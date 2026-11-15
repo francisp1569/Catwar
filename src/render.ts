@@ -752,10 +752,23 @@ function drawEnemy(ctx: Ctx, e: Enemy): void {
 // ───────────────────────── 고양이 부대 ─────────────────────────
 
 function drawSquad(ctx: Ctx, game: Game, t: number): void {
-  const order = [...game.squad].sort((a, b) => a.y - b.y);
+  const order = game.squad.filter((m) => m.level > 0).sort((a, b) => a.y - b.y);
+  const crowd = order.length >= 6 ? 0.88 : 1;
   for (const m of order) {
-    const sleeping = m.level === 0;
-    const s = m.slot === 0 ? 40 : 33;
+    const sleeping = false;
+    const s = (m.slot === 0 ? 40 : 33) * crowd;
+    const enter = m.enterT / 0.8;
+    if (enter > 0) {
+      // 합류: 아래에서 폴짝 뛰어 들어오며 반짝
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      for (let i = 0; i < 8; i++) {
+        const a = (i / 8) * Math.PI * 2 + t * 3;
+        const rr = s * (1.2 + (1 - enter) * 1.4);
+        text(ctx, '✦', m.x + Math.cos(a) * rr, m.y - s + Math.sin(a) * rr * 0.6, 12 + enter * 8, '#fff3a0', 'center', false);
+      }
+      ctx.restore();
+    }
     ellipse(ctx, m.x, m.y + 2, s * 1.0, s * 0.3, 'rgba(60,30,10,0.2)');
     if (m.wakeFx > 0) {
       ctx.save();
@@ -767,8 +780,8 @@ function drawSquad(ctx: Ctx, game: Game, t: number): void {
       ctx.restore();
     }
     ctx.save();
-    ctx.translate(m.x, m.y);
-    if (sleeping) ctx.globalAlpha = 0.7;
+    ctx.translate(m.x, m.y + (enter > 0 ? -Math.sin((1 - enter) * Math.PI) * 60 + enter * enter * 70 : 0));
+    if (enter > 0) ctx.scale(1 - enter * 0.3, 1 + enter * 0.2);
     const art = getArt(m.def.id, 'back');
     if (art) {
       const h = s * 3.4;
@@ -843,6 +856,75 @@ function drawSquad(ctx: Ctx, game: Game, t: number): void {
 
 function drawShots(ctx: Ctx, game: Game): void {
   for (const s of game.shots) {
+    if (s.kind === 'lob') {
+      // 츄르 폭탄: 바닥 그림자 + 빙글빙글 도는 츄르 스틱
+      const k = Math.min(1, (s.age ?? 0) / (s.dur ?? 1));
+      const gx = s.sx! + (s.tx! - s.sx!) * k;
+      const gy = s.sy! + (s.ty! - s.sy!) * k;
+      ellipse(ctx, gx, gy, 10 + k * 8, 4 + k * 3, 'rgba(40,20,10,0.25)');
+      ctx.save();
+      ctx.translate(s.x, s.y);
+      ctx.rotate(s.spin);
+      roundRect(ctx, -7, -16, 14, 32, 5);
+      const g = ctx.createLinearGradient(-7, 0, 7, 0);
+      g.addColorStop(0, '#ffd0a0'); g.addColorStop(1, '#ff8a3d');
+      ctx.fillStyle = g; ctx.fill();
+      ctx.strokeStyle = '#3b2228'; ctx.lineWidth = 2; ctx.stroke();
+      ctx.fillStyle = '#ff5f6d'; ctx.fillRect(-7, -4, 14, 8);
+      ctx.fillStyle = '#fff'; ctx.fillRect(-4, -13, 3, 7);
+      ctx.restore();
+      if (k > 0.85) { ctx.strokeStyle = 'rgba(255,90,90,0.6)'; ctx.setLineDash([5, 5]); ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(s.tx!, s.ty!, s.radius, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]); }
+      continue;
+    }
+    if (s.kind === 'boomer') {
+      ctx.save();
+      ctx.globalAlpha = 0.35;
+      circle(ctx, s.x, s.y, s.radius * 1.4, '#ffffff');
+      ctx.globalAlpha = 1;
+      ctx.translate(s.x, s.y);
+      ctx.rotate(s.spin * 1.5);
+      const k = s.radius / 14;
+      ctx.scale(k, k);
+      ctx.strokeStyle = '#d07090'; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.moveTo(-12, 0); ctx.quadraticCurveTo(-22, -10, -30, 2); ctx.stroke();
+      ellipse(ctx, 0, 0, 14, 9, '#3b2228');
+      ellipse(ctx, 0, 0, 12.5, 7.5, '#a9a3b8');
+      ellipse(ctx, 8, -6, 5, 5, '#3b2228');
+      ellipse(ctx, 8, -6, 4, 4, '#f4a7b9');
+      circle(ctx, 11, -1, 1.5, '#3b2228');
+      ctx.restore();
+      continue;
+    }
+    if (s.kind === 'vacuum') {
+      // 집사의 로봇청소기
+      const R = s.radius;
+      ellipse(ctx, s.x + 4, s.y + 8, R, R * 0.5, 'rgba(30,20,30,0.3)');
+      ctx.save();
+      ctx.translate(s.x, s.y);
+      for (const side of [-1, 1]) {
+        ctx.save();
+        ctx.translate(R * 0.7 * Math.sign(s.vx), side * R * 0.75);
+        ctx.rotate(s.spin * 2 * side);
+        ctx.strokeStyle = '#6a6070';
+        ctx.lineWidth = 2;
+        for (let i = 0; i < 3; i++) { const a = (i / 3) * Math.PI * 2; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(a) * 14, Math.sin(a) * 14); ctx.stroke(); }
+        ctx.restore();
+      }
+      ellipse(ctx, 0, 0, R + 2.5, R + 2.5, '#3b2228');
+      ellipse(ctx, 0, 0, R, R, '#e9e6ef');
+      ellipse(ctx, 0, 0, R * 0.78, R * 0.78, '#bdb7c9');
+      ellipse(ctx, 0, 0, R * 0.32, R * 0.32, '#5a5468');
+      const blink = Math.sin(s.spin * 2) > 0;
+      ellipse(ctx, Math.sign(s.vx) * R * 0.55, 0, 4, 4, blink ? '#5fd3ff' : '#2a8fb8');
+      ctx.strokeStyle = '#3b2228'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(0, 0, R * 0.92, Math.sign(s.vx) > 0 ? -0.9 : Math.PI - 0.9, Math.sign(s.vx) > 0 ? 0.9 : Math.PI + 0.9); ctx.stroke();
+      ctx.restore();
+      ctx.save();
+      ctx.globalAlpha = 0.6;
+      for (let i = 0; i < 4; i++) circle(ctx, s.x - Math.sign(s.vx) * (R + 10 + i * 12), s.y + Math.sin(s.spin * 3 + i) * 10, 5 - i, '#e8e0f0');
+      ctx.restore();
+      continue;
+    }
     if (s.kind === 'roll') {
       // 캣휠
       const R = s.radius;
@@ -943,6 +1025,42 @@ function drawShots(ctx: Ctx, game: Game): void {
 function pawPrint(ctx: Ctx, x: number, y: number, r: number, color: string): void {
   ellipse(ctx, x, y + r * 0.2, r * 0.55, r * 0.45, color);
   for (const [dx, dy] of [[-0.55, -0.35], [-0.2, -0.65], [0.2, -0.65], [0.55, -0.35]] as const) ellipse(ctx, x + dx * r, y + dy * r, r * 0.2, r * 0.24, color);
+}
+
+function drawMines(ctx: Ctx, game: Game, t: number): void {
+  for (const mn of game.mines) {
+    const armed = mn.t >= 0.4;
+    ellipse(ctx, mn.x, mn.y + 8, 15, 5, 'rgba(40,20,10,0.25)');
+    ctx.save();
+    ctx.translate(mn.x, mn.y);
+    ctx.rotate(mn.seed);
+    ellipse(ctx, 0, 0, 15, 13, '#3b2228');
+    ellipse(ctx, 0, 0, 13, 11, '#c8834e');
+    ctx.strokeStyle = '#f3d3b0';
+    ctx.lineWidth = 1.3;
+    for (let i = 0; i < 7; i++) { const a = i * 0.9; ctx.beginPath(); ctx.arc(0, 0, 9, a, a + 1.2); ctx.stroke(); }
+    for (let i = 0; i < 8; i++) { const a = i * 0.785; ctx.strokeStyle = '#a9652f'; ctx.beginPath(); ctx.moveTo(Math.cos(a) * 12, Math.sin(a) * 10); ctx.lineTo(Math.cos(a) * 17, Math.sin(a) * 14); ctx.stroke(); }
+    ctx.restore();
+    if (armed && Math.sin(t * 6 + mn.seed) > 0) circle(ctx, mn.x, mn.y - 12, 3, '#ff5a5a');
+  }
+}
+
+function drawShield(ctx: Ctx, game: Game, t: number): void {
+  if (game.shield <= 0) return;
+  const k = Math.min(1, game.shield / (game.maxHp * 0.3));
+  ctx.save();
+  ctx.globalAlpha = 0.25 + k * 0.35;
+  const y = CONFIG.barricadeY;
+  const g = ctx.createLinearGradient(0, y - 50, 0, y + 50);
+  g.addColorStop(0, 'rgba(160,215,255,0)'); g.addColorStop(0.5, 'rgba(160,215,255,0.9)'); g.addColorStop(1, 'rgba(160,215,255,0.1)');
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.moveTo(0, y + 50);
+  for (let x = 0; x <= W; x += 30) ctx.lineTo(x, y - 30 - Math.sin(x * 0.03 + t * 2) * 6);
+  ctx.lineTo(W, y + 50);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
 }
 
 function drawFields(ctx: Ctx, game: Game, t: number): void {
@@ -1123,6 +1241,68 @@ function drawFx(ctx: Ctx, game: Game): void {
         }
         break;
       }
+      case 'zap': {
+        if (!f.pts || f.pts.length < 2) break;
+        ctx.globalCompositeOperation = 'lighter';
+        for (const [w, col] of [[7, 'rgba(120,200,255,0.5)'], [2.5, '#ffffff']] as const) {
+          ctx.strokeStyle = col;
+          ctx.lineWidth = w;
+          ctx.lineJoin = 'round';
+          ctx.beginPath();
+          ctx.moveTo(f.pts[0].x, f.pts[0].y);
+          for (let i = 1; i < f.pts.length; i++) {
+            const a = f.pts[i - 1];
+            const b = f.pts[i];
+            for (let j = 1; j <= 4; j++) {
+              const q = j / 4;
+              const jit = j < 4 ? (Math.sin((f.t + j) * 40 + i) * 9) : 0;
+              ctx.lineTo(a.x + (b.x - a.x) * q + jit, a.y + (b.y - a.y) * q - jit * 0.6);
+            }
+          }
+          ctx.stroke();
+        }
+        for (const p of f.pts.slice(1)) circle(ctx, p.x, p.y, 10 * (1 - k) + 3, 'rgba(180,230,255,0.6)');
+        break;
+      }
+      case 'pounce': {
+        const q = Math.min(1, k * 1.2);
+        const px = f.x + (f.x2! - f.x) * q;
+        const py = f.y + (f.y2! - f.y) * q - Math.sin(q * Math.PI) * 70;
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = 'rgba(232,160,64,0.5)';
+        ctx.lineWidth = 6;
+        ctx.setLineDash([2, 10]);
+        ctx.beginPath(); ctx.moveTo(f.x, f.y); ctx.quadraticCurveTo((f.x + f.x2!) / 2, Math.min(f.y, f.y2!) - 140, px, py); ctx.stroke();
+        ctx.setLineDash([]);
+        ellipse(ctx, px, py, 18, 13, '#3b2228');
+        ellipse(ctx, px, py, 16, 11, '#e2a24e');
+        for (const [dx, dy] of [[-6, -3], [4, 2], [8, -5], [-2, 5]]) circle(ctx, px + dx, py + dy, 2.2, '#5a3a1e');
+        ellipse(ctx, px, py - 13, 9, 8, '#e2a24e');
+        break;
+      }
+      case 'spray': {
+        const a0 = (f.ang ?? -Math.PI / 2) - (f.x2 ?? 0.45);
+        const a1 = (f.ang ?? -Math.PI / 2) + (f.x2 ?? 0.45);
+        const rr = f.r * Math.min(1, k * 2.5);
+        const g = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, rr);
+        g.addColorStop(0, 'rgba(190,235,255,0.75)'); g.addColorStop(1, 'rgba(120,200,255,0.05)');
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.moveTo(f.x, f.y); ctx.arc(f.x, f.y, rr, a0, a1); ctx.closePath(); ctx.fill();
+        for (let i = 0; i < 16; i++) {
+          const a = a0 + ((a1 - a0) * ((i * 7) % 16)) / 15;
+          const d = rr * (0.3 + ((i * 13) % 10) / 14);
+          ellipse(ctx, f.x + Math.cos(a) * d, f.y + Math.sin(a) * d, 4, 5.5, 'rgba(225,245,255,0.9)');
+        }
+        break;
+      }
+      case 'shield': {
+        ctx.globalCompositeOperation = 'lighter';
+        const g = ctx.createLinearGradient(0, f.y - 60, 0, f.y + 50);
+        g.addColorStop(0, 'rgba(150,210,255,0)'); g.addColorStop(0.5, 'rgba(150,210,255,0.6)'); g.addColorStop(1, 'rgba(150,210,255,0)');
+        ctx.fillStyle = g;
+        ctx.fillRect(0, f.y - 60 - k * 20, W, 110);
+        break;
+      }
       case 'heal':
         for (let i = 0; i < 10; i++) text(ctx, '+', (i + 0.5) * (W / 10), f.y - k * 30 - (i % 2) * 8, 18, f.color, 'center', false);
         break;
@@ -1246,7 +1426,12 @@ function drawHud(ctx: Ctx, game: Game, t: number, pressed: string | null): void 
     ctx.fillStyle = ratio > 0.5 ? '#6fd67a' : ratio > 0.25 ? '#ffc94d' : '#ff6b6b';
     ctx.fill();
   }
-  text(ctx, `🛡 ${Math.ceil(game.hp)} / ${game.maxHp}`, W / 2, CONFIG.height - 26, 13, '#fff');
+  if (game.shield > 0) {
+    roundRect(ctx, 64, CONFIG.height - 36, Math.min(416, 416 * (game.shield / game.maxHp)), 20, 10);
+    ctx.fillStyle = 'rgba(140,200,255,0.75)';
+    ctx.fill();
+  }
+  text(ctx, `🛡 ${Math.ceil(game.hp)} / ${game.maxHp}${game.shield > 0 ? ` (+${Math.ceil(game.shield)})` : ''}`, W / 2, CONFIG.height - 26, 13, '#fff');
   ctx.save();
   ctx.beginPath(); ctx.arc(34, CONFIG.height - 28, 24, 0, Math.PI * 2);
   ctx.fillStyle = '#bfe6ff'; ctx.fill();
@@ -1285,9 +1470,14 @@ function drawSkillChip(ctx: Ctx, m: Member, x: number, y: number, t: number): vo
 // ───────────────────────── 스킬 선택 / 오버레이 ─────────────────────────
 
 function cardInfo(game: Game, c: Card) {
-  if (c.type === 'cat') {
+  if (c.type === 'new') {
     const m = game.squad[c.slot];
-    return { title: m.def.skillName, sub: m.def.name, desc: m.weapon.desc[c.next - 1], badge: c.next === 1 ? 'NEW' : `Lv.${c.next}`, color: RARITY_COLOR[m.def.rarity], look: m.def.look as CatLook | null, icon: m.weapon.icon };
+    return { title: m.def.name, sub: m.def.skillName, desc: m.weapon.intro, badge: 'NEW', color: RARITY_COLOR[m.def.rarity], look: m.def.look as CatLook | null, icon: m.weapon.icon };
+  }
+  if (c.type === 'mod') {
+    const m = game.squad[c.slot];
+    const mod = m.weapon.mods.find((x) => x.id === c.mod)!;
+    return { title: mod.name, sub: `${m.def.name} · ${m.def.skillName}`, desc: mod.desc, badge: '', color: RARITY_COLOR[m.def.rarity], look: m.def.look as CatLook | null, icon: m.weapon.icon };
   }
   const g = GENERIC[c.id];
   return { title: g.name, sub: c.id === 'snack' ? '회복' : `${game.generic[c.id] + 1}단계`, desc: g.desc, badge: '강화', color: '#7ad99a', look: null as CatLook | null, icon: g.icon };
@@ -1359,7 +1549,7 @@ function drawCard(ctx: Ctx, game: Game, c: Card, r: Rect, t: number, _glow: numb
     g.addColorStop(0, info.color + 'aa'); g.addColorStop(1, info.color + '00');
     ctx.fillStyle = g;
     ctx.fillRect(r.x - 30, r.y - 130, r.w + 60, 200);
-    const art = c.type === 'cat' ? getArt(game.squad[c.slot].def.id, 'card') : null;
+    const art = c.type !== 'generic' ? getArt(game.squad[c.slot].def.id, 'card') : null;
     if (art) {
       const h = 150;
       const w = (art.naturalWidth / art.naturalHeight) * h;
@@ -1407,7 +1597,7 @@ function drawCard(ctx: Ctx, game: Game, c: Card, r: Rect, t: number, _glow: numb
   ctx.fillStyle = ig;
   ctx.beginPath(); ctx.arc(ix, iy, 30, 0, Math.PI * 2); ctx.fill();
   text(ctx, info.icon, ix, iy + 1, 30, '#fff', 'center', false);
-  if (c.type === 'cat' && c.next > 1) {
+  if (c.type === 'mod') {
     circle(ctx, ix + 24, iy + 24, 12, '#1d3b22');
     text(ctx, `${c.next}`, ix + 24, iy + 24, 14, '#ffffff', 'center', false);
   }
@@ -1511,9 +1701,11 @@ export function render(ctx: Ctx, game: Game, t: number, pressed: string | null, 
   drawField(ctx, game.stage.area, t);
   drawDecals(ctx, game.decals);
   drawFields(ctx, game, t);
+  drawMines(ctx, game, t);
   const sorted = [...game.enemies].sort((a, b) => (a.def.flying ? 1 : 0) - (b.def.flying ? 1 : 0) || a.y - b.y);
   for (const e of sorted) drawEnemy(ctx, e);
   drawBarricade(ctx, game, t);
+  drawShield(ctx, game, t);
   drawSquad(ctx, game, t);
   drawShots(ctx, game);
   drawFx(ctx, game);

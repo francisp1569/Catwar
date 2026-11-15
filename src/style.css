@@ -352,7 +352,7 @@ canvas#game { display: block; position: fixed; inset: 0; width: 100vw; height: 1
 .card.in-deck { box-shadow: 0 0 0 3px var(--pink) inset; }
 .card .check { position: absolute; top: 3px; right: 7px; color: var(--pink); font-size: 18px; }
 .portrait { width: 72px; height: 72px; display: block; }
-.deck { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 8px 0; }
+.deck { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin: 8px 0; }
 .slot {
   background: var(--panel2); border: 2px solid var(--pink); border-radius: 12px; padding: 6px 2px;
   display: flex; flex-direction: column; align-items: center; text-align: center; min-height: 110px; justify-content: center;

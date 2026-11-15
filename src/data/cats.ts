@@ -5,7 +5,7 @@ export type Rarity = 'N' | 'R' | 'SR' | 'SSR';
 export const RARITY_ORDER: Rarity[] = ['N', 'R', 'SR', 'SSR'];
 export const RARITY_COLOR: Record<Rarity, string> = { N: '#9aa5b1', R: '#4fa3ff', SR: '#b06bff', SSR: '#ffb800' };
 
-export type Pattern = 'solid' | 'bicolor' | 'tabby' | 'tuxedo' | 'calico' | 'tortie' | 'point';
+export type Pattern = 'solid' | 'bicolor' | 'tabby' | 'tuxedo' | 'calico' | 'tortie' | 'point' | 'spotted';
 
 /** 코드로 그리는 고양이 외형 */
 export interface CatLook {
@@ -124,6 +124,48 @@ export const CATS: CatDef[] = [
     hp: 200, atk: 42, skillName: '레이저 포인터', weapon: WEAPONS.siamese,
     look: { base: '#f3e6cf', pattern: 'point', patch: '#5a4034', eye: '#4aa3ff' },
     bio: '푸른 눈의 명사수. 말이 많고 한 번 노린 벌레는 놓치지 않는다.',
+  },
+  {
+    id: 'cow', name: '젖소', breed: '젖소무늬 코숏', rarity: 'R', role: '폭격',
+    hp: 200, atk: 18, skillName: '츄르 폭탄', weapon: WEAPONS.cow,
+    look: { base: WHITE, pattern: 'calico', patch: '#2e2e38', patch2: '#2e2e38', belly: WHITE, eye: '#c9a227' },
+    bio: '흑백 얼룩이 젖소를 닮은 코숏. 츄르를 아껴 먹다 폭탄처럼 던진다.',
+  },
+  {
+    id: 'americanshort', name: '은비', breed: '아메리칸 숏헤어', rarity: 'R', role: '원거리',
+    hp: 180, atk: 20, skillName: '쥐돌이 부메랑', weapon: WEAPONS.americanshort,
+    look: { base: '#c9ccd2', pattern: 'tabby', stripe: '#3e4250', belly: '#f2f2f2', eye: '#e8b83a' },
+    bio: '은빛 소용돌이 무늬. 쥐돌이 장난감을 던지면 꼭 다시 받아낸다.',
+  },
+  {
+    id: 'abyssinian', name: '아비', breed: '아비시니안', rarity: 'R', role: '함정',
+    hp: 170, atk: 22, skillName: '털뭉치 덫', weapon: WEAPONS.abyssinian,
+    look: { base: '#c8834e', pattern: 'tabby', stripe: '#a9652f', belly: '#f3d3b0', eye: '#d9b030' },
+    bio: '호기심 많은 탐험가. 집안 곳곳에 털뭉치를 숨겨 둔다.',
+  },
+  {
+    id: 'norwegian', name: '노르', breed: '노르웨이숲', rarity: 'SR', role: '연쇄',
+    hp: 300, atk: 20, skillName: '정전기 쓰다듬기', weapon: WEAPONS.norwegian,
+    look: { base: '#a88a68', pattern: 'tabby', stripe: '#6a5038', belly: WHITE, eye: '#9ccf5a', fluffy: true },
+    bio: '겨울에 쓰다듬으면 찌릿! 털 속에 정전기가 가득하다.',
+  },
+  {
+    id: 'ragdoll', name: '구름', breed: '랙돌', rarity: 'SR', role: '보호막',
+    hp: 450, atk: 10, skillName: '꾹꾹이 쿠션', weapon: WEAPONS.ragdoll,
+    look: { base: '#f6efe6', pattern: 'point', patch: '#8a7a70', belly: WHITE, eye: '#5aa9ff', fluffy: true },
+    bio: '안으면 축 늘어지는 구름 같은 고양이. 꾹꾹이로 폭신한 쿠션을 만든다.',
+  },
+  {
+    id: 'bengal', name: '벵이', breed: '벵갈', rarity: 'SSR', role: '사냥꾼',
+    hp: 220, atk: 36, skillName: '사냥 본능', weapon: WEAPONS.bengal,
+    look: { base: '#e2a24e', pattern: 'spotted', patch: '#5a3a1e', belly: '#fff1d8', eye: '#7cc36b' },
+    bio: '작은 표범. 사냥감을 보면 눈빛이 달라진다.',
+  },
+  {
+    id: 'sphynx', name: '스피', breed: '스핑크스', rarity: 'SSR', role: '물대포',
+    hp: 200, atk: 34, skillName: '분무기 물총', weapon: WEAPONS.sphynx,
+    look: { base: '#f2c4b8', pattern: 'solid', eye: '#7ad0a0', kitten: true },
+    bio: '털이 없어 물이 묻어도 끄떡없다. 분무기는 이 고양이의 무기.',
   },
 ];
 

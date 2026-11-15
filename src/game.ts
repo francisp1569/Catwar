@@ -4,7 +4,7 @@ import { CONFIG } from './data/config';
 import { BATTLE_LINES, JOIN_LINES, RALLY_LINE } from './data/lines';
 import { ENEMIES, type EnemyDef, type EnemyKind } from './data/enemies';
 import type { Mix, StageDef } from './data/stages';
-import { GENERIC, MAX_WEAPON_LV, rally, type GenericCard, type WeaponDef, type WeaponFx, type WeaponParams } from './data/weapons';
+import { GENERIC, applyMods, rally, type GenericCard, type WeaponDef, type WeaponFx, type WeaponParams } from './data/weapons';
 import type { Bonus } from './meta/items';
 import { catStats } from './meta/progression';
 import type { OwnedCat } from './meta/save';
@@ -38,8 +38,14 @@ export interface Member {
   def: CatDef;
   owned: OwnedCat;
   weapon: WeaponDef;
-  /** 전투 중 스킬 레벨 (0 = 아직 잠자는 중) */
+  /** 전투 중 스킬 레벨 (0 = 아직 합류 안 함) */
   level: number;
+  /** 고른 갈래형 강화 */
+  picks: Record<string, number>;
+  joinOrder: number;
+  targetX: number;
+  /** 합류 등장 연출 남은 시간 */
+  enterT: number;
   power: number;
   timer: number;
   x: number;
@@ -52,7 +58,8 @@ export interface Member {
 }
 
 export interface Shot {
-  kind: 'bolt' | 'roll' | 'web';
+  kind: 'bolt' | 'roll' | 'web' | 'lob' | 'boomer' | 'vacuum';
+  sx?: number; sy?: number; tx?: number; ty?: number; age?: number; dur?: number; back?: boolean; range?: number;
   x: number; y: number; vx: number; vy: number;
   dmg: number; radius: number; pierce: number;
   color: string; crit: boolean;
@@ -65,11 +72,13 @@ export interface Shot {
   trail?: { x: number; y: number }[];
 }
 
-export type FxKind = 'beam' | 'slam' | 'quake' | 'snipe' | 'dash' | 'heal' | 'thorns' | 'spark' | 'boom' | 'poof';
-export interface Fx { kind: FxKind; x: number; y: number; x2?: number; y2?: number; r: number; t: number; life: number; color: string; style?: WeaponFx; }
+export type FxKind = 'beam' | 'slam' | 'quake' | 'snipe' | 'dash' | 'heal' | 'thorns' | 'spark' | 'boom' | 'poof' | 'zap' | 'pounce' | 'spray' | 'shield';
+export interface ZapPoint { x: number; y: number; }
+export interface Fx { kind: FxKind; x: number; y: number; x2?: number; y2?: number; r: number; t: number; life: number; color: string; style?: WeaponFx; pts?: ZapPoint[]; ang?: number; }
+export interface Mine { x: number; y: number; r: number; dmg: number; src: number; t: number; seed: number; }
 
 export interface Field { x: number; y: number; r: number; t: number; life: number; slow: number; dmg: number; tick: number; sx: number; sy: number; src: number; }
-export interface PendingSlam { x: number; y: number; r: number; delay: number; dmg: number; knock: number; src: number; }
+export interface PendingSlam { x: number; y: number; r: number; delay: number; dmg: number; knock: number; src: number; execute?: number; pounce?: boolean; }
 
 export interface Decal { x: number; y: number; r: number; color: string; t: number; seed: number; }
 
@@ -77,7 +86,8 @@ export interface FloatText { x: number; y: number; text: string; color: string; 
 export interface Particle { x: number; y: number; vx: number; vy: number; t: number; life: number; color: string; r: number; }
 
 export type Card =
-  | { type: 'cat'; slot: number; next: number }
+  | { type: 'new'; slot: number }
+  | { type: 'mod'; slot: number; mod: string; next: number }
   | { type: 'generic'; id: GenericCard };
 
 export type Phase = 'playing' | 'victory' | 'defeat';
@@ -132,6 +142,11 @@ export class Game {
   shake = 0;
 
   private nextUid = 1;
+  private joinCount = 0;
+  /** 바리케이드 보호막 */
+  shield = 0;
+  mines: Mine[] = [];
+  supportT = 22;
   private spawnAcc = 0;
   private burstsDone = new Set<number>();
 
@@ -151,13 +166,35 @@ export class Game {
       hp += s.hp;
       return {
         slot: i, def: e.def, owned: e.owned, weapon: e.def.weapon,
-        level: i === 0 ? 1 : 0, power: s.atk, timer: 0,
-        x: CONFIG.squadX[i], y: CONFIG.squadY + (i === 0 ? 8 : i > 2 ? -6 : 0), swing: 0, wakeFx: 0, dealt: 0, speech: null,
+        level: i === 0 ? 1 : 0, picks: {}, joinOrder: i === 0 ? 0 : -1, targetX: W / 2, enterT: 0, power: s.atk, timer: 0,
+        x: W / 2, y: CONFIG.squadY + 6, swing: 0, wakeFx: 0, dealt: 0, speech: null,
       };
     });
     this.maxHp = Math.round(hp * (1 + this.bonus.hp));
     this.hp = this.maxHp;
     this.banner = { text: `STAGE ${stage.no} · ${stage.name}`, t: 2.5 };
+    this.layout(true);
+  }
+
+  /** 합류한 고양이를 바리케이드 뒤에 고르게 배치 (치즈는 가운데) */
+  private layout(snap = false): void {
+    const act = this.squad.filter((m) => m.level > 0).sort((a, b) => a.joinOrder - b.joinOrder);
+    const n = act.length;
+    const order: Member[] = new Array(n);
+    const mid = Math.floor((n - 1) / 2);
+    let l = mid - 1;
+    let r = mid + 1;
+    order[mid] = act[0];
+    for (let i = 1; i < n; i++) {
+      if (i % 2 === 1 && r < n) order[r++] = act[i];
+      else if (l >= 0) order[l--] = act[i];
+      else order[r++] = act[i];
+    }
+    order.forEach((m, i) => {
+      m.targetX = (W * (i + 0.5)) / n;
+      m.y = CONFIG.squadY + (m.slot === 0 ? 8 : (i % 2) * -8);
+      if (snap) m.x = m.targetX;
+    });
   }
 
   get hero(): Member { return this.squad[0]; }
@@ -182,8 +219,8 @@ export class Game {
     return { reduce: p.reduce ?? 0, thorns: p.thorns ?? 0, power: g.power, slot: g.slot };
   }
 
-  params(m: Member, level = m.level): WeaponParams {
-    return m.weapon.levels[Math.max(0, Math.min(MAX_WEAPON_LV, level) - 1)];
+  params(m: Member): WeaponParams {
+    return applyMods(m.weapon, m.picks);
   }
 
   // ───────────── 플레이어 조작 ─────────────
@@ -208,14 +245,27 @@ export class Game {
     const c = this.choice?.[i];
     if (!c) return;
     this.pickAnim = { card: c, index: i, t: 0.7 };
-    if (c.type === 'cat') {
+    if (c.type === 'new') {
       const m = this.squad[c.slot];
-      m.level = c.next;
+      m.level = 1;
+      m.joinOrder = ++this.joinCount;
+      m.enterT = 0.8;
       m.wakeFx = 1;
       m.timer = this.params(m).interval * 0.5;
-      if (c.next === 1) { this.say(m, JOIN_LINES[m.def.id] ?? '냥!'); this.sfx('meow'); }
+      this.layout();
+      m.x = m.targetX;
+      this.say(m, JOIN_LINES[m.def.id] ?? '냥!');
+      this.sfx('meow');
       this.sfx('card');
-      this.addFloat(m.x, m.y - 70, c.next === 1 ? `${m.def.name} 합류!` : `${m.def.skillName} Lv.${c.next}`, '#ffe98a', 18);
+      this.addFloat(m.targetX, m.y - 90, `${m.def.name} 합류!`, '#ffe98a', 18);
+    } else if (c.type === 'mod') {
+      const m = this.squad[c.slot];
+      m.picks[c.mod] = (m.picks[c.mod] ?? 0) + 1;
+      m.level++;
+      m.wakeFx = 0.8;
+      const mod = m.weapon.mods.find((x) => x.id === c.mod)!;
+      this.sfx('card');
+      this.addFloat(m.x, m.y - 90, `${mod.name}!`, '#ffe98a', 18);
     } else {
       this.generic[c.id]++;
       if (c.id === 'snack') this.repair(this.maxHp * 0.25);
@@ -235,8 +285,9 @@ export class Game {
   private rollCards(): Card[] {
     const pool: { card: Card; w: number }[] = [];
     for (const m of this.squad) {
-      if (m.level >= MAX_WEAPON_LV) continue;
-      pool.push({ card: { type: 'cat', slot: m.slot, next: m.level + 1 }, w: m.level === 0 ? 3 : 2.2 });
+      if (m.level === 0) { pool.push({ card: { type: 'new', slot: m.slot }, w: 3 }); continue; }
+      const open = m.weapon.mods.filter((x) => (m.picks[x.id] ?? 0) < x.max);
+      for (const mod of open) pool.push({ card: { type: 'mod', slot: m.slot, mod: mod.id, next: (m.picks[mod.id] ?? 0) + 1 }, w: 2.4 / Math.max(1.5, open.length) + 0.3 });
     }
     for (const id of Object.keys(GENERIC) as GenericCard[]) {
       if (this.generic[id] >= GENERIC[id].max) continue;
@@ -313,7 +364,7 @@ export class Game {
 
   private spawn(kind: EnemyKind, x = 30 + Math.random() * (W - 60), y = CONFIG.fieldTop - 20): Enemy {
     const def = ENEMIES[kind];
-    const mul = this.stage.mul * (1 + this.progress * 0.35); // 시간이 갈수록 조금씩 강해짐
+    const mul = this.stage.mul * (1 + this.progress * 1.1); // 시간이 갈수록 조금씩 강해짐
     const e: Enemy = {
       uid: this.nextUid++, def, x, y, baseX: x,
       hp: def.hp * mul * HORDE.hp, maxHp: def.hp * mul * HORDE.hp, atk: def.atk * this.stage.mul * HORDE.atk,
@@ -335,7 +386,8 @@ export class Game {
     const st = this.stage;
     if (this.time < st.duration) {
       const k = this.progress;
-      const rate = st.rate[0] + (st.rate[1] - st.rate[0]) * k;
+      // 레퍼런스처럼: 처음엔 한두 마리씩, 후반엔 폭발적으로
+      const rate = st.rate[1] * (0.05 + Math.pow(k, 1.8) * 1.35) + st.rate[0] * 0.15;
       this.spawnAcc += rate * dt;
       while (this.spawnAcc >= 1) {
         this.spawnAcc -= 1;
@@ -430,7 +482,13 @@ export class Game {
 
   private damageBarricade(dmg: number, x: number): void {
     this.sfx('hurt');
-    const real = dmg * (1 - this.guard.reduce) * (1 - this.bonus.reduce);
+    let real = dmg * (1 - this.guard.reduce) * (1 - this.bonus.reduce);
+    if (this.shield > 0) {
+      const absorbed = Math.min(this.shield, real);
+      this.shield -= absorbed;
+      real -= absorbed;
+      if (real <= 0) return;
+    }
     this.hp -= real;
     this.hitFlash = 0.12;
     if (Math.random() < 0.35) this.addFloat(x, CONFIG.barricadeY + 18, `-${Math.round(real)}`, '#ff6b6b', 13);
@@ -545,7 +603,21 @@ export class Game {
       const awake = this.squad.filter((m) => m.level > 0 && !m.speech);
       if (awake.length) this.say(awake[Math.floor(Math.random() * awake.length)], BATTLE_LINES[Math.floor(Math.random() * BATTLE_LINES.length)]);
     }
+    // 집사 지원 출동: 로봇청소기
+    if (this.time > 12) {
+      this.supportT -= dt;
+      if (this.supportT <= 0) {
+        this.supportT = 26;
+        const y = CONFIG.fieldTop + 140 + Math.random() * (CONFIG.barricadeY - CONFIG.fieldTop - 320);
+        const fromLeft = Math.random() < 0.5;
+        this.shots.push({ kind: 'vacuum', x: fromLeft ? -50 : W + 50, y, vx: fromLeft ? 230 : -230, vy: 0, dmg: this.hero.power * 1.3 * this.dmgMul, radius: 36, pierce: 999, color: '#9fd8ff', crit: false, hit: new Set(), tick: 0, done: false, spin: 0, src: -1 });
+        this.banner = { text: '🤖 집사의 로봇청소기 출동!', t: 1.6 };
+        this.sfx('vacuum');
+      }
+    }
     for (const m of this.squad) {
+      m.x += (m.targetX - m.x) * Math.min(1, dt * 6);
+      m.enterT = Math.max(0, m.enterT - dt);
       if (m.speech) { m.speech.t -= dt; if (m.speech.t <= 0) m.speech = null; }
       m.swing = Math.max(0, m.swing - dt * 3);
       m.wakeFx = Math.max(0, m.wakeFx - dt);
@@ -565,6 +637,7 @@ export class Game {
 
   private static FIRE_SFX: Partial<Record<WeaponFx, string>> = {
     paw: 'pop', yarn: 'yarn', claws: 'scratch', scratch: 'scratch', wheel: 'wheel', bell: 'bell', feather: 'yarn', butt: 'thud', laser: 'laser', groom: 'heal',
+    churu: 'throw', zap: 'zap', pounce: 'pounce', mousetoy: 'throw', water: 'splash', hairball: 'throw',
   };
 
   private fire(m: Member, p: WeaponParams): boolean {
@@ -673,6 +746,96 @@ export class Game {
         this.repair(this.maxHp * (p.repair ?? 0.02));
         return true;
       }
+      case 'lob': {
+        const n = p.count ?? 1;
+        let rest = list;
+        let any = false;
+        for (let i = 0; i < n; i++) {
+          const c = this.densest(rest, p.radius ?? 60);
+          if (!c) break;
+          any = true;
+          this.shots.push({ kind: 'lob', x: ox, y: oy, sx: ox, sy: oy, tx: c.x, ty: c.y, age: 0, dur: 0.75, vx: 0, vy: 0, dmg, radius: p.radius ?? 60, pierce: 0, color, crit: false, hit: new Set(), tick: 0, done: false, spin: 0, style: m.weapon.fx, src: m.slot });
+          rest = rest.filter((e) => Math.hypot(e.x - c.x, e.y - c.y) > (p.radius ?? 60) * 1.4);
+          if (!rest.length) rest = list;
+        }
+        return any;
+      }
+      case 'chain': {
+        let cur = this.frontmost(list);
+        if (!cur) return false;
+        const pts = [{ x: ox, y: oy }];
+        const hit = new Set<number>();
+        let d = dmg;
+        for (let j = 0; j <= (p.jumps ?? 3) && cur; j++) {
+          hit.add(cur.uid);
+          pts.push({ x: cur.x, y: cur.y });
+          this.damageEnemy(cur, d, { stun: p.stun, src: m.slot, color: '#bfe8ff' });
+          d *= 0.88;
+          let next: Enemy | null = null;
+          let bd = 130;
+          for (const e of list) {
+            if (e.dead || hit.has(e.uid)) continue;
+            const dd = Math.hypot(e.x - cur.x, e.y - cur.y);
+            if (dd < bd) { bd = dd; next = e; }
+          }
+          cur = next;
+        }
+        this.fx.push({ kind: 'zap', x: ox, y: oy, r: 0, t: 0, life: 0.3, color, pts });
+        return true;
+      }
+      case 'pounce': {
+        // 체력 비율이 낮은 적이 많은 곳으로 덮친다
+        const c = this.densest(list.filter((e) => e.y > CONFIG.fieldTop + 40), p.radius ?? 55);
+        if (!c) return false;
+        this.fx.push({ kind: 'pounce', x: ox, y: oy, x2: c.x, y2: c.y, r: p.radius ?? 55, t: 0, life: 0.35, color });
+        this.slams.push({ x: c.x, y: c.y, r: p.radius ?? 55, delay: 0.3, dmg, knock: 0, src: m.slot, execute: p.execute ?? 0, pounce: true });
+        return true;
+      }
+      case 'boomerang': {
+        const t = this.frontmost(list);
+        if (!t) return false;
+        const n = p.count ?? 1;
+        const base = Math.atan2(t.y - oy, t.x - ox);
+        for (let i = 0; i < n; i++) {
+          const a = base + (i - (n - 1) / 2) * 0.35;
+          const sp = p.speed ?? 520;
+          this.shots.push({ kind: 'boomer', x: ox, y: oy, sx: ox, sy: oy, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, range: p.range ?? 380, back: false, dmg, radius: p.radius ?? 14, pierce: 999, color, crit: false, hit: new Set(), tick: 0, done: false, spin: 0, style: m.weapon.fx, src: m.slot });
+        }
+        return true;
+      }
+      case 'barrier': {
+        const cap = this.maxHp * 0.3;
+        if (this.shield >= cap) return false;
+        this.shield = Math.min(cap, this.shield + this.maxHp * (p.shield ?? 0.06));
+        this.fx.push({ kind: 'shield', x: W / 2, y: CONFIG.barricadeY, r: W / 2, t: 0, life: 0.7, color });
+        this.sfx('shield');
+        return true;
+      }
+      case 'spray': {
+        const range = p.range ?? 260;
+        const near = list.filter((e) => e.y > CONFIG.barricadeY - range - 40);
+        if (!near.length) return false;
+        const tx = this.bestColumn(near, 90) ?? W / 2;
+        const sx = m.x;
+        const sy = CONFIG.barricadeY - 10;
+        const ang = Math.atan2(-range, tx - sx);
+        const cone = p.cone ?? 0.45;
+        for (const e of near) {
+          const da = Math.atan2(e.y - sy, e.x - sx) - ang;
+          const dd = Math.hypot(e.x - sx, e.y - sy);
+          if (dd <= range && Math.abs(Math.atan2(Math.sin(da), Math.cos(da))) <= cone) this.damageEnemy(e, dmg, { knock: p.knock, quiet: true, src: m.slot, color: '#bfe8ff' });
+        }
+        this.fx.push({ kind: 'spray', x: sx, y: sy, r: range, t: 0, life: 0.45, color, ang, x2: cone });
+        return true;
+      }
+      case 'mine': {
+        if (this.mines.filter((x) => x.src === m.slot).length >= (p.count ?? 3)) return false;
+        // 적이 지나갈 길목(바리케이드 앞 중간쯤)에 깐다
+        const col = this.bestColumn(list, 70) ?? 60 + Math.random() * (W - 120);
+        const y = CONFIG.barricadeY - 120 - Math.random() * 220;
+        this.mines.push({ x: Math.max(30, Math.min(W - 30, col + (Math.random() - 0.5) * 60)), y, r: p.radius ?? 55, dmg, src: m.slot, t: 0, seed: Math.random() * 10 });
+        return true;
+      }
       default:
         return false;
     }
@@ -685,6 +848,52 @@ export class Game {
       if (s.kind === 'bolt') { (s.trail ??= []).push({ x: s.x, y: s.y }); if (s.trail.length > 6) s.trail.shift(); }
       s.x += s.vx * dt;
       s.y += s.vy * dt;
+      if (s.kind === 'lob') {
+        s.age! += dt;
+        const k = Math.min(1, s.age! / s.dur!);
+        s.x = s.sx! + (s.tx! - s.sx!) * k;
+        s.y = s.sy! + (s.ty! - s.sy!) * k - Math.sin(k * Math.PI) * 140;
+        if (k >= 1) {
+          s.done = true;
+          this.fx.push({ kind: 'boom', x: s.tx!, y: s.ty!, r: s.radius * 0.9, t: 0, life: 0.45, color: '#ffb347' });
+          this.sfx('boom');
+          for (const e of list) if (!e.dead && Math.hypot(e.x - s.tx!, e.y - s.ty!) <= s.radius + e.def.size * 0.5) this.damageEnemy(e, s.dmg, { src: s.src });
+        }
+        continue;
+      }
+      if (s.kind === 'vacuum') {
+        s.tick -= dt;
+        if (s.tick <= 0) {
+          s.tick = 0.2;
+          for (const e of list) {
+            if (e.dead || Math.abs(e.x - s.x) > s.radius + e.def.size || Math.abs(e.y - s.y) > s.radius + e.def.size) continue;
+            this.damageEnemy(e, s.dmg, { quiet: true, knock: 6 });
+            if (Math.random() < 0.3) this.particles.push({ x: e.x, y: e.y, vx: (s.x - e.x) * 3, vy: (s.y - e.y) * 3, t: 0, life: 0.3, color: '#d8d0e0', r: 3 });
+          }
+        }
+        if (s.x < -80 || s.x > W + 80) s.done = true;
+        continue;
+      }
+      if (s.kind === 'boomer') {
+        if (!s.back && (Math.hypot(s.x - s.sx!, s.y - s.sy!) >= s.range! || s.y < CONFIG.fieldTop)) { s.back = true; s.hit.clear(); }
+        if (s.back) {
+          const dx = s.sx! - s.x;
+          const dy = s.sy! - s.y;
+          const d = Math.hypot(dx, dy);
+          const sp = Math.hypot(s.vx, s.vy);
+          s.vx += ((dx / d) * sp - s.vx) * Math.min(1, dt * 6);
+          s.vy += ((dy / d) * sp - s.vy) * Math.min(1, dt * 6);
+          if (d < 30) { s.done = true; continue; }
+        }
+        for (const e of list) {
+          if (e.dead || s.hit.has(e.uid)) continue;
+          if (Math.hypot(e.x - s.x, e.y - s.y) <= s.radius + e.def.size) {
+            s.hit.add(e.uid);
+            this.damageEnemy(e, s.dmg, { src: s.src });
+          }
+        }
+        continue;
+      }
       if (s.kind === 'web') {
         if (s.y >= CONFIG.barricadeY) { s.done = true; this.damageBarricade(s.dmg, s.x); this.burst(s.x, CONFIG.barricadeY, '#ffffff', 3); }
         continue;
@@ -712,6 +921,17 @@ export class Game {
   }
 
   private updateFields(dt: number): void {
+    for (const mn of this.mines) {
+      mn.t += dt;
+      if (mn.t < 0.4) continue;
+      const trig = this.enemies.some((e) => !e.dead && !e.def.flying && Math.hypot(e.x - mn.x, e.y - mn.y) <= mn.r * 0.55 + e.def.size * 0.5);
+      if (!trig) continue;
+      mn.t = -1;
+      this.fx.push({ kind: 'boom', x: mn.x, y: mn.y, r: mn.r * 0.9, t: 0, life: 0.45, color: '#ffb347' });
+      this.sfx('boom');
+      for (const e of this.enemies) if (!e.dead && Math.hypot(e.x - mn.x, e.y - mn.y) <= mn.r + e.def.size * 0.5) this.damageEnemy(e, mn.dmg, { src: mn.src, knock: 20 });
+    }
+    this.mines = this.mines.filter((mn) => mn.t >= 0);
     for (const f of this.fields) {
       f.t += dt;
       f.tick -= dt;
@@ -727,12 +947,19 @@ export class Game {
     for (const s of this.slams) {
       s.delay -= dt;
       if (s.delay <= 0) {
-        this.fx.push({ kind: 'slam', x: s.x, y: s.y, r: s.r, t: 0, life: 0.5, color: '#9b7350' });
-        this.fx.push({ kind: 'boom', x: s.x, y: s.y, r: s.r * 0.7, t: 0, life: 0.45, color: '#ffb347' });
-        this.sfx('boom');
-        this.shake = Math.max(this.shake, 0.25);
+        if (s.pounce) {
+          this.fx.push({ kind: 'dash', x: s.x, y: s.y + 30, y2: s.y - 30, r: s.r * 1.2, t: 0, life: 0.35, color: '#e8a040' });
+          this.sfx('scratch');
+        } else {
+          this.fx.push({ kind: 'slam', x: s.x, y: s.y, r: s.r, t: 0, life: 0.5, color: '#9b7350' });
+          this.fx.push({ kind: 'boom', x: s.x, y: s.y, r: s.r * 0.7, t: 0, life: 0.45, color: '#ffb347' });
+          this.sfx('boom');
+          this.shake = Math.max(this.shake, 0.25);
+        }
         for (const e of this.enemies) {
-          if (!e.dead && Math.hypot(e.x - s.x, e.y - s.y) <= s.r + e.def.size * 0.5) this.damageEnemy(e, s.dmg, { knock: s.knock, src: s.src });
+          if (e.dead || Math.hypot(e.x - s.x, e.y - s.y) > s.r + e.def.size * 0.5) continue;
+          if (s.execute && !e.def.boss && e.hp / e.maxHp <= s.execute) { this.addFloat(e.x, e.y - 24, '사냥!', '#ffcf5a', 16); this.damageEnemy(e, e.hp + 1, { src: s.src, quiet: true }); continue; }
+          this.damageEnemy(e, s.dmg, { knock: s.knock, src: s.src });
         }
         this.burst(s.x, s.y, '#d9b48a', 16);
       }

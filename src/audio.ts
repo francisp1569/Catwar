@@ -143,7 +143,7 @@ class Sound {
   play(name: string): void {
     if (!this.ctx || !this.sfxOn) return;
     const now = this.ctx.currentTime;
-    const gap: Record<string, number> = { pop: 0.07, yarn: 0.1, scratch: 0.06, hit: 0.045, kill: 0.06, hurt: 0.18, boom: 0.12, laser: 0.15, crit: 0.08 };
+    const gap: Record<string, number> = { throw: 0.1, zap: 0.1, splash: 0.15, pop: 0.07, yarn: 0.1, scratch: 0.06, hit: 0.045, kill: 0.06, hurt: 0.18, boom: 0.12, laser: 0.15, crit: 0.08 };
     const g = gap[name] ?? 0.03;
     if (now - (this.last.get(name) ?? -1) < g) return;
     this.last.set(name, now);
@@ -177,6 +177,12 @@ class Sound {
         this.meow(1.1, now + 0.8);
         break;
       case 'lose': [392, 349, 311, 262].forEach((f, i) => this.tone(f, 0.3, { vol: 0.16, at: now + i * 0.22, type: 'triangle' })); break;
+      case 'throw': this.noise(0.12, { freq: 600, to: 1600, vol: 0.14, q: 2 }); break;
+      case 'zap': this.tone(1400, 0.12, { to: 300, vol: 0.1, type: 'sawtooth' }); this.noise(0.1, { freq: 5000, type: 'highpass', vol: 0.14 }); break;
+      case 'pounce': this.tone(300, 0.1, { to: 700, vol: 0.12, type: 'triangle' }); this.meow(1.5 * r); break;
+      case 'splash': this.noise(0.3, { freq: 2600, to: 800, vol: 0.22, q: 0.8 }); break;
+      case 'shield': [660, 990].forEach((f, i) => this.tone(f, 0.3, { vol: 0.1, at: now + i * 0.08, type: 'sine' })); break;
+      case 'vacuum': this.noise(1.6, { freq: 500, to: 1400, vol: 0.18, q: 3 }); this.tone(180, 1.4, { to: 240, vol: 0.06, type: 'sawtooth' }); break;
       case 'gacha': [784, 988, 1175, 1568, 1976].forEach((f, i) => this.tone(f, 0.15, { vol: 0.12, at: now + i * 0.05, type: 'triangle' })); break;
     }
   }

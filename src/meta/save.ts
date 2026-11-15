@@ -31,7 +31,7 @@ export interface SaveData {
 }
 
 const KEY = 'catwar.save.v1';
-export const DECK_SIZE = 4;
+export const DECK_SIZE = 5;
 
 export function newSave(): SaveData {
   const cats: Record<string, OwnedCat> = {};

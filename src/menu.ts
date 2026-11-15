@@ -671,7 +671,7 @@ export class Menu {
         <div class="slot hero"><canvas class="portrait" data-look="${HERO_ID}"></canvas><b>치즈</b><small>리더 · 처음부터 전투</small></div>
         ${slots}
       </div>
-      <div class="row"><p class="muted">편성한 고양이는 전투 중 레벨업 카드로 깨어나 합류해요.</p><button class="btn small" data-act="deck-auto">자동 편성</button></div>
+      <div class="row"><p class="muted">편성한 고양이는 전투 중 레벨업 때 NEW 카드로 합류해요.</p><button class="btn small" data-act="deck-auto">자동 편성</button></div>
       <div class="grid">${owned.map((d) => {
         const o = s.cats[d.id];
         return `<button class="card ${s.deck.includes(d.id) ? 'in-deck' : ''}" data-act="deck-toggle" data-arg="${d.id}" style="--rc:${RARITY_COLOR[d.rarity]}">
@@ -688,8 +688,9 @@ export class Menu {
     this.openModal(`
       <button class="x" data-act="close">✕</button>
       <h2>${w.icon} ${esc(def.skillName)} <small>${def.name}</small></h2>
-      <p class="muted">전투 중 레벨업 카드로 Lv.1 → Lv.5까지 성장해요. 고양이 레벨과 성급(★)은 위력을 올려요.</p>
-      <ul class="skill">${w.desc.map((d, i) => `<li class="${i === 0 ? 'cur' : ''}">Lv.${i + 1} ${esc(d)}</li>`).join('')}</ul>
+      <p class="muted">${esc(w.intro)}</p>
+      <p class="muted">전투 중 NEW 카드로 합류한 뒤, 아래 강화 중에서 골라 키워요. 고양이 레벨과 성급(★)은 기본 위력을 올려요.</p>
+      <ul class="skill">${w.mods.map((x) => `<li class="cur">${esc(x.name)} <small>(최대 ${x.max}회)</small><br><span class="muted">${esc(x.desc)}</span></li>`).join('')}</ul>
       ${def.hero && o ? `<h3>📣 꾹꾹이 응원 <small>★${o.stars}</small></h3><ul class="skill"><li class="cur">${esc(rallyDesc(o.stars))}</li></ul>` : ''}
       <p class="muted">${esc(def.bio)}</p>`);
   }

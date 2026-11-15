@@ -64,6 +64,21 @@ function roundRect(ctx: Ctx, x: number, y: number, w: number, h: number, r: numb
   ctx.closePath();
 }
 
+/** 표범 점무늬(로제트): 영역(cx,cy,rx,ry) 안에 흩뿌린다 */
+function spots(ctx: Ctx, cx: number, cy: number, rx: number, ry: number, dark: string, seed: number): void {
+  let r = seed * 9301 + 49297;
+  const rnd = () => { r = (r * 9301 + 49297) % 233280; return r / 233280; };
+  for (let i = 0; i < 9; i++) {
+    const x = cx + (rnd() - 0.5) * rx * 1.8;
+    const y = cy + (rnd() - 0.5) * ry * 1.8;
+    const s = Math.min(rx, ry) * (0.13 + rnd() * 0.08);
+    ctx.fillStyle = dark;
+    ctx.beginPath(); ctx.ellipse(x, y, s * 1.3, s, rnd() * 3, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(255,200,120,0.55)';
+    ctx.beginPath(); ctx.ellipse(x, y, s * 0.6, s * 0.45, 0, 0, Math.PI * 2); ctx.fill();
+  }
+}
+
 export function heart(ctx: Ctx, x: number, y: number, size: number): void {
   ctx.save();
   ctx.translate(x, y);
@@ -145,6 +160,7 @@ export function drawCatLook(ctx: Ctx, look: CatLook, s: number, pose: CatPose): 
       ellipse(ctx, -s * 0.55, by - s * 0.3, s * 0.55, s * 0.42, accentA);
       ellipse(ctx, s * 0.3, by - s * 0.42, s * 0.42, s * 0.3, look.patch2 ?? '#333');
     }
+    if (p === 'spotted') spots(ctx, 0, by - s * 0.1, bw, bry, accentA, 3);
     if (p === 'tortie') {
       for (const [x, y, r] of [[-0.6, -0.3, 0.3], [0.1, -0.45, 0.25], [0.55, -0.2, 0.2], [-0.2, 0.05, 0.22]] as const) {
         ellipse(ctx, s * x, by + s * y, s * r * 1.3, s * r, accentA);
@@ -251,6 +267,7 @@ export function drawCatLook(ctx: Ctx, look: CatLook, s: number, pose: CatPose): 
       ellipse(ctx, hx + hr * 0.7, hy - hr * 0.65, hr * 0.45, hr * 0.4, look.patch2 ?? '#333');
     }
     if (p === 'tortie') ellipse(ctx, hx + hr * 0.45, hy - hr * 0.55, hr * 0.4, hr * 0.35, accentA);
+    if (p === 'spotted') spots(ctx, hx - hr * 0.2, hy - hr * 0.4, hr * 0.7, hr * 0.45, accentA, 7);
     if (p === 'tabby' && look.stripe) {
       ctx.strokeStyle = look.stripe;
       ctx.lineWidth = hr * 0.12;
@@ -433,6 +450,7 @@ export function drawCatFace(ctx: Ctx, look: CatLook, R: number, t = 0): void {
       ellipse(ctx, R * 0.65, -R * 0.5, R * 0.5, R * 0.5, look.patch2 ?? '#333');
     }
     if (p === 'tortie') { ellipse(ctx, R * 0.45, -R * 0.4, R * 0.45, R * 0.4, accent); ellipse(ctx, -R * 0.6, R * 0.2, R * 0.35, R * 0.3, accent); }
+    if (p === 'spotted') spots(ctx, 0, -R * 0.45, R * 0.8, R * 0.4, accent, 5);
     if (p === 'point') ellipse(ctx, 0, R * 0.25, R * 0.62, R * 0.6, accent);
     if (p === 'tuxedo') {
       ctx.fillStyle = white;
@@ -667,6 +685,7 @@ export function drawCatBack(ctx: Ctx, look: CatLook, s: number, t: number, opt: 
       ellipse(ctx, -bodyRx * 0.45, by - bodyRy * 0.2, bodyRx * 0.55, bodyRy * 0.55, accent);
       ellipse(ctx, bodyRx * 0.5, by + bodyRy * 0.15, bodyRx * 0.45, bodyRy * 0.5, look.patch2 ?? '#333');
     }
+    if (p === 'spotted') spots(ctx, 0, by, bodyRx, bodyRy, accent, 13);
     if (p === 'tortie') {
       for (const [x, y, r] of [[-0.5, -0.3, 0.32], [0.4, -0.1, 0.28], [-0.1, 0.4, 0.3]] as const) ellipse(ctx, bodyRx * x, by + bodyRy * y, bodyRx * r, bodyRy * r, accent);
     }
@@ -748,6 +767,7 @@ export function drawCatBack(ctx: Ctx, look: CatLook, s: number, t: number, opt: 
       ellipse(ctx, hx + hr * 0.6, hy - hr * 0.4, hr * 0.5, hr * 0.5, look.patch2 ?? '#333');
     }
     if (p === 'tortie') ellipse(ctx, hx + hr * 0.4, hy - hr * 0.3, hr * 0.45, hr * 0.4, accent);
+    if (p === 'spotted') spots(ctx, hx, hy - hr * 0.2, hr * 0.8, hr * 0.7, accent, 11);
     if (p === 'point') ellipse(ctx, hx, hy + hr * 0.3, hr * 1.1, hr * 0.6, '#00000022');
     if (p === 'tabby' && look.stripe) {
       ctx.strokeStyle = look.stripe;
