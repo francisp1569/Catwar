@@ -1,7 +1,7 @@
 // 로비 화면 (DOM): 스테이지 / 고양이 도감·성장 / 편성 / 뽑기
 import { drawCatPortrait } from './catdraw';
 import { CATS, CAT_BY_ID, HERO_ID, RARITY_COLOR, RARITY_ORDER, type CatDef, type CatLook } from './data/cats';
-import { SKILL_INFO } from './data/skills';
+import { rallyDesc } from './data/weapons';
 import { AREA_NAME, STAGES } from './data/stages';
 import { PULL10_COST, PULL_COST, RATES, pull, type PullResult } from './meta/gacha';
 import {
@@ -20,7 +20,7 @@ function power(def: CatDef, save: SaveData): number {
   const o = save.cats[def.id];
   if (!o) return 0;
   const s = catStats(def, o);
-  return Math.round(s.hp / 4 + (s.atk / def.atkInterval) * 3 + o.stars * 20);
+  return Math.round(s.hp / 3 + s.atk * 6 + o.stars * 20);
 }
 
 function stars(n: number, max = MAX_STARS): string {
@@ -197,7 +197,7 @@ export class Menu {
           <div class="no">${st.no}</div>
           <div class="info">
             <b>${esc(st.name)}</b>
-            <small>웨이브 ${st.waves.length} · 적 강함 x${st.mul.toFixed(1)}</small>
+            <small>${Math.floor(st.duration / 60)}분 ${st.duration % 60 ? `${st.duration % 60}초 ` : ''}버티기${st.boss ? ' + 보스' : ''} · 적 강함 x${st.mul.toFixed(1)}</small>
             <small>${best ? stars(best, 3) : `첫 클리어: 🪙${st.reward.coins} 🥫${st.reward.tuna}`}</small>
           </div>
           ${unlocked ? `<button class="btn go" data-act="start" data-arg="${st.id}">출전</button>` : '<span class="lock">🔒</span>'}
@@ -232,7 +232,7 @@ export class Menu {
         <canvas class="portrait" data-look="${def.id}"></canvas>
         <b>${def.name}</b>
         <small>Lv.${o.level} ${stars(o.stars)}</small>
-        <small class="muted">${def.role} · ${SKILL_INFO[def.skill].icon} ${esc(def.skillName)}</small>
+        <small class="muted">${def.role} · ${def.weapon.icon} ${esc(def.skillName)}</small>
       </button>`;
   }
 
@@ -245,7 +245,7 @@ export class Menu {
     });
     return `
       <h2>고양이 도감 <small>${ownedCount} / ${CATS.length}</small></h2>
-      <p class="muted">레벨업은 🪙코인, 성급(★)은 중복으로 얻은 조각으로 올려요. 성급이 오르면 스킬이 강해지고 레벨 상한이 늘어나요.</p>
+      <p class="muted">레벨업은 🪙코인, 성급(★)은 중복으로 얻은 조각으로 올려요. 성급이 오르면 능력치와 레벨 상한이 늘어나요.</p>
       <div class="grid">${sorted.map((d) => this.catCard(d)).join('')}</div>`;
   }
 
@@ -255,16 +255,16 @@ export class Menu {
       const id = s.deck[i];
       if (!id) return `<div class="slot empty">빈 슬롯</div>`;
       const d = CAT_BY_ID[id];
-      return `<button class="slot" data-act="deck-toggle" data-arg="${id}"><canvas class="portrait" data-look="${id}"></canvas><b>${d.name}</b><small>🐟${d.cost}</small></button>`;
+      return `<button class="slot" data-act="deck-toggle" data-arg="${id}"><canvas class="portrait" data-look="${id}"></canvas><b>${d.name}</b><small>${d.weapon.icon} ${esc(d.skillName)}</small></button>`;
     }).join('');
     const owned = CATS.filter((c) => !c.hero && s.cats[c.id]);
     return `
       <h2>편성 <small>팀 전투력 ${teamPower.toLocaleString()}</small></h2>
       <div class="deck">
-        <div class="slot hero"><canvas class="portrait" data-look="${HERO_ID}"></canvas><b>치즈</b><small>리더 · 자동 출전</small></div>
+        <div class="slot hero"><canvas class="portrait" data-look="${HERO_ID}"></canvas><b>치즈</b><small>리더 · 처음부터 전투</small></div>
         ${slots}
       </div>
-      <div class="row"><p class="muted">고양이를 눌러 편성에 넣거나 빼요. (최대 ${DECK_SIZE}마리)</p><button class="btn small" data-act="deck-auto">자동 편성</button></div>
+      <div class="row"><p class="muted">편성한 고양이는 전투 중 레벨업 카드로 깨어나 합류해요. 모든 고양이의 체력은 바리케이드 체력이 돼요. (최대 ${DECK_SIZE}마리)</p><button class="btn small" data-act="deck-auto">자동 편성</button></div>
       <div class="grid">${owned.map((d) => this.catCard(d, { inDeck: s.deck.includes(d.id), act: 'deck-toggle' })).join('')}</div>`;
   }
 
@@ -309,9 +309,8 @@ export class Menu {
     const cap = levelCap(o.stars);
     const lvCost = levelUpCost(def, o.level);
     const starNeed = o.stars < MAX_STARS ? STAR_COST[o.stars] : 0;
-    const info = SKILL_INFO[def.skill];
-    const skillLines = Array.from({ length: MAX_STARS }, (_, i) => i + 1)
-      .map((lv) => `<li class="${lv === o.stars ? 'cur' : lv < o.stars ? 'done' : ''}">★${lv} ${esc(info.desc(lv))}</li>`).join('');
+    const w = def.weapon;
+    const skillLines = w.desc.map((d, i) => `<li class="${i === 0 ? 'cur' : ''}">Lv.${i + 1} ${esc(d)}</li>`).join('');
     const canLv = canLevelUp(this.save, id);
     const canSt = canStarUp(this.save, id);
     this.openModal(`
@@ -326,14 +325,14 @@ export class Menu {
         </div>
       </div>
       <div class="stats">
-        <span>❤️ 체력 <b>${st.hp}</b></span>
-        <span>⚔️ 공격 <b>${st.atk}</b></span>
-        <span>🎯 사거리 <b>${def.range > 60 ? def.range : '근접'}</b></span>
-        <span>👟 속도 <b>${def.speed}</b></span>
-        ${def.hero ? '<span>👑 자동 출전</span>' : `<span>🐟 비용 <b>${def.cost}</b></span><span>⏱ 재소환 <b>${def.cooldown}s</b></span>`}
+        <span>⚔️ 공격력 <b>${st.atk}</b></span>
+        <span>🛡 바리케이드 <b>+${st.hp}</b></span>
+        <span>${w.icon} <b>${def.role}</b></span>
       </div>
-      <h3>${info.icon} ${esc(def.skillName)} <small>스킬 Lv.${o.stars}</small></h3>
+      <h3>${w.icon} ${esc(def.skillName)} <small>전투 중 카드로 Lv.1→5 성장</small></h3>
       <ul class="skill">${skillLines}</ul>
+      ${def.hero ? `<h3>📣 꾹꾹이 응원 <small>★${o.stars}</small></h3><ul class="skill"><li class="cur">${esc(rallyDesc(o.stars))}</li></ul>` : ''}
+      <p class="muted">레벨과 성급(★)이 오르면 공격력과 바리케이드 체력이 함께 올라요.${def.hero ? ' 치즈의 성급은 응원 스킬도 강화해요.' : ''}</p>
       <div class="grow">
         <div>
           <b>레벨업</b>

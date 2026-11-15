@@ -1,35 +1,31 @@
-// 전투 화면 버튼 레이아웃 (렌더링과 입력 판정에서 공통 사용)
+// 전투 화면 버튼 레이아웃 (세로 540x960). 렌더링과 입력 판정에서 공통 사용.
 export interface Rect { x: number; y: number; w: number; h: number; }
 
 export type ButtonId =
-  | { type: 'cat'; id: string; slot: number }
-  | { type: 'hero' }
-  | { type: 'wallet' }
   | { type: 'pause' }
   | { type: 'speed' }
+  | { type: 'rally' }
+  | { type: 'card'; index: number }
+  | { type: 'reroll' }
   | { type: 'resume' }
   | { type: 'quit' };
 
 export interface Button { id: ButtonId; rect: Rect; }
 
-export const BAR_Y = 440;
+export const HUD_BUTTONS: Button[] = [
+  { id: { type: 'pause' }, rect: { x: 10, y: 10, w: 44, h: 40 } },
+  { id: { type: 'speed' }, rect: { x: 484, y: 10, w: 46, h: 40 } },
+  { id: { type: 'rally' }, rect: { x: 462, y: 640, w: 68, h: 68 } }, // y는 layoutButtons에서 갱신
+];
 
-export function buildButtons(deckIds: string[]): Button[] {
-  const buttons: Button[] = [];
-  buttons.push({ id: { type: 'wallet' }, rect: { x: 10, y: BAR_Y + 8, w: 150, h: 84 } });
-  buttons.push({ id: { type: 'hero' }, rect: { x: 168, y: BAR_Y + 8, w: 132, h: 84 } });
-  deckIds.forEach((id, i) => {
-    buttons.push({ id: { type: 'cat', id, slot: i }, rect: { x: 308 + i * 162, y: BAR_Y + 8, w: 154, h: 84 } });
-  });
-  buttons.push({ id: { type: 'speed' }, rect: { x: 846, y: 12, w: 46, h: 40 } });
-  buttons.push({ id: { type: 'pause' }, rect: { x: 900, y: 12, w: 46, h: 40 } });
-  return buttons;
-}
+export const CHOICE_BUTTONS: Button[] = [
+  ...[0, 1, 2].map((i) => ({ id: { type: 'card' as const, index: i }, rect: { x: 14 + i * 174, y: 250, w: 164, h: 340 } })),
+  { id: { type: 'reroll' }, rect: { x: 150, y: 640, w: 240, h: 62 } },
+];
 
-/** 일시정지 화면 전용 버튼 */
 export const PAUSE_BUTTONS: Button[] = [
-  { id: { type: 'resume' }, rect: { x: 330, y: 270, w: 300, h: 56 } },
-  { id: { type: 'quit' }, rect: { x: 330, y: 340, w: 300, h: 56 } },
+  { id: { type: 'resume' }, rect: { x: 120, y: 420, w: 300, h: 60 } },
+  { id: { type: 'quit' }, rect: { x: 120, y: 500, w: 300, h: 60 } },
 ];
 
 export function hit(r: Rect, x: number, y: number): boolean {
@@ -37,5 +33,14 @@ export function hit(r: Rect, x: number, y: number): boolean {
 }
 
 export function buttonKey(id: ButtonId): string {
-  return id.type === 'cat' ? `cat:${id.id}` : id.type;
+  return id.type === 'card' ? `card:${id.index}` : id.type;
+}
+
+/** 바닥 기준 버튼 위치 갱신 */
+export function layoutButtons(height: number): void {
+  const rally = HUD_BUTTONS.find((b) => b.id.type === 'rally')!;
+  rally.rect.y = height - 320;
+  const off = (height - 960) / 2;
+  CHOICE_BUTTONS.forEach((b) => { b.rect.y = (b.id.type === 'reroll' ? 640 : 250) + off; });
+  PAUSE_BUTTONS.forEach((b, i) => { b.rect.y = 420 + i * 80 + off; });
 }

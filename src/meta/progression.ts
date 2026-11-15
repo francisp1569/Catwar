@@ -1,9 +1,9 @@
 // 레벨업 / 성급(별) 성장 규칙
 import { CAT_BY_ID, RARITY_ORDER, type CatDef } from '../data/cats';
-import { MAX_SKILL_LV } from '../data/skills';
+import { MAX_WEAPON_LV } from '../data/weapons';
 import type { OwnedCat, SaveData } from './save';
 
-export const MAX_STARS = MAX_SKILL_LV;
+export const MAX_STARS = MAX_WEAPON_LV;
 /** 다음 별로 올리는 데 필요한 조각 (index = 현재 별) */
 export const STAR_COST = [0, 10, 20, 40, 60];
 /** 중복 획득 시 얻는 조각 */

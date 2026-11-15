@@ -12,10 +12,10 @@ export function isUnlocked(save: SaveData, stage: StageDef): boolean {
   return (save.stages[prev.id] ?? 0) > 0;
 }
 
-export function applyResult(save: SaveData, stage: StageDef, res: BattleResult, wavesReached: number): Reward {
+export function applyResult(save: SaveData, stage: StageDef, res: BattleResult): Reward {
   const prevStars = save.stages[stage.id] ?? 0;
   if (!res.victory) {
-    const coins = Math.round(stage.reward.coins * 0.15 * (wavesReached / stage.waves.length));
+    const coins = Math.round(stage.reward.coins * 0.2 * res.progress);
     save.coins += coins;
     return { coins, tuna: 0, heroShards: 0, firstClear: false, newStars: 0 };
   }
