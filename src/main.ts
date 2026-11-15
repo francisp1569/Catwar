@@ -87,6 +87,7 @@ canvas.addEventListener('pointerdown', (e) => {
     if (reward) endBattle();
     return;
   }
+  if (g.pickAnim) return;
   const { x, y } = toLogical(e);
   let list: Button[];
   if (g.choice) list = CHOICE_BUTTONS.filter((b) => b.id.type !== 'card' || b.id.index < g.choice!.length);
@@ -112,6 +113,7 @@ window.addEventListener('keydown', (e) => {
     if ((e.key === 'Enter' || e.key === ' ') && reward) endBattle();
     return;
   }
+  if (g.pickAnim) return;
   if (g.choice) {
     const n = Number(e.key);
     if (n >= 1 && n <= g.choice.length) g.pick(n - 1);

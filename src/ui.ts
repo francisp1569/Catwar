@@ -19,8 +19,8 @@ export const HUD_BUTTONS: Button[] = [
 ];
 
 export const CHOICE_BUTTONS: Button[] = [
-  ...[0, 1, 2].map((i) => ({ id: { type: 'card' as const, index: i }, rect: { x: 14 + i * 174, y: 250, w: 164, h: 340 } })),
-  { id: { type: 'reroll' }, rect: { x: 150, y: 640, w: 240, h: 62 } },
+  ...[0, 1, 2].map((i) => ({ id: { type: 'card' as const, index: i }, rect: { x: 14 + i * 174, y: 330, w: 164, h: 290 } })),
+  { id: { type: 'reroll' }, rect: { x: 150, y: 660, w: 240, h: 62 } },
 ];
 
 export const PAUSE_BUTTONS: Button[] = [
@@ -41,6 +41,6 @@ export function layoutButtons(height: number): void {
   const rally = HUD_BUTTONS.find((b) => b.id.type === 'rally')!;
   rally.rect.y = height - 320;
   const off = (height - 960) / 2;
-  CHOICE_BUTTONS.forEach((b) => { b.rect.y = (b.id.type === 'reroll' ? 640 : 250) + off; });
+  CHOICE_BUTTONS.forEach((b) => { b.rect.y = (b.id.type === 'reroll' ? 660 : 330) + off; });
   PAUSE_BUTTONS.forEach((b, i) => { b.rect.y = 420 + i * 80 + off; });
 }

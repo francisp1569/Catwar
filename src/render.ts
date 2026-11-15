@@ -4,7 +4,7 @@ import { RARITY_COLOR, type CatLook } from './data/cats';
 import { CONFIG } from './data/config';
 import type { Area } from './data/stages';
 import { GENERIC } from './data/weapons';
-import type { Card, Enemy, Game, Member } from './game';
+import type { Card, Decal, Enemy, Game, Member } from './game';
 import { CHOICE_BUTTONS, HUD_BUTTONS, PAUSE_BUTTONS, buttonKey, type Rect } from './ui';
 
 type Ctx = CanvasRenderingContext2D;
@@ -28,7 +28,7 @@ function text(ctx: Ctx, s: string, x: number, y: number, size: number, color: st
   ctx.textAlign = align;
   ctx.textBaseline = 'middle';
   if (outline) {
-    ctx.lineWidth = Math.max(3, size / 5);
+    ctx.lineWidth = Math.max(3, size / 4.5);
     ctx.strokeStyle = 'rgba(40,20,40,0.85)';
     ctx.lineJoin = 'round';
     ctx.strokeText(s, x, y);
@@ -190,6 +190,29 @@ function drawField(ctx: Ctx, area: Area, t: number): void {
   ctx.fillRect(0, CONFIG.barricadeY + 20, W, CONFIG.height - CONFIG.barricadeY - 20);
 }
 
+function drawDecals(ctx: Ctx, decals: Decal[]): void {
+  for (const d of decals) {
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, (12 - d.t) / 3);
+    ctx.fillStyle = d.color;
+    ctx.beginPath();
+    for (let i = 0; i < 9; i++) {
+      const a = (i / 9) * Math.PI * 2;
+      const rr = d.r * (0.7 + 0.35 * Math.sin(d.seed + i * 2.3));
+      const px = d.x + Math.cos(a) * rr;
+      const py = d.y + Math.sin(a) * rr * 0.75;
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.fill();
+    for (let i = 0; i < 3; i++) {
+      const a = d.seed + i * 2.1;
+      circle(ctx, d.x + Math.cos(a) * d.r * 1.4, d.y + Math.sin(a) * d.r, d.r * 0.18, d.color);
+    }
+    ctx.restore();
+  }
+}
+
 function drawBarricade(ctx: Ctx, game: Game, t: number): void {
   const ratio = game.hp / game.maxHp;
   const y = CONFIG.barricadeY - 6;
@@ -202,16 +225,19 @@ function drawBarricade(ctx: Ctx, game: Game, t: number): void {
     const jitter = Math.sin(i * 7.3) * 4;
     if (kind === 'cushion') {
       const col = ['#ff9fb7', '#a6d8ff', '#ffe08a'][i % 3];
-      roundRect(ctx, x + 2, y + jitter, w - 4, 44, 16); ctx.fillStyle = col; ctx.fill();
+      roundRect(ctx, x + 1, y - 4 + jitter, w - 2, 56, 18); ctx.fillStyle = col; ctx.fill();
       ctx.strokeStyle = '#0002'; ctx.lineWidth = 2; ctx.stroke();
-      circle(ctx, x + w / 2, y + 22 + jitter, 4, '#fff8');
+      circle(ctx, x + w / 2, y + 24 + jitter, 5, '#fff8');
+      ctx.strokeStyle = '#fff6'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x + 10, y + 24 + jitter); ctx.lineTo(x + w - 10, y + 24 + jitter); ctx.stroke();
     } else if (kind === 'box') {
-      roundRect(ctx, x + 3, y - 6 + jitter, w - 6, 52, 3); ctx.fillStyle = '#c8925a'; ctx.fill();
-      ctx.fillStyle = '#e8c79a'; ctx.fillRect(x + w / 2 - 5, y - 6 + jitter, 10, 52);
-      ctx.strokeStyle = '#8a5a2a55'; ctx.lineWidth = 2; ctx.strokeRect(x + 3, y - 6 + jitter, w - 6, 52);
+      roundRect(ctx, x + 2, y - 14 + jitter, w - 4, 66, 3); ctx.fillStyle = '#c8925a'; ctx.fill();
+      ctx.fillStyle = '#b37d47'; ctx.fillRect(x + 2, y - 14 + jitter, w - 4, 12);
+      ctx.fillStyle = '#e8c79a'; ctx.fillRect(x + w / 2 - 5, y - 14 + jitter, 10, 66);
+      ctx.strokeStyle = '#8a5a2a55'; ctx.lineWidth = 2; ctx.strokeRect(x + 2, y - 14 + jitter, w - 4, 66);
     } else {
       ['#6aa0ff', '#ff7a7a', '#7ad99a'].forEach((c, j) => {
-        roundRect(ctx, x + 4 + j * 2, y + 30 - j * 15 + jitter, w - 10 - j * 3, 14, 3); ctx.fillStyle = c; ctx.fill();
+        roundRect(ctx, x + 3 + j * 2, y + 34 - j * 17 + jitter, w - 8 - j * 3, 16, 3); ctx.fillStyle = c; ctx.fill();
+        ctx.fillStyle = '#fff8'; ctx.fillRect(x + 6 + j * 2, y + 38 - j * 17 + jitter, 3, 8);
       });
     }
   });
@@ -225,7 +251,7 @@ function drawBarricade(ctx: Ctx, game: Game, t: number): void {
       ctx.beginPath(); ctx.moveTo(x, y + 4); ctx.lineTo(x + 8, y + 18); ctx.lineTo(x + 2, y + 30); ctx.stroke();
     }
   }
-  if (game.hitFlash > 0) { ctx.fillStyle = 'rgba(255,60,60,0.25)'; ctx.fillRect(0, y - 8, W, 56); }
+  if (game.hitFlash > 0) { ctx.fillStyle = 'rgba(255,60,60,0.25)'; ctx.fillRect(0, y - 14, W, 66); }
   ctx.restore();
   void t;
 }
@@ -385,7 +411,7 @@ function drawEnemy(ctx: Ctx, e: Enemy): void {
       ctx.beginPath(); ctx.arc(e.x, e.y, s * 1.15, 0, Math.PI * 2); ctx.stroke();
     }
     if (e.hitFlash > 0) {
-      ctx.save(); ctx.globalAlpha = 0.55; circle(ctx, e.x, e.y, s, '#ffffff'); ctx.restore();
+      ctx.save(); ctx.globalAlpha = 0.6; circle(ctx, e.x, e.y + s * 0.1, s * 1.05, '#ff3b4e'); ctx.globalAlpha = 0.5; circle(ctx, e.x, e.y, s * 0.6, '#ffd0d5'); ctx.restore();
     }
     if (e.hp < e.maxHp && !e.def.boss) {
       const w = Math.max(20, s * 1.8);
@@ -403,7 +429,7 @@ function drawSquad(ctx: Ctx, game: Game, t: number): void {
   const order = [...game.squad].sort((a, b) => a.y - b.y);
   for (const m of order) {
     const sleeping = m.level === 0;
-    const s = m.slot === 0 ? 30 : 25;
+    const s = m.slot === 0 ? 40 : 33;
     ellipse(ctx, m.x, m.y + 2, s * 1.0, s * 0.3, 'rgba(60,30,10,0.2)');
     if (m.wakeFx > 0) {
       ctx.save();
@@ -419,6 +445,16 @@ function drawSquad(ctx: Ctx, game: Game, t: number): void {
     if (sleeping) ctx.globalAlpha = 0.7;
     drawCatBack(ctx, m.def.look, s, t + m.slot, { sleep: sleeping, swing: m.swing });
     ctx.restore();
+    if (!sleeping && m.swing > 0.6) {
+      const fy = m.y - s * 2.6;
+      ctx.save();
+      ctx.globalAlpha = (m.swing - 0.6) * 2.5;
+      const g = ctx.createRadialGradient(m.x + s * 0.3, fy, 2, m.x + s * 0.3, fy, s * 0.9);
+      g.addColorStop(0, '#fffbe0'); g.addColorStop(0.4, m.weapon.color); g.addColorStop(1, 'rgba(255,200,80,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(m.x + s * 0.3, fy, s * 0.9, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
     if (sleeping) {
       const k = (t * 0.6 + m.slot * 0.3) % 1;
       ctx.save();
@@ -426,7 +462,7 @@ function drawSquad(ctx: Ctx, game: Game, t: number): void {
       text(ctx, 'z', m.x + 14 + k * 10, m.y - s * 2.2 - k * 22, 12 + k * 6, '#ffffff');
       ctx.restore();
     } else if (m.slot !== 0) {
-      text(ctx, `Lv.${m.level}`, m.x, m.y + 14, 11, '#fff7d0');
+      text(ctx, `Lv.${m.level}`, m.x, m.y + 12, 12, '#fff7d0');
     }
   }
   if (game.rallyT > 0) {
@@ -731,101 +767,143 @@ function drawSkillChip(ctx: Ctx, m: Member, x: number, y: number, t: number): vo
 
 // ───────────────────────── 스킬 선택 / 오버레이 ─────────────────────────
 
+function cardInfo(game: Game, c: Card) {
+  if (c.type === 'cat') {
+    const m = game.squad[c.slot];
+    return { title: m.def.skillName, sub: m.def.name, desc: m.weapon.desc[c.next - 1], badge: c.next === 1 ? 'NEW' : `Lv.${c.next}`, color: RARITY_COLOR[m.def.rarity], look: m.def.look as CatLook | null, icon: m.weapon.icon };
+  }
+  const g = GENERIC[c.id];
+  return { title: g.name, sub: c.id === 'snack' ? '회복' : `${game.generic[c.id] + 1}단계`, desc: g.desc, badge: '강화', color: '#7ad99a', look: null as CatLook | null, icon: g.icon };
+}
+
 function drawChoice(ctx: Ctx, game: Game, t: number, pressed: string | null): void {
-  const cards = game.choice!;
+  const off = (CONFIG.height - 960) / 2;
   ctx.fillStyle = 'rgba(25,12,25,0.78)';
   ctx.fillRect(0, 0, W, CONFIG.height);
   const band = ctx.createLinearGradient(0, 0, W, 0);
-  band.addColorStop(0, 'rgba(180,120,30,0)'); band.addColorStop(0.5, 'rgba(200,140,40,0.95)'); band.addColorStop(1, 'rgba(180,120,30,0)');
-  const off = (CONFIG.height - 960) / 2;
+  band.addColorStop(0, 'rgba(160,100,20,0)'); band.addColorStop(0.5, 'rgba(200,140,40,0.95)'); band.addColorStop(1, 'rgba(160,100,20,0)');
   ctx.fillStyle = band;
-  ctx.fillRect(0, 186 + off, W, 46);
-  text(ctx, `레벨 업! 스킬 선택`, W / 2, 209 + off, 24, '#fff');
-  if (game.pendingLevels > 1) text(ctx, `(남은 선택 ${game.pendingLevels})`, W / 2, 168 + off, 14, '#ffe98a');
+  ctx.fillRect(0, 128 + off, W, 46);
+  ctx.fillStyle = '#ffdc7a';
+  ctx.fillRect(0, 128 + off, W, 2); ctx.fillRect(0, 172 + off, W, 2);
+  text(ctx, '스킬 선택', W / 2, 151 + off, 26, '#fff');
+  if (game.pendingLevels > 1) text(ctx, `남은 선택 ${game.pendingLevels}`, W / 2, 112 + off, 14, '#ffe98a');
 
+  const pa = game.pickAnim;
+  const cards = pa ? [] : game.choice ?? [];
   cards.forEach((c, i) => {
     const r = CHOICE_BUTTONS[i].rect;
     ctx.save();
     if (pressed === `card:${i}`) ctx.translate(0, 4);
-    const appear = Math.min(1, 0.6 + 0.4 * Math.sin(t * 3 + i));
-    drawCard(ctx, game, c, r, t, appear);
+    drawCard(ctx, game, c, r, t, 1);
     ctx.restore();
   });
 
+  if (pa) {
+    // 고른 카드가 가운데로 커지는 연출
+    const k = 1 - pa.t / 0.7;
+    const from = CHOICE_BUTTONS[pa.index].rect;
+    const ease = 1 - Math.pow(1 - Math.min(1, k * 2.2), 3);
+    const sc = 1 + 0.35 * ease;
+    const cx = from.x + from.w / 2 + (W / 2 - from.x - from.w / 2) * ease;
+    const cy = from.y + from.h / 2;
+    ctx.save();
+    ctx.globalAlpha = k > 0.8 ? (1 - k) * 5 : 1;
+    ctx.translate(cx, cy);
+    ctx.scale(sc, sc);
+    const glow = ctx.createRadialGradient(0, 0, 20, 0, 0, 260);
+    glow.addColorStop(0, 'rgba(255,230,150,0.55)'); glow.addColorStop(1, 'rgba(255,230,150,0)');
+    ctx.fillStyle = glow;
+    ctx.fillRect(-260, -260, 520, 520);
+    drawCard(ctx, game, pa.card, { x: -from.w / 2, y: -from.h / 2, w: from.w, h: from.h }, t, 1);
+    ctx.restore();
+    return;
+  }
+
   const rb = CHOICE_BUTTONS[3].rect;
+  text(ctx, `이번 전투 갱신 횟수: ${game.rerolls}/${CONFIG.rerolls}`, W / 2, rb.y - 16, 13, '#d9c9d6');
   ctx.save();
   if (pressed === 'reroll') ctx.translate(0, 3);
-  drawButtonBase(ctx, rb, game.rerolls > 0, '#4a9be0', 30);
-  text(ctx, '🔄 스킬 갱신', rb.x + rb.w / 2, rb.y + 24, 20, '#fff');
-  text(ctx, `남은 횟수 ${game.rerolls}/${CONFIG.rerolls}`, rb.x + rb.w / 2, rb.y + 46, 12, '#e0f0ff');
+  drawButtonBase(ctx, rb, game.rerolls > 0, '#3d8fe0', 31);
+  ctx.strokeStyle = '#ffffff55';
+  ctx.lineWidth = 6;
+  for (const dx of [26, 44]) { ctx.beginPath(); ctx.moveTo(rb.x + dx, rb.y + rb.h - 6); ctx.lineTo(rb.x + dx + 18, rb.y + 6); ctx.stroke(); }
+  for (const dx of [rb.w - 62, rb.w - 44]) { ctx.beginPath(); ctx.moveTo(rb.x + dx, rb.y + rb.h - 6); ctx.lineTo(rb.x + dx + 18, rb.y + 6); ctx.stroke(); }
+  text(ctx, '🔄 스킬 갱신', rb.x + rb.w / 2, rb.y + rb.h / 2, 21, '#fff');
   ctx.restore();
 }
 
-function drawCard(ctx: Ctx, game: Game, c: Card, r: Rect, t: number, glow: number): void {
-  let title: string;
-  let sub: string;
-  let desc: string;
-  let badge: string;
-  let color: string;
-  let look: CatLook | null = null;
-  let icon = '';
-  if (c.type === 'cat') {
-    const m = game.squad[c.slot];
-    title = m.def.skillName;
-    sub = m.def.name;
-    desc = m.weapon.desc[c.next - 1];
-    badge = c.next === 1 ? 'NEW' : `Lv.${c.next}`;
-    color = RARITY_COLOR[m.def.rarity];
-    look = m.def.look;
-    icon = m.weapon.icon;
-  } else {
-    const gdef = GENERIC[c.id];
-    title = gdef.name;
-    sub = c.id === 'snack' ? '회복' : `${game.generic[c.id] + 1}단계`;
-    desc = gdef.desc;
-    badge = '강화';
-    color = '#7ad99a';
-    icon = gdef.icon;
-  }
-  roundRect(ctx, r.x, r.y + 6, r.w, r.h, 14); ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fill();
-  roundRect(ctx, r.x, r.y, r.w, r.h, 14); ctx.fillStyle = '#fbf6ef'; ctx.fill();
-  ctx.save();
-  roundRect(ctx, r.x, r.y, r.w, r.h, 14); ctx.clip();
-  const g = ctx.createLinearGradient(0, r.y, 0, r.y + 170);
-  g.addColorStop(0, color); g.addColorStop(1, '#fbf6ef');
-  ctx.fillStyle = g;
-  ctx.fillRect(r.x, r.y, r.w, 170);
-  if (look) {
+function drawCard(ctx: Ctx, game: Game, c: Card, r: Rect, t: number, _glow: number): void {
+  const info = cardInfo(game, c);
+  // 카드 위로 튀어나오는 캐릭터
+  if (info.look) {
     ctx.save();
-    ctx.translate(r.x + r.w / 2 - 10, r.y + 150);
-    ctx.scale(2.4, 2.4);
-    drawCatLook(ctx, look, 20, { ...IDLE_POSE, t });
+    const g = ctx.createRadialGradient(r.x + r.w / 2, r.y - 10, 10, r.x + r.w / 2, r.y - 10, 110);
+    g.addColorStop(0, info.color + 'aa'); g.addColorStop(1, info.color + '00');
+    ctx.fillStyle = g;
+    ctx.fillRect(r.x - 30, r.y - 130, r.w + 60, 200);
+    ctx.translate(r.x + r.w / 2 - 14, r.y + 40);
+    ctx.scale(2.9, 2.9);
+    drawCatLook(ctx, info.look, 20, { ...IDLE_POSE, t, attacking: true, swing: 0 });
     ctx.restore();
   } else {
-    text(ctx, icon, r.x + r.w / 2, r.y + 95, 64, '#fff', 'center', false);
+    text(ctx, info.icon, r.x + r.w / 2, r.y - 30, 72, '#fff', 'center', false);
   }
+  // 카드 본체 (왼쪽 위가 잘린 종이 카드)
+  const cut = 54;
+  const shape = () => {
+    ctx.beginPath();
+    ctx.moveTo(r.x, r.y + cut);
+    ctx.lineTo(r.x + cut, r.y);
+    ctx.lineTo(r.x + r.w, r.y);
+    ctx.lineTo(r.x + r.w, r.y + r.h);
+    ctx.lineTo(r.x, r.y + r.h);
+    ctx.closePath();
+  };
+  ctx.save();
+  ctx.translate(0, 6); shape(); ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fill();
   ctx.restore();
-  // 아이콘 원
-  circle(ctx, r.x + r.w - 30, r.y + 150, 24, '#2a1a22');
-  circle(ctx, r.x + r.w - 30, r.y + 150, 21, color);
-  text(ctx, icon, r.x + r.w - 30, r.y + 151, 22, '#fff', 'center', false);
-  // 배지
-  const isNew = badge === 'NEW';
-  roundRect(ctx, r.x - 4, r.y + 12, 64, 26, 6);
-  ctx.fillStyle = isNew ? '#ffcf3a' : '#ff8fb4';
+  shape();
+  ctx.fillStyle = '#fbf6ef';
   ctx.fill();
-  text(ctx, badge, r.x + 28, r.y + 25, 15, isNew ? '#7a3a00' : '#fff', 'center', false);
+  ctx.save();
+  shape(); ctx.clip();
+  const top = ctx.createLinearGradient(0, r.y, 0, r.y + 96);
+  top.addColorStop(0, info.color); top.addColorStop(1, '#fbf6ef');
+  ctx.fillStyle = top;
+  ctx.fillRect(r.x, r.y, r.w, 96);
+  ctx.restore();
+  // 스킬 아이콘
+  const ix = r.x + r.w - 42;
+  const iy = r.y + 48;
+  circle(ctx, ix, iy, 34, '#2a1a22');
+  const ig = ctx.createRadialGradient(ix - 8, iy - 10, 4, ix, iy, 32);
+  ig.addColorStop(0, '#ffffff'); ig.addColorStop(1, info.color);
+  circle(ctx, ix, iy, 30, '#000');
+  ctx.fillStyle = ig;
+  ctx.beginPath(); ctx.arc(ix, iy, 30, 0, Math.PI * 2); ctx.fill();
+  text(ctx, info.icon, ix, iy + 1, 30, '#fff', 'center', false);
+  if (c.type === 'cat' && c.next > 1) {
+    circle(ctx, ix + 24, iy + 24, 12, '#1d3b22');
+    text(ctx, `${c.next}`, ix + 24, iy + 24, 14, '#ffffff', 'center', false);
+  }
+  // 배지
+  if (info.badge === 'NEW' || info.badge === '강화') {
+    const bx = r.x - 6;
+    const by = r.y + 84;
+    ctx.fillStyle = info.badge === 'NEW' ? '#ffcf3a' : '#7ad99a';
+    ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx + 70, by); ctx.lineTo(bx + 84, by + 13); ctx.lineTo(bx + 70, by + 26); ctx.lineTo(bx, by + 26); ctx.closePath(); ctx.fill();
+    text(ctx, info.badge, bx + 36, by + 13, 16, info.badge === 'NEW' ? '#7a3a00' : '#1d3b22', 'center', false);
+  }
   // 이름 띠
   ctx.fillStyle = '#5a2c1c';
-  ctx.fillRect(r.x, r.y + 176, r.w, 44);
-  text(ctx, title, r.x + r.w / 2, r.y + 192, 16, '#fff', 'center', false);
-  text(ctx, sub, r.x + r.w / 2, r.y + 211, 11, '#ffd9a8', 'center', false);
-  const lines = wrap(ctx, desc, r.w - 18, 13);
-  lines.slice(0, 5).forEach((ln, i) => text(ctx, ln, r.x + r.w / 2, r.y + 240 + i * 19, 13, '#4a3a40', 'center', false));
-  ctx.lineWidth = 3;
-  ctx.strokeStyle = `rgba(255,220,120,${0.5 * glow})`;
-  roundRect(ctx, r.x, r.y, r.w, r.h, 14);
-  ctx.stroke();
+  ctx.fillRect(r.x, r.y + 112, r.w, 50);
+  ctx.fillStyle = '#7a4430';
+  ctx.fillRect(r.x, r.y + 112, r.w, 3);
+  text(ctx, info.title, r.x + r.w / 2, r.y + 131, 17, '#fff', 'center', false);
+  text(ctx, info.sub, r.x + r.w / 2, r.y + 151, 11, '#ffd9a8', 'center', false);
+  const lines = wrap(ctx, info.desc, r.w - 18, 14);
+  lines.slice(0, 5).forEach((ln, i) => text(ctx, ln, r.x + r.w / 2, r.y + 186 + i * 21, 14, '#4a3a40', 'center', false));
 }
 
 function drawPause(ctx: Ctx, pressed: string | null): void {
@@ -880,6 +958,7 @@ export function render(ctx: Ctx, game: Game, t: number, pressed: string | null, 
   ctx.save();
   if (game.shake > 0) ctx.translate((Math.random() - 0.5) * 8 * game.shake * 2, (Math.random() - 0.5) * 8 * game.shake * 2);
   drawField(ctx, game.stage.area, t);
+  drawDecals(ctx, game.decals);
   drawFields(ctx, game, t);
   const sorted = [...game.enemies].sort((a, b) => (a.def.flying ? 1 : 0) - (b.def.flying ? 1 : 0) || a.y - b.y);
   for (const e of sorted) drawEnemy(ctx, e);
@@ -901,6 +980,6 @@ export function render(ctx: Ctx, game: Game, t: number, pressed: string | null, 
 
   drawHud(ctx, game, t, pressed);
   if (game.phase !== 'playing') drawResult(ctx, game, t, reward);
-  else if (game.choice) drawChoice(ctx, game, t, pressed);
+  else if (game.choice || game.pickAnim) drawChoice(ctx, game, t, pressed);
   else if (game.paused) drawPause(ctx, pressed);
 }

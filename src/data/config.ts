@@ -6,8 +6,8 @@ export const CONFIG = {
   barricadeY: 780,     // 바리케이드 윗면 (적이 멈추는 선)
   squadY: 872,         // 고양이들이 앉아 있는 높이
   squadX: [270, 160, 380, 60, 480], // [치즈, 편성1~4]
-  xpBase: 8,
-  xpPerLevel: 6,
+  xpBase: 14,
+  xpPerLevel: 10,
   rerolls: 2,
 };
 

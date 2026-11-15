@@ -9,7 +9,7 @@ import type { OwnedCat } from './meta/save';
 
 const W = CONFIG.width;
 /** 많은 수의 약한 적 = 무리 느낌. 보스는 제외 */
-const HORDE = { hp: 0.5, atk: 0.55 };
+const HORDE = { hp: 0.3, atk: 0.35 };
 
 export interface Enemy {
   uid: number;
@@ -63,6 +63,8 @@ export interface Fx { kind: FxKind; x: number; y: number; x2?: number; y2?: numb
 export interface Field { x: number; y: number; r: number; t: number; life: number; slow: number; dmg: number; tick: number; }
 export interface PendingSlam { x: number; y: number; r: number; delay: number; dmg: number; knock: number; }
 
+export interface Decal { x: number; y: number; r: number; color: string; t: number; seed: number; }
+
 export interface FloatText { x: number; y: number; text: string; color: string; t: number; size: number; }
 export interface Particle { x: number; y: number; vx: number; vy: number; t: number; life: number; color: string; r: number; }
 
@@ -72,6 +74,10 @@ export type Card =
 
 export type Phase = 'playing' | 'victory' | 'defeat';
 export interface BattleResult { victory: boolean; stars: number; kills: number; time: number; progress: number; }
+
+export function fmtDmg(v: number): string {
+  return v >= 10000 ? `${(v / 1000).toFixed(0)}K` : v >= 1000 ? `${(v / 1000).toFixed(1)}K` : `${Math.round(v)}`;
+}
 
 export interface SquadEntry { def: CatDef; owned: OwnedCat; }
 
@@ -93,6 +99,9 @@ export class Game {
   slams: PendingSlam[] = [];
   floats: FloatText[] = [];
   particles: Particle[] = [];
+  decals: Decal[] = [];
+  /** 카드를 고른 직후 확대 연출 */
+  pickAnim: { card: Card; index: number; t: number } | null = null;
 
   readonly maxHp: number;
   hp: number;
@@ -139,7 +148,7 @@ export class Game {
   get xpNeed(): number { return CONFIG.xpBase + CONFIG.xpPerLevel * this.level; }
   get progress(): number { return Math.min(1, this.time / this.stage.duration); }
   get timeLeft(): number { return Math.max(0, this.stage.duration - this.time); }
-  private get active(): boolean { return this.phase === 'playing' && !this.paused && !this.choice; }
+  private get active(): boolean { return this.phase === 'playing' && !this.paused && !this.choice && !this.pickAnim; }
 
   get dmgMul(): number {
     let m = 1 + 0.12 * this.generic.tuna;
@@ -178,6 +187,7 @@ export class Game {
   pick(i: number): void {
     const c = this.choice?.[i];
     if (!c) return;
+    this.pickAnim = { card: c, index: i, t: 0.7 };
     if (c.type === 'cat') {
       const m = this.squad[c.slot];
       m.level = c.next;
@@ -231,6 +241,11 @@ export class Game {
   // ───────────── 메인 업데이트 ─────────────
 
   update(rawDt: number): void {
+    if (this.pickAnim && !this.paused) {
+      this.pickAnim.t -= Math.min(rawDt, 0.05);
+      if (this.pickAnim.t <= 0) this.pickAnim = null;
+      return;
+    }
     if (!this.active) return;
     const dt = Math.min(rawDt, 0.05) * this.speed;
     this.time += dt;
@@ -351,7 +366,35 @@ export class Game {
         }
       }
     }
+    this.separate();
     this.enemies = this.enemies.filter((e) => !(e.dead && e.deathT > 0.45));
+  }
+
+  /** 적끼리 겹치지 않게 밀어내서 바리케이드 앞에 무리가 쌓이게 한다 */
+  private separate(): void {
+    const list = this.enemies.filter((e) => !e.dead && !e.def.flying);
+    for (let i = 0; i < list.length; i++) {
+      const a = list[i];
+      for (let j = i + 1; j < list.length; j++) {
+        const b = list[j];
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        const min = (a.def.size + b.def.size) * 0.75;
+        if (Math.abs(dx) > min || Math.abs(dy) > min) continue;
+        const d = Math.hypot(dx, dy) || 0.01;
+        if (d >= min) continue;
+        const push = (min - d) * 0.5;
+        const nx = dx / d;
+        const ny = dy / d;
+        const wa = a.def.boss ? 0.1 : 1;
+        const wb = b.def.boss ? 0.1 : 1;
+        a.x -= nx * push * wa; a.baseX -= nx * push * wa;
+        b.x += nx * push * wb; b.baseX += nx * push * wb;
+        // 아래(앞) 쪽 적은 그대로 두고, 뒤쪽 적만 위로 밀린다
+        if (dy > 0) a.y -= Math.abs(ny) * push * wa; else b.y -= Math.abs(ny) * push * wb;
+      }
+    }
+    for (const e of list) { e.x = Math.max(16, Math.min(W - 16, e.x)); e.baseX = Math.max(16, Math.min(W - 16, e.baseX)); }
   }
 
   private damageBarricade(dmg: number, x: number): void {
@@ -378,9 +421,9 @@ export class Game {
     if (o.slow) { e.slowAmt = Math.max(e.def.boss ? o.slow * 0.5 : o.slow, e.slowT > 0 ? e.slowAmt : 0); e.slowT = Math.max(e.slowT, o.slowDur ?? 1); }
     if (o.stun) e.stunT = Math.max(e.stunT, e.def.boss ? o.stun * 0.3 : o.stun);
     if (o.knock && !e.def.boss) e.y = Math.max(CONFIG.fieldTop - 10, e.y - o.knock);
-    if (!o.quiet || o.crit) {
-      this.addFloat(e.x + (Math.random() - 0.5) * 16, e.y - e.def.size - 6, o.crit ? `${Math.round(dmg)}!` : `${Math.round(dmg)}`,
-        o.crit ? '#ffd84d' : o.color ?? '#ffffff', o.crit ? 22 : dmg > 100 ? 18 : 14);
+    if (!o.quiet || o.crit || Math.random() < 0.3) {
+      this.addFloat(e.x + (Math.random() - 0.5) * 16, e.y - e.def.size - 6, o.crit ? `${fmtDmg(dmg)}!` : fmtDmg(dmg),
+        o.crit ? '#ff4d5e' : o.color ?? '#ffffff', o.crit ? 28 : dmg > 300 ? 22 : 17);
     }
     if (e.hp <= 0) {
       e.hp = 0;
@@ -388,6 +431,9 @@ export class Game {
       e.deathT = 0;
       this.kills++;
       this.burst(e.x, e.y, e.def.color, e.def.boss ? 24 : 6);
+      const goo = e.def.id === 'mouse' || e.def.id === 'ratking' ? 'rgba(200,195,210,0.55)' : e.def.id === 'spider' ? 'rgba(150,110,200,0.45)' : 'rgba(150,190,60,0.42)';
+      this.decals.push({ x: e.x, y: e.y, r: e.def.size * (e.def.boss ? 2.2 : 1.4), color: goo, t: 0, seed: Math.random() * 10 });
+      if (this.decals.length > 70) this.decals.shift();
       this.gainXp(e.def.xp);
       if (e.def.boss) { this.shake = 0.5; this.banner = { text: `${e.def.name} 격파!`, t: 1.8 }; }
     }
@@ -629,7 +675,7 @@ export class Game {
   // ───────────── 연출 ─────────────
 
   addFloat(x: number, y: number, text: string, color: string, size: number): void {
-    if (this.floats.length > 80) this.floats.shift();
+    if (this.floats.length > 140) this.floats.shift();
     this.floats.push({ x, y, text, color, t: 0.8, size });
   }
 
@@ -643,6 +689,8 @@ export class Game {
   }
 
   private updateFx(dt: number): void {
+    for (const d of this.decals) d.t += dt;
+    this.decals = this.decals.filter((d) => d.t < 12);
     for (const f of this.fx) f.t += dt;
     this.fx = this.fx.filter((f) => f.t < f.life);
     for (const f of this.floats) { f.t -= dt; f.y -= 34 * dt; }
