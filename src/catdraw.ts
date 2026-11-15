@@ -39,6 +39,26 @@ function roundRect(ctx: Ctx, x: number, y: number, w: number, h: number, r: numb
   ctx.closePath();
 }
 
+export function heart(ctx: Ctx, x: number, y: number, size: number): void {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.beginPath();
+  ctx.moveTo(0, size * 0.35);
+  ctx.bezierCurveTo(-size * 0.1, size * 0.22, -size * 0.62, -size * 0.02, -size * 0.5, -size * 0.32);
+  ctx.bezierCurveTo(-size * 0.4, -size * 0.6, -size * 0.05, -size * 0.55, 0, -size * 0.25);
+  ctx.bezierCurveTo(size * 0.05, -size * 0.55, size * 0.4, -size * 0.6, size * 0.5, -size * 0.32);
+  ctx.bezierCurveTo(size * 0.62, -size * 0.02, size * 0.1, size * 0.22, 0, size * 0.35);
+  ctx.closePath();
+  ctx.fillStyle = '#e8352b';
+  ctx.fill();
+  ctx.lineWidth = Math.max(1, size * 0.05);
+  ctx.strokeStyle = '#2a1414';
+  ctx.stroke();
+  ctx.fillStyle = 'rgba(255,255,255,0.45)';
+  ctx.beginPath(); ctx.ellipse(-size * 0.26, -size * 0.3, size * 0.1, size * 0.06, -0.6, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+
 export function drawCatLook(ctx: Ctx, look: CatLook, s: number, pose: CatPose): void {
   const p = look.pattern;
   const white = look.belly ?? '#fffaf2';
@@ -88,7 +108,14 @@ export function drawCatLook(ctx: Ctx, look: CatLook, s: number, pose: CatPose): 
   const bry = s * (look.fluffy ? 0.68 : 0.62);
   ellipse(ctx, 0, by, bw, bry, look.base);
   clipEllipse(ctx, 0, by, bw, bry, () => {
-    if (p === 'bicolor') ellipse(ctx, -s * 0.15, by - s * 0.38, bw * 0.95, s * 0.48, accentA);
+    if (p === 'bicolor') {
+      ellipse(ctx, -s * 0.15, by - s * 0.38, bw * 0.95, s * 0.48, accentA);
+      if (look.stripe) {
+        ctx.strokeStyle = look.stripe;
+        ctx.lineWidth = s * 0.08;
+        for (let i = -2; i <= 1; i++) { ctx.beginPath(); ctx.moveTo(i * s * 0.32, by - bry); ctx.lineTo(i * s * 0.32 - s * 0.08, by - bry * 0.35); ctx.stroke(); }
+      }
+    }
     if (p === 'calico') {
       ellipse(ctx, -s * 0.55, by - s * 0.3, s * 0.55, s * 0.42, accentA);
       ellipse(ctx, s * 0.3, by - s * 0.42, s * 0.42, s * 0.3, look.patch2 ?? '#333');
@@ -115,7 +142,7 @@ export function drawCatLook(ctx: Ctx, look: CatLook, s: number, pose: CatPose): 
   });
 
   // 머리 위치
-  const hr = s * (look.fluffy ? 0.66 : 0.62);
+  const hr = s * (look.fluffy ? 0.66 : look.kitten ? 0.7 : 0.62);
   const hx = s * 0.85;
   const hy = -s * 1.15 + ly;
 
@@ -177,7 +204,22 @@ export function drawCatLook(ctx: Ctx, look: CatLook, s: number, pose: CatPose): 
     if (p === 'bicolor') {
       ellipse(ctx, hx - hr * 0.1, hy - hr * 0.45, hr * 1.15, hr * 0.8, accentA);
       ellipse(ctx, hx - hr * 0.85, hy + hr * 0.1, hr * 0.5, hr * 0.7, accentA); // 뒤통수
-      ellipse(ctx, hx + hr * 0.26, hy - hr * 0.25, hr * 0.13, hr * 0.48, look.base); // 흰 이마 줄
+      if (look.stripe) {
+        ctx.strokeStyle = look.stripe;
+        ctx.lineWidth = hr * 0.08;
+        for (const dx of [-0.05, 0.12, 0.42, 0.58]) { ctx.beginPath(); ctx.moveTo(hx + dx * hr, hy - hr * 0.95); ctx.lineTo(hx + dx * hr, hy - hr * 0.55); ctx.stroke(); }
+        for (const dy of [-0.15, 0.08]) { ctx.beginPath(); ctx.moveTo(hx - hr * 0.95, hy + dy * hr); ctx.lineTo(hx - hr * 0.6, hy + dy * hr + 2); ctx.stroke(); }
+      }
+      // 이마에서 코로 넓어지는 흰 ㅅ자
+      ctx.fillStyle = look.base;
+      ctx.beginPath();
+      ctx.moveTo(hx + hr * 0.22, hy - hr * 0.9);
+      ctx.lineTo(hx + hr * 0.32, hy - hr * 0.9);
+      ctx.lineTo(hx + hr * 0.7, hy + hr * 0.2);
+      ctx.lineTo(hx - hr * 0.12, hy + hr * 0.2);
+      ctx.closePath();
+      ctx.fill();
+      ellipse(ctx, hx + hr * 0.3, hy + hr * 0.42, hr * 0.62, hr * 0.42, look.base);
     }
     if (p === 'calico') {
       ellipse(ctx, hx - hr * 0.5, hy - hr * 0.55, hr * 0.6, hr * 0.5, accentA);
@@ -222,9 +264,10 @@ export function drawCatLook(ctx: Ctx, look: CatLook, s: number, pose: CatPose): 
     ctx.beginPath(); ctx.moveTo(hx + hr * 0.6, hy - hr * 0.2); ctx.lineTo(hx + hr * 0.4, hy - hr * 0.05); ctx.lineTo(hx + hr * 0.6, hy + hr * 0.1); ctx.stroke();
   } else {
     for (const ex of [0, 0.52]) {
-      ellipse(ctx, hx + ex * hr, hy - hr * 0.05, hr * 0.16, hr * 0.21, look.eye);
-      ellipse(ctx, hx + ex * hr + hr * 0.02, hy - hr * 0.03, hr * 0.07, hr * 0.17, '#1e1820');
-      ellipse(ctx, hx + ex * hr + hr * 0.05, hy - hr * 0.13, hr * 0.05, hr * 0.05, '#fff');
+      const k = look.kitten ? 1.25 : 1;
+      ellipse(ctx, hx + ex * hr, hy - hr * 0.05, hr * 0.16 * k, hr * 0.21 * k, look.eye);
+      ellipse(ctx, hx + ex * hr + hr * 0.02, hy - hr * 0.03, hr * 0.08 * k, hr * 0.15 * k, '#1e1820');
+      ellipse(ctx, hx + ex * hr + hr * 0.06, hy - hr * 0.14, hr * 0.055 * k, hr * 0.055 * k, '#fff');
     }
   }
   ellipse(ctx, hx + hr * 0.27, hy + hr * 0.2, hr * 0.09, hr * 0.07, '#ff7f9f');
@@ -246,6 +289,9 @@ export function drawCatLook(ctx: Ctx, look: CatLook, s: number, pose: CatPose): 
 
   // 액세서리
   switch (look.accessory) {
+    case 'heart':
+      heart(ctx, hx + hr * 0.1, hy - hr * 1.75 + Math.sin(pose.t * 3) * hr * 0.08, hr * 0.7);
+      break;
     case 'bell':
       ctx.fillStyle = '#e8384f';
       ctx.fillRect(hx - hr * 0.6, hy + hr * 0.75, hr * 1.1, hr * 0.14);
@@ -283,7 +329,168 @@ export function drawCatLook(ctx: Ctx, look: CatLook, s: number, pose: CatPose): 
   ctx.restore();
 }
 
-/** 메뉴용 초상화: 캔버스 중앙에 고양이를 그린다 */
+
+/** 정면 얼굴 초상화 (로비·아이콘용). 원점 = 머리 중심, R = 머리 반지름 */
+export function drawCatFace(ctx: Ctx, look: CatLook, R: number, t = 0): void {
+  const p = look.pattern;
+  const white = look.belly ?? '#fffaf2';
+  const accent = look.patch ?? look.base;
+  const kit = look.kitten ? 1.15 : 1;
+  const earCol = (side: number) => p === 'bicolor' || p === 'point' ? accent : p === 'calico' ? (side < 0 ? accent : look.patch2 ?? '#333') : look.base;
+  ctx.save();
+  // 가슴
+  ellipse(ctx, 0, R * 1.35, R * 0.95, R * 0.75, p === 'bicolor' || p === 'tuxedo' || p === 'calico' ? white : p === 'point' ? look.base : look.base);
+  if (p === 'bicolor') {
+    ellipse(ctx, -R * 0.95, R * 1.5, R * 0.4, R * 0.6, accent);
+    ellipse(ctx, R * 0.95, R * 1.5, R * 0.4, R * 0.6, accent);
+  }
+  if (p === 'tabby' || p === 'tortie') ellipse(ctx, 0, R * 1.25, R * 0.5, R * 0.5, look.belly ?? look.base);
+  // 귀
+  for (const side of [-1, 1]) {
+    if (look.fold) {
+      ellipse(ctx, side * R * 0.5, -R * 0.72, R * 0.36, R * 0.2, earCol(side), side * 0.5);
+      continue;
+    }
+    ctx.fillStyle = earCol(side);
+    ctx.beginPath();
+    ctx.moveTo(side * R * 0.92, -R * 0.15);
+    ctx.lineTo(side * R * 0.78 * kit, -R * 1.42 * kit);
+    ctx.lineTo(side * R * 0.08, -R * 0.78);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#f7b5c4';
+    ctx.beginPath();
+    ctx.moveTo(side * R * 0.78, -R * 0.35);
+    ctx.lineTo(side * R * 0.74 * kit, -R * 1.2 * kit);
+    ctx.lineTo(side * R * 0.28, -R * 0.8);
+    ctx.closePath();
+    ctx.fill();
+    if (look.fluffy || look.kitten) {
+      ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+      ctx.lineWidth = 1;
+      for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.moveTo(side * R * (0.6 - i * 0.08), -R * (0.55 + i * 0.12)); ctx.lineTo(side * R * (0.7 - i * 0.06), -R * (0.85 + i * 0.1)); ctx.stroke(); }
+    }
+  }
+  // 머리
+  const hx = R * 1.02;
+  const hy = R * 0.9;
+  ellipse(ctx, 0, 0, hx, hy, look.base);
+  clipEllipse(ctx, 0, 0, hx, hy, () => {
+    if (p === 'bicolor') {
+      ellipse(ctx, 0, -R * 0.15, hx * 1.05, hy * 0.95, accent);
+      if (look.stripe) {
+        ctx.strokeStyle = look.stripe;
+        ctx.lineWidth = R * 0.06;
+        for (const dx of [-0.42, -0.28, 0.28, 0.42]) { ctx.beginPath(); ctx.moveTo(dx * R, -R * 0.9); ctx.lineTo(dx * R * 0.9, -R * 0.45); ctx.stroke(); }
+        for (const side of [-1, 1]) for (const dy of [0.05, 0.25]) {
+          ctx.beginPath(); ctx.moveTo(side * R * 1.0, dy * R); ctx.quadraticCurveTo(side * R * 0.85, dy * R - R * 0.05, side * R * 0.7, dy * R + R * 0.02); ctx.stroke();
+        }
+      }
+      // 흰 ㅅ자: 이마에서 코·입으로 넓어짐
+      ctx.fillStyle = look.base;
+      ctx.beginPath();
+      ctx.moveTo(-R * 0.06, -R * 0.95);
+      ctx.lineTo(R * 0.06, -R * 0.95);
+      ctx.quadraticCurveTo(R * 0.2, -R * 0.2, R * 0.62, R * 0.25);
+      ctx.lineTo(-R * 0.62, R * 0.25);
+      ctx.quadraticCurveTo(-R * 0.2, -R * 0.2, -R * 0.06, -R * 0.95);
+      ctx.fill();
+      ellipse(ctx, 0, R * 0.55, R * 0.75, R * 0.5, look.base);
+    }
+    if (p === 'tabby' && look.stripe) {
+      ctx.strokeStyle = look.stripe;
+      ctx.lineWidth = R * 0.09;
+      for (const dx of [-0.2, 0, 0.2]) { ctx.beginPath(); ctx.moveTo(dx * R, -R * 0.9); ctx.lineTo(dx * R, -R * 0.45); ctx.stroke(); }
+      for (const side of [-1, 1]) for (const dy of [0, 0.22]) { ctx.beginPath(); ctx.moveTo(side * R, dy * R); ctx.lineTo(side * R * 0.68, dy * R + R * 0.04); ctx.stroke(); }
+    }
+    if (p === 'calico') {
+      ellipse(ctx, -R * 0.6, -R * 0.45, R * 0.6, R * 0.55, accent);
+      ellipse(ctx, R * 0.65, -R * 0.5, R * 0.5, R * 0.5, look.patch2 ?? '#333');
+    }
+    if (p === 'tortie') { ellipse(ctx, R * 0.45, -R * 0.4, R * 0.45, R * 0.4, accent); ellipse(ctx, -R * 0.6, R * 0.2, R * 0.35, R * 0.3, accent); }
+    if (p === 'point') ellipse(ctx, 0, R * 0.25, R * 0.62, R * 0.6, accent);
+    if (p === 'tuxedo') {
+      ctx.fillStyle = white;
+      ctx.beginPath(); ctx.moveTo(-R * 0.08, -R * 0.5); ctx.lineTo(R * 0.08, -R * 0.5); ctx.lineTo(R * 0.5, R * 0.3); ctx.lineTo(-R * 0.5, R * 0.3); ctx.fill();
+      ellipse(ctx, 0, R * 0.55, R * 0.62, R * 0.42, white);
+    }
+    if (look.belly && (p === 'tabby' || p === 'tortie')) ellipse(ctx, 0, R * 0.55, R * 0.5, R * 0.36, white);
+  });
+  // 볼털 (아기 고양이/장모)
+  if (look.fluffy) for (const side of [-1, 1]) ellipse(ctx, side * R * 0.95, R * 0.4, R * 0.25, R * 0.3, look.belly ?? look.base);
+
+  // 눈
+  const dark = p === 'tuxedo' || p === 'tortie';
+  const ex = R * 0.4;
+  const ey = -R * 0.05;
+  const erx = R * 0.2 * kit;
+  const ery = R * 0.22 * kit;
+  for (const side of [-1, 1]) {
+    ellipse(ctx, side * ex, ey, erx * 1.12, ery * 1.12, dark ? '#1a1418' : '#5a3a2a');
+    const g = ctx.createRadialGradient(side * ex, ey + ery * 0.3, 1, side * ex, ey, ery);
+    g.addColorStop(0, '#f2f0c8'); g.addColorStop(1, look.eye);
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.ellipse(side * ex, ey, erx, ery, 0, 0, Math.PI * 2); ctx.fill();
+    ellipse(ctx, side * ex, ey + ery * 0.05, erx * 0.55, ery * 0.72, '#141016');
+    ellipse(ctx, side * ex + erx * 0.3, ey - ery * 0.35, erx * 0.28, erx * 0.28, '#fff');
+    ellipse(ctx, side * ex - erx * 0.3, ey + ery * 0.35, erx * 0.12, erx * 0.12, '#fff');
+  }
+  // 코 / 입
+  ctx.fillStyle = '#f0a0a8';
+  ctx.beginPath();
+  ctx.moveTo(-R * 0.12, R * 0.22);
+  ctx.quadraticCurveTo(0, R * 0.16, R * 0.12, R * 0.22);
+  ctx.quadraticCurveTo(R * 0.08, R * 0.33, 0, R * 0.36);
+  ctx.quadraticCurveTo(-R * 0.08, R * 0.33, -R * 0.12, R * 0.22);
+  ctx.fill();
+  ctx.strokeStyle = dark ? '#ddd' : '#8a5a5a';
+  ctx.lineWidth = Math.max(1, R * 0.035);
+  ctx.beginPath();
+  ctx.moveTo(0, R * 0.36); ctx.lineTo(0, R * 0.43);
+  ctx.arc(-R * 0.08, R * 0.43, R * 0.08, 0, Math.PI * 0.9);
+  ctx.moveTo(0, R * 0.43);
+  ctx.arc(R * 0.08, R * 0.43, R * 0.08, Math.PI * 0.1, Math.PI, false);
+  ctx.stroke();
+  ellipse(ctx, -R * 0.55, R * 0.3, R * 0.14, R * 0.08, 'rgba(255,130,160,0.4)');
+  ellipse(ctx, R * 0.55, R * 0.3, R * 0.14, R * 0.08, 'rgba(255,130,160,0.4)');
+  // 수염
+  ctx.strokeStyle = dark ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.95)';
+  ctx.lineWidth = Math.max(0.8, R * 0.02);
+  for (const side of [-1, 1]) for (const a of [-0.12, 0.05, 0.22]) {
+    ctx.beginPath();
+    ctx.moveTo(side * R * 0.3, R * 0.38);
+    ctx.quadraticCurveTo(side * R * 0.8, R * (0.3 + a), side * R * 1.35, R * (0.3 + a * 2));
+    ctx.stroke();
+  }
+  // 액세서리
+  switch (look.accessory) {
+    case 'heart': heart(ctx, 0, -R * 1.55 + Math.sin(t * 3) * R * 0.05, R * 0.55); break;
+    case 'scarf': ellipse(ctx, 0, R * 0.95, R * 0.8, R * 0.18, '#e8384f'); break;
+    case 'bell':
+      ellipse(ctx, 0, R * 0.92, R * 0.75, R * 0.1, '#e8384f');
+      ellipse(ctx, 0, R * 1.08, R * 0.14, R * 0.14, '#ffd84d');
+      break;
+    case 'ribbon':
+      ctx.fillStyle = '#ff5f9e';
+      ctx.beginPath();
+      ctx.moveTo(-R * 0.5, -R * 0.75); ctx.lineTo(-R * 0.85, -R * 1.0); ctx.lineTo(-R * 0.8, -R * 0.5); ctx.closePath();
+      ctx.moveTo(-R * 0.5, -R * 0.75); ctx.lineTo(-R * 0.2, -R * 1.05); ctx.lineTo(-R * 0.22, -R * 0.55); ctx.closePath();
+      ctx.fill();
+      break;
+    case 'crown': {
+      const cy = -R * 0.85;
+      ctx.fillStyle = '#ffd84d';
+      ctx.beginPath();
+      ctx.moveTo(-R * 0.35, cy); ctx.lineTo(-R * 0.42, cy - R * 0.4); ctx.lineTo(-R * 0.18, cy - R * 0.18);
+      ctx.lineTo(0, cy - R * 0.5); ctx.lineTo(R * 0.18, cy - R * 0.18); ctx.lineTo(R * 0.42, cy - R * 0.4);
+      ctx.lineTo(R * 0.35, cy); ctx.closePath(); ctx.fill();
+      break;
+    }
+  }
+  ctx.restore();
+}
+
+/** 메뉴용 초상화: 캔버스 중앙에 고양이 얼굴을 그린다 */
 export function drawCatPortrait(canvas: HTMLCanvasElement, look: CatLook, t = 0): void {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
@@ -296,9 +503,9 @@ export function drawCatPortrait(canvas: HTMLCanvasElement, look: CatLook, t = 0)
   }
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  const s = Math.min(cssW, cssH) * 0.3;
-  ctx.setTransform(dpr, 0, 0, dpr, dpr * (cssW / 2 - s * 0.1), dpr * (cssH * 0.86));
-  drawCatLook(ctx, look, s, { ...IDLE_POSE, t });
+  const R = Math.min(cssW, cssH) * 0.27;
+  ctx.setTransform(dpr, 0, 0, dpr, dpr * (cssW / 2), dpr * (cssH * 0.52));
+  drawCatFace(ctx, look, R, t);
 }
 
 /** 뒷모습 (전투 화면 아래쪽에서 적을 바라보는 고양이). 발밑 중앙이 원점. */
@@ -314,7 +521,7 @@ export function drawCatBack(ctx: Ctx, look: CatLook, s: number, t: number, opt: 
   const bodyRx = s * (fluffy ? 0.95 : 0.82) * (1 + breathe);
   const bodyRy = s * (look.shortLegs ? 0.66 : 0.76);
   const by = -bodyRy;
-  const hr = s * (fluffy ? 0.62 : 0.56);
+  const hr = s * (fluffy ? 0.62 : look.kitten ? 0.64 : 0.56);
   const hy = by - bodyRy * 0.78 - hr * 0.55 + (opt.sleep ? s * 0.22 : 0) - opt.swing * s * 0.12;
   const hx = opt.sleep ? s * 0.08 : 0;
 
@@ -341,7 +548,14 @@ export function drawCatBack(ctx: Ctx, look: CatLook, s: number, t: number, opt: 
   // 몸통
   ellipse(ctx, 0, by, bodyRx, bodyRy, look.base);
   clipEllipse(ctx, 0, by, bodyRx, bodyRy, () => {
-    if (p === 'bicolor') ellipse(ctx, 0, by - bodyRy * 0.35, bodyRx * 0.95, bodyRy * 0.85, accent);
+    if (p === 'bicolor') {
+      ellipse(ctx, 0, by - bodyRy * 0.35, bodyRx * 0.95, bodyRy * 0.85, accent);
+      if (look.stripe) {
+        ctx.strokeStyle = look.stripe;
+        ctx.lineWidth = s * 0.08;
+        for (let i = -2; i <= 1; i++) { const yy = by - bodyRy * 0.7 + i * bodyRy * 0.25; ctx.beginPath(); ctx.moveTo(-bodyRx * 0.8, yy + s * 0.06); ctx.quadraticCurveTo(0, yy - s * 0.1, bodyRx * 0.8, yy + s * 0.06); ctx.stroke(); }
+      }
+    }
     if (p === 'calico') {
       ellipse(ctx, -bodyRx * 0.45, by - bodyRy * 0.2, bodyRx * 0.55, bodyRy * 0.55, accent);
       ellipse(ctx, bodyRx * 0.5, by + bodyRy * 0.15, bodyRx * 0.45, bodyRy * 0.5, look.patch2 ?? '#333');
@@ -414,7 +628,14 @@ export function drawCatBack(ctx: Ctx, look: CatLook, s: number, t: number, opt: 
   // 머리 (뒤통수)
   ellipse(ctx, hx, hy, hr, hr * 0.95, look.base);
   clipEllipse(ctx, hx, hy, hr, hr * 0.95, () => {
-    if (p === 'bicolor') ellipse(ctx, hx, hy - hr * 0.1, hr * 1.05, hr * 0.95, accent);
+    if (p === 'bicolor') {
+      ellipse(ctx, hx, hy - hr * 0.1, hr * 1.05, hr * 0.95, accent);
+      if (look.stripe) {
+        ctx.strokeStyle = look.stripe;
+        ctx.lineWidth = hr * 0.09;
+        for (const dx of [-0.3, 0, 0.3]) { ctx.beginPath(); ctx.moveTo(hx + dx * hr, hy - hr); ctx.lineTo(hx + dx * hr * 0.8, hy + hr * 0.05); ctx.stroke(); }
+      }
+    }
     if (p === 'calico') {
       ellipse(ctx, hx - hr * 0.55, hy - hr * 0.3, hr * 0.6, hr * 0.6, accent);
       ellipse(ctx, hx + hr * 0.6, hy - hr * 0.4, hr * 0.5, hr * 0.5, look.patch2 ?? '#333');
@@ -434,6 +655,9 @@ export function drawCatBack(ctx: Ctx, look: CatLook, s: number, t: number, opt: 
   ellipse(ctx, hx + hr * 0.88, hy + hr * 0.25, hr * 0.18, hr * 0.14, p === 'bicolor' || p === 'tuxedo' ? white : look.base);
 
   switch (look.accessory) {
+    case 'heart':
+      heart(ctx, hx, hy - hr * 1.9 + Math.sin(t * 3) * hr * 0.1, hr * 0.75);
+      break;
     case 'scarf': {
       ellipse(ctx, hx, hy + hr * 0.92, hr * 0.85, hr * 0.22, '#e8384f');
       const flap = Math.sin(t * 7) * 2;

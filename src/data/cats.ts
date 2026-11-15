@@ -20,7 +20,9 @@ export interface CatLook {
   shortLegs?: boolean;
   fluffy?: boolean;
   scale?: number;
-  accessory?: 'scarf' | 'bell' | 'ribbon' | 'crown';
+  accessory?: 'scarf' | 'bell' | 'ribbon' | 'crown' | 'heart';
+  /** 아기 고양이 비율: 큰 귀, 큰 눈 */
+  kitten?: boolean;
 }
 
 export interface CatDef {
@@ -47,7 +49,8 @@ export const CATS: CatDef[] = [
   {
     id: 'cheese', name: '치즈', breed: '반치즈 코리안숏헤어', rarity: 'SSR', role: '리더', hero: true,
     hp: 420, atk: 20, skillName: '발톱 펀치', weapon: WEAPONS.cheese,
-    look: { base: WHITE, pattern: 'bicolor', patch: ORANGE, belly: WHITE, eye: '#c9a227', accessory: 'scarf' },
+    // 실제 반치즈 코숏 '혜옹이'를 모델로: 연한 치즈색 + 은은한 줄무늬, 이마에서 턱까지 흰 ㅅ자, 큰 귀와 초록빛 눈
+    look: { base: WHITE, pattern: 'bicolor', patch: '#eeb47c', stripe: '#d8925a', belly: WHITE, eye: '#a8a86c', accessory: 'heart', kitten: true },
     bio: '소녀가 길에서 데려온 반치즈 코숏. 집을 지키는 냥냥 방위대의 대장이다.',
   },
   {
