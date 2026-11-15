@@ -12,13 +12,15 @@
 ```json
 {
   "cheese": ["back", "face", "card"],
-  "cheesetabby": { "full": "cheesetabby-full.jpg", "face": "cheesetabby-full.jpg", "faceFocus": [0.476, 0.27, 0.16] }
+  "cheese": { "face": "cheese-face.jpg", "faceFocus": [0.52, 0.58, 0.32], "full": "cheese-full.jpg", "fullFocus": [0.476, 0.27, 0.16], "back": "cheese-back.png" }
 }
 ```
 
 `faceFocus` = [얼굴 중심 x 비율, 얼굴 중심 y 비율, 얼굴 반지름(가로 대비 비율)]. 파일 이름은 jpg/png 모두 됩니다.
 
-### 그림 스타일 가이드 (치즈태비 일러스트 기준)
+`fullFocus`는 전신 그림 속 얼굴 위치(스킬 카드 상반신 자르기용)입니다. 얼굴 사진과 전신 그림을 따로 쓸 때 지정하세요.
+
+### 그림 스타일 가이드 (치즈 = 혜옹이 일러스트 기준)
 - 두 발로 선 의인화 고양이, 실제 털무늬를 살린 반실사 애니메이션 채색
 - 교복 + 고양이 장난감·행동을 무기로 들고 있는 전투 자세
 - 세로 9:20 정도 전신, 배경은 단순하게 (글씨는 넣지 않기)

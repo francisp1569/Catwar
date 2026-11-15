@@ -5,10 +5,11 @@
 // faceFocus = [얼굴 중심 x, y, 반지름] (그림 가로 대비 비율). 동그란 아이콘으로 자를 때 사용.
 export type ArtKind = 'back' | 'face' | 'card' | 'full';
 
-type Entry = ArtKind[] | Partial<Record<ArtKind, string>> & { faceFocus?: [number, number, number] };
+type Entry = ArtKind[] | Partial<Record<ArtKind, string>> & { faceFocus?: [number, number, number]; fullFocus?: [number, number, number] };
 
 const images = new Map<string, HTMLImageElement>();
 const focus = new Map<string, [number, number, number]>();
+const fullFocus = new Map<string, [number, number, number]>();
 
 export async function loadArt(): Promise<void> {
   try {
@@ -21,6 +22,7 @@ export async function loadArt(): Promise<void> {
         ? entry.map((k) => [k, `${id}-${k}.png`])
         : (['back', 'face', 'card', 'full'] as ArtKind[]).filter((k) => typeof entry[k] === 'string').map((k) => [k, entry[k] as string]);
       if (!Array.isArray(entry) && entry.faceFocus) focus.set(id, entry.faceFocus);
+      if (!Array.isArray(entry) && entry.fullFocus) fullFocus.set(id, entry.fullFocus);
       for (const [kind, file] of files) {
         const img = new Image();
         loads.push(new Promise((ok) => { img.onload = () => ok(); img.onerror = () => ok(); }));
@@ -66,7 +68,7 @@ export function drawFaceArtSquare(ctx: CanvasRenderingContext2D, id: string, img
 
 /** 전신 일러스트에서 상반신(얼굴~허리)을 잘라 (dx,dy,dw,dh) 칸에 그린다 */
 export function drawBustArt(ctx: CanvasRenderingContext2D, id: string, img: HTMLImageElement, dx: number, dy: number, dw: number, dh: number): void {
-  const [fx, fy, fr] = getFocus(id);
+  const [fx, fy, fr] = fullFocus.get(id) ?? getFocus(id);
   const W = img.naturalWidth;
   const H = img.naturalHeight;
   let sw = Math.min(W, fr * W * 4.2);

@@ -1,21 +1,21 @@
 # 냥냥 방위대 캐릭터 일러스트 프롬프트 (전체)
 
-치즈태비 앞모습("주황 태비 건슬링어")과 뒷모습 그림과 같은 스타일로 나머지 캐릭터를 만드는 프롬프트입니다.
+주인공 **치즈(혜옹이)** 앞모습("주황 태비 건슬링어")과 뒷모습 그림과 같은 스타일로 나머지 캐릭터를 만드는 프롬프트입니다.
 **고양이마다 앞모습·뒷모습 블록을 그대로 복사해서 그림 생성 AI에 붙여 넣으면 됩니다.**
 
 ## 사용법
-1. 가능하면 **치즈태비 앞모습·뒷모습 그림을 참고 이미지로 함께 넣고** 생성하세요. 스타일이 훨씬 잘 맞습니다.
+1. 가능하면 **치즈(혜옹이) 앞모습·뒷모습 그림을 참고 이미지로 함께 넣고** 생성하세요. 스타일이 훨씬 잘 맞습니다.
 2. 비율은 **세로 9:20** (예: 704×1530).
 3. 앞모습과 뒷모습은 같은 대화에서 연달아 만들면 옷·무늬가 일치하기 쉽습니다. ("방금 그 캐릭터의 뒷모습" 이라고 덧붙이기)
 4. 다 만든 그림은 파일 이름 없이 보내셔도 됩니다. 그림 보고 맞춰서 넣습니다.
 
 | # | 이름 | 품종 | 무기 (스킬) |
 | --- | --- | --- | --- |
-| 1 | 치즈 (주인공) | 반치즈 코숏 | 젤리 발바닥 장갑 (냥냥펀치) |
+| 1 | 치즈 (주인공 · 혜옹이) | 반치즈 코숏 | ✅ 완료 (쌍권총) |
 | 2 | 고등어 | 고등어태비 코숏 | 스크래처 방패 (스크래처 방벽) |
 | 3 | 흰둥이 | 흰 코숏 | 털실뭉치 (털실뭉치 던지기) |
 | 4 | 카오스 | 카오스 코숏 | 발톱 (우다다 할퀴기) |
-| 5 | 치즈태비 | 치즈태비 코숏 | ✅ 완료 |
+| 5 | 치즈태비 | 치즈태비 코숏 | 캣휠 (캣휠 굴리기) |
 | 6 | 턱시도 | 턱시도 코숏 | 방울공 (방울공 저격) |
 | 7 | 삼색이 | 삼색 코숏 | 그루밍 브러시 (그루밍 수선) |
 | 8 | 블루 | 러시안 블루 | 깃털 낚싯대 (깃털 낚싯대) |
@@ -34,27 +34,8 @@
 
 ---
 
-## 1. 치즈 (주인공 · 반치즈 코숏)
-실제 고양이 "혜옹이"가 모델입니다. 가능하면 혜옹이 사진도 참고 이미지로 넣어주세요.
-
-**앞모습**
-```
-Anime-style semi-realistic illustration of an anthropomorphic cat girl standing on two legs, full body, vertical 9:20.
-Character: young cream-and-orange bicolor Korean shorthair cat with soft faint tabby stripes, a wide white inverted-V blaze running from the forehead down over the nose, mouth, chin and chest, large ears with pink insides, big round hazel-green eyes, pink nose, small red heart hairpin on one ear. Kitten-like cute proportions, cheerful brave leader.
-Outfit: Japanese school uniform - white sailor blouse with navy collar and orange trim, orange neckerchief, orange armband, navy pleated skirt with orange trim over navy shorts, brown utility belt with pouches, thigh holster strap, white socks, black lace-up combat boots.
-Weapon: oversized pink jelly-bean cat paw boxing gloves, throwing a punch forward.
-Dynamic battle stance, determined expression. Thick clean line art, cel shading, warm lighting.
-Background: simple grey gradient, faint ruined silhouettes, small embers and fire at the bottom. No text, no watermark.
-```
-
-**뒷모습**
-```
-Same character seen from directly behind, standing upright and facing away from the viewer, full body, vertical 9:20.
-Cream-and-orange bicolor cat with faint tabby stripes on the back of the head, red heart hairpin on one ear, tail with white tip hanging down.
-Same school uniform from behind: navy sailor collar with orange stripes, orange armband with bow, navy pleated skirt, brown utility belt with pouch, thigh holster, black combat boots.
-Pink jelly-bean paw boxing gloves on both hands, arms relaxed at the sides.
-Plain flat light grey background (#DEDEDE), no shadow, no text, no watermark.
-```
+## 1. 치즈 (주인공 · 혜옹이) ✅ 완료
+앞모습 `cheese-full.jpg`, 뒷모습 `cheese-back.png` 가 이미 들어가 있습니다. 다른 캐릭터를 만들 때 이 두 장을 참고 이미지로 넣어 주세요.
 
 ## 2. 고등어 (고등어태비 코숏)
 
@@ -110,6 +91,26 @@ Thick clean line art, cel shading. Background: simple grey gradient, faint ruins
 Same character seen from directly behind, standing upright and facing away, full body, vertical 9:20.
 Black and orange tortoiseshell fur pattern on head, arms and tail. Same school uniform from behind, orange armband, belt with pouch, combat boots.
 Claws out on both hands, arms at the sides.
+Plain flat light grey background (#DEDEDE), no shadow, no text, no watermark.
+```
+
+## 5. 치즈태비 (치즈태비 코숏)
+혜옹이와 헷갈리지 않게, 온몸이 진한 주황 줄무늬인 통통한 먹보 남자아이로 설정했습니다.
+
+**앞모습**
+```
+Anime-style semi-realistic illustration of an anthropomorphic cat standing on two legs, full body, vertical 9:20.
+Character: chubby male orange tabby Korean shorthair, deep orange fur with bold dark-orange classic tabby stripes all over (including the face, no white blaze), cream belly, round green eyes, easygoing foodie grin, a fish snack in the mouth.
+Outfit: Japanese school uniform - white sailor blouse with navy collar and orange trim, orange neckerchief and armband, navy shorts, brown utility belt with pouches, black lace-up combat boots.
+Weapon: rolling a big wooden cat exercise wheel forward with both paws like a giant tire, dust trailing behind it.
+Thick clean line art, cel shading. Background: simple grey gradient, faint ruins, embers at the bottom. No text, no watermark.
+```
+
+**뒷모습**
+```
+Same character seen from directly behind, standing upright and facing away, full body, chubby build, vertical 9:20.
+Deep orange fur with bold dark stripes on head, back and thick ringed tail. Same school uniform from behind, orange armband, belt with pouch, combat boots.
+Small wooden cat wheel strapped on the back, arms at the sides.
 Plain flat light grey background (#DEDEDE), no shadow, no text, no watermark.
 ```
 
@@ -400,6 +401,6 @@ Plain flat light grey background (#DEDEDE), no shadow, no text, no watermark.
 
 ---
 
-## 참고: 완성된 치즈태비 (5번)
-앞모습: `cheesetabby-full.jpg` · 뒷모습: `cheesetabby-back.png`
+## 참고: 완성된 치즈 (혜옹이, 1번)
+앞모습: `cheese-full.jpg` · 뒷모습: `cheese-back.png`
 다른 캐릭터를 만들 때 이 두 장을 참고 이미지로 함께 넣어 주세요.
