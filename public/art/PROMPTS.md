@@ -1,64 +1,405 @@
-# 고양이 일러스트 생성 프롬프트
+# 냥냥 방위대 캐릭터 일러스트 프롬프트 (전체)
 
-치즈태비 일러스트("주황 태비 건슬링어")와 같은 스타일로 나머지 고양이를 만들기 위한 프롬프트입니다.
-그림 생성 AI에 **공통 스타일 + 고양이별 설명**을 이어 붙여 사용하세요.
+치즈태비 앞모습("주황 태비 건슬링어")과 뒷모습 그림과 같은 스타일로 나머지 캐릭터를 만드는 프롬프트입니다.
+**고양이마다 앞모습·뒷모습 블록을 그대로 복사해서 그림 생성 AI에 붙여 넣으면 됩니다.**
 
-- 비율: 세로 9:20 (예: 704×1530)
-- 그림 안에 글씨는 넣지 않기
-- 같은 스타일이 나오도록, 가능하면 치즈태비 그림을 참고 이미지로 함께 넣기
-- 완성되면 파일 이름을 `<id>-full.jpg` 로 해서 보내주세요 (id는 아래 표)
+## 사용법
+1. 가능하면 **치즈태비 앞모습·뒷모습 그림을 참고 이미지로 함께 넣고** 생성하세요. 스타일이 훨씬 잘 맞습니다.
+2. 비율은 **세로 9:20** (예: 704×1530).
+3. 앞모습과 뒷모습은 같은 대화에서 연달아 만들면 옷·무늬가 일치하기 쉽습니다. ("방금 그 캐릭터의 뒷모습" 이라고 덧붙이기)
+4. 다 만든 그림은 파일 이름 없이 보내셔도 됩니다. 그림 보고 맞춰서 넣습니다.
 
-## 공통 스타일 (영어)
+| # | 이름 | 품종 | 무기 (스킬) |
+| --- | --- | --- | --- |
+| 1 | 치즈 (주인공) | 반치즈 코숏 | 젤리 발바닥 장갑 (냥냥펀치) |
+| 2 | 고등어 | 고등어태비 코숏 | 스크래처 방패 (스크래처 방벽) |
+| 3 | 흰둥이 | 흰 코숏 | 털실뭉치 (털실뭉치 던지기) |
+| 4 | 카오스 | 카오스 코숏 | 발톱 (우다다 할퀴기) |
+| 5 | 치즈태비 | 치즈태비 코숏 | ✅ 완료 |
+| 6 | 턱시도 | 턱시도 코숏 | 방울공 (방울공 저격) |
+| 7 | 삼색이 | 삼색 코숏 | 그루밍 브러시 (그루밍 수선) |
+| 8 | 블루 | 러시안 블루 | 깃털 낚싯대 (깃털 낚싯대) |
+| 9 | 폴드 | 스코티시 폴드 | 엉덩방아 (식빵 엉덩방아) |
+| 10 | 먼치 | 먼치킨 | 양손 발톱 (할퀴기 연타) |
+| 11 | 페르 | 페르시안 | 마이크 (골골송) |
+| 12 | 쿤 | 메인쿤 | 거대한 앞발 (거대 냥펀치) |
+| 13 | 샴 | 샴 | 레이저 포인터 (레이저 포인터) |
+| 14 | 젖소 | 젖소무늬 코숏 | 츄르 폭탄 (츄르 폭탄) |
+| 15 | 은비 | 아메리칸 숏헤어 | 쥐돌이 부메랑 (쥐돌이 부메랑) |
+| 16 | 아비 | 아비시니안 | 털뭉치 덫 (털뭉치 덫) |
+| 17 | 노르 | 노르웨이숲 | 정전기 (정전기 쓰다듬기) |
+| 18 | 구름 | 랙돌 | 쿠션 방패 (꾹꾹이 쿠션) |
+| 19 | 벵이 | 벵갈 | 맨손 덮치기 (사냥 본능) |
+| 20 | 스피 | 스핑크스 | 분무기 (분무기 물총) |
 
+---
+
+## 1. 치즈 (주인공 · 반치즈 코숏)
+실제 고양이 "혜옹이"가 모델입니다. 가능하면 혜옹이 사진도 참고 이미지로 넣어주세요.
+
+**앞모습**
 ```
-anime-style semi-realistic illustration of an anthropomorphic cat standing on two legs,
-realistic cat fur pattern and cat face, full body, dynamic battle stance,
-Japanese school uniform (white sailor blouse with navy collar, orange neckerchief and armband,
-navy pleated skirt or shorts, utility belt with pouches, lace-up combat boots),
-thick clean line art, cel shading, vertical 9:20 composition,
-simple grey gradient background with soft ruins silhouette and a few embers at the bottom,
-no text, no watermark
+Anime-style semi-realistic illustration of an anthropomorphic cat girl standing on two legs, full body, vertical 9:20.
+Character: young cream-and-orange bicolor Korean shorthair cat with soft faint tabby stripes, a wide white inverted-V blaze running from the forehead down over the nose, mouth, chin and chest, large ears with pink insides, big round hazel-green eyes, pink nose, small red heart hairpin on one ear. Kitten-like cute proportions, cheerful brave leader.
+Outfit: Japanese school uniform - white sailor blouse with navy collar and orange trim, orange neckerchief, orange armband, navy pleated skirt with orange trim over navy shorts, brown utility belt with pouches, thigh holster strap, white socks, black lace-up combat boots.
+Weapon: oversized pink jelly-bean cat paw boxing gloves, throwing a punch forward.
+Dynamic battle stance, determined expression. Thick clean line art, cel shading, warm lighting.
+Background: simple grey gradient, faint ruined silhouettes, small embers and fire at the bottom. No text, no watermark.
 ```
 
-## 공통 스타일 (한국어)
-
+**뒷모습**
 ```
-반실사 애니메이션 스타일 일러스트, 두 발로 선 의인화 고양이, 실제 고양이 털무늬와 얼굴,
-전신, 역동적인 전투 자세, 일본식 교복(흰 세일러 블라우스, 남색 칼라, 주황 스카프와 완장,
-남색 주름치마 또는 반바지, 파우치 달린 벨트, 끈 묶는 전투화), 깔끔한 굵은 선화, 셀 채색,
-세로 9:20 구도, 단순한 회색 그라데이션 배경과 아래쪽 약간의 불씨, 글씨 없음
+Same character seen from directly behind, standing upright and facing away from the viewer, full body, vertical 9:20.
+Cream-and-orange bicolor cat with faint tabby stripes on the back of the head, red heart hairpin on one ear, tail with white tip hanging down.
+Same school uniform from behind: navy sailor collar with orange stripes, orange armband with bow, navy pleated skirt, brown utility belt with pouch, thigh holster, black combat boots.
+Pink jelly-bean paw boxing gloves on both hands, arms relaxed at the sides.
+Plain flat light grey background (#DEDEDE), no shadow, no text, no watermark.
 ```
 
-## 고양이별 설명
+## 2. 고등어 (고등어태비 코숏)
 
-| id | 이름 | 고양이별 설명 (공통 스타일 뒤에 붙이기) |
-| --- | --- | --- |
-| cheese | 치즈 (주인공) | cream-and-orange bicolor Korean shorthair kitten, white inverted-V blaze from forehead to chin, big hazel-green eyes, large ears, small red heart hairpin, punching forward with a giant pink jelly-bean paw glove, cheerful leader pose |
-| godeungeo | 고등어 | grey mackerel tabby, green eyes, sturdy build, holding a large round cardboard scratching-post shield in front, defensive stance |
-| huindungi | 흰둥이 | pure white cat, blue eyes, fluffy, winding up to throw a big pink yarn ball like a baseball pitcher |
-| chaos | 카오스 | black tortoiseshell cat with orange patches, amber eyes, mid-sprint with motion lines, claws out, wild grin |
-| tuxedo | 턱시도 | black and white tuxedo cat, yellow eyes, red collar with gold bell, gentleman pose, throwing a golden bell ball like a sniper |
-| samsaek | 삼색이 | calico cat (white with orange and black patches), pink ribbon, kind face, holding a big pink grooming brush, support/healer pose |
-| russianblue | 블루 | Russian Blue, silver-grey fur, green eyes, cool expression, casting a feather cat-teaser fishing rod with colorful feathers |
-| scottish | 폴드 | Scottish Fold, cream tabby, round face, folded ears, jumping in the air about to do a hip-drop slam, shockwave below |
-| munchkin | 먼치 | Munchkin cat with very short legs, white with grey patches, blue eyes, rapid scratching with both paws, energetic |
-| persian | 페르 | white Persian, long fluffy fur, flat face, small gold crown, singing with music notes around, elegant idol pose |
-| mainecoon | 쿤 | huge brown tabby Maine Coon, ear tufts, fluffy mane, raising one enormous paw to slam the ground, gentle giant |
-| siamese | 샴 | Siamese, cream body with dark brown face, ears and paws, sapphire blue eyes, aiming a laser pointer with a red beam |
-| cow | 젖소 | white cat with black cow-like patches, yellow eyes, throwing a bundle of churu treat sticks like grenades |
-| americanshort | 은비 | American Shorthair, silver classic swirl tabby, copper eyes, throwing a grey toy mouse like a boomerang |
-| abyssinian | 아비 | Abyssinian, ruddy ticked coat, large ears, crouching and placing fluffy hairball traps on the ground |
-| norwegian | 노르 | Norwegian Forest Cat, long brown tabby fur with white chest, ear tufts, static electricity sparks crackling around the fur |
-| ragdoll | 구름 | Ragdoll, cream colorpoint with darker face, blue eyes, very fluffy, hugging a big cloud-like cushion that glows like a shield |
-| bengal | 벵이 | Bengal cat with leopard rosette spots, green eyes, muscular, pouncing forward with claws, hunter expression |
-| sphynx | 스피 | hairless Sphynx cat, pink wrinkled skin, big ears, green eyes, spraying a water spray bottle like a pistol |
-
-## 전투 화면용 뒷모습 (선택)
-
-바리케이드 뒤 전투 장면까지 일러스트로 바꾸려면, 같은 고양이의 뒷모습을 한 장 더 만들면 됩니다.
-파일 이름은 `<id>-back.png` (배경 투명).
-
+**앞모습**
 ```
-same character, seen from behind, standing and aiming/attacking upward toward the top of the screen,
-full body, transparent background, no shadow, no text
+Anime-style semi-realistic illustration of an anthropomorphic cat standing on two legs, full body, vertical 9:20.
+Character: grey mackerel tabby Korean shorthair with dark grey stripes, light grey chest, green eyes, sturdy calm big-brother type.
+Outfit: Japanese school uniform - white sailor blouse with navy collar and orange trim, orange neckerchief and armband, navy shorts, brown utility belt with pouches, black lace-up combat boots.
+Weapon: a large round cardboard scratching-post shield (rope-wrapped edge) held in front, defensive stance, braced to block.
+Thick clean line art, cel shading. Background: simple grey gradient, faint ruins, embers at the bottom. No text, no watermark.
 ```
+
+**뒷모습**
+```
+Same character seen from directly behind, standing upright and facing away, full body, vertical 9:20.
+Grey mackerel tabby stripes on head, back and tail. Same school uniform from behind with navy sailor collar, orange armband, belt with pouch, combat boots.
+Round cardboard scratching-post shield strapped on one arm, arms at the sides.
+Plain flat light grey background (#DEDEDE), no shadow, no text, no watermark.
+```
+
+## 3. 흰둥이 (흰 코숏)
+
+**앞모습**
+```
+Anime-style semi-realistic illustration of an anthropomorphic cat girl standing on two legs, full body, vertical 9:20.
+Character: pure white fluffy Korean shorthair, bright blue eyes, pink ears and nose, sweet playful face.
+Outfit: Japanese school uniform - white sailor blouse with navy collar and orange trim, orange neckerchief and armband, navy pleated skirt, brown utility belt with pouches, white socks, black lace-up combat boots.
+Weapon: winding up to throw a big pink yarn ball like a baseball pitcher, loose yarn thread trailing, two spare yarn balls on the belt.
+Thick clean line art, cel shading. Background: simple grey gradient, faint ruins, embers at the bottom. No text, no watermark.
+```
+
+**뒷모습**
+```
+Same character seen from directly behind, standing upright and facing away, full body, vertical 9:20.
+Pure white fur, white tail. Same school uniform from behind, orange armband, belt with yarn balls, combat boots.
+Holding a pink yarn ball in one hand at the side.
+Plain flat light grey background (#DEDEDE), no shadow, no text, no watermark.
+```
+
+## 4. 카오스 (카오스 코숏)
+
+**앞모습**
+```
+Anime-style semi-realistic illustration of an anthropomorphic cat girl on two legs, full body, vertical 9:20.
+Character: black tortoiseshell cat with mottled orange patches, amber eyes, wild hyperactive grin, messy fur.
+Outfit: Japanese school uniform - white sailor blouse with navy collar and orange trim, orange neckerchief and armband, navy shorts, brown utility belt, black lace-up combat boots.
+Weapon: sharp claws extended on both hands, mid-sprint dash with speed lines, slashing forward.
+Thick clean line art, cel shading. Background: simple grey gradient, faint ruins, embers at the bottom. No text, no watermark.
+```
+
+**뒷모습**
+```
+Same character seen from directly behind, standing upright and facing away, full body, vertical 9:20.
+Black and orange tortoiseshell fur pattern on head, arms and tail. Same school uniform from behind, orange armband, belt with pouch, combat boots.
+Claws out on both hands, arms at the sides.
+Plain flat light grey background (#DEDEDE), no shadow, no text, no watermark.
+```
+
+## 6. 턱시도 (턱시도 코숏)
+
+**앞모습**
+```
+Anime-style semi-realistic illustration of an anthropomorphic cat standing on two legs, full body, vertical 9:20.
+Character: black and white tuxedo cat (black body, white chest, white muzzle and white paws), yellow eyes, cool gentleman expression, red collar with a gold bell.
+Outfit: Japanese school uniform - white sailor blouse with navy collar and orange trim, orange neckerchief and armband, navy shorts, brown utility belt with pouches, black lace-up combat boots.
+Weapon: throwing a golden jingle-bell ball with precise sniper aim, one eye narrowed.
+Thick clean line art, cel shading. Background: simple grey gradient, faint ruins, embers at the bottom. No text, no watermark.
+```
+
+**뒷모습**
+```
+Same character seen from directly behind, standing upright and facing away, full body, vertical 9:20.
+Black fur on head, back and tail, white paws. Red collar visible at the neck. Same school uniform from behind, orange armband, belt with pouch, combat boots.
+Holding a golden bell ball in one hand at the side.
+Plain flat light grey background (#DEDEDE), no shadow, no text, no watermark.
+```
+
+## 7. 삼색이 (삼색 코숏)
+
+**앞모습**
+```
+Anime-style semi-realistic illustration of an anthropomorphic cat girl on two legs, full body, vertical 9:20.
+Character: calico cat - white base with distinct orange and black patches, golden eyes, pink ribbon on one ear, kind gentle healer smile.
+Outfit: Japanese school uniform - white sailor blouse with navy collar and orange trim, orange neckerchief and armband, navy pleated skirt, brown utility belt with first-aid pouch, white socks, black lace-up combat boots.
+Weapon: a big pink grooming brush held up, soft green sparkles of healing around it.
+Thick clean line art, cel shading. Background: simple grey gradient, faint ruins, embers at the bottom. No text, no watermark.
+```
+
+**뒷모습**
+```
+Same character seen from directly behind, standing upright and facing away, full body, vertical 9:20.
+Calico patches (orange and black on white) on head, back and tail, pink ribbon. Same school uniform from behind, orange armband, belt with pouch, combat boots.
+Pink grooming brush in one hand at the side.
+Plain flat light grey background (#DEDEDE), no shadow, no text, no watermark.
+```
+
+## 8. 블루 (러시안 블루)
+
+**앞모습**
+```
+Anime-style semi-realistic illustration of an anthropomorphic cat girl on two legs, full body, vertical 9:20.
+Character: Russian Blue, short dense silver-blue grey fur, vivid emerald green eyes, shy but cool expression.
+Outfit: Japanese school uniform - white sailor blouse with navy collar and orange trim, orange neckerchief and armband, navy pleated skirt, brown utility belt with pouches, black lace-up combat boots.
+Weapon: casting a long cat-teaser fishing rod with a bundle of colorful feathers on the string, swinging it forward.
+Thick clean line art, cel shading. Background: simple grey gradient, faint ruins, embers at the bottom. No text, no watermark.
+```
+
+**뒷모습**
+```
+Same character seen from directly behind, standing upright and facing away, full body, vertical 9:20.
+Silver-blue grey fur, grey tail. Same school uniform from behind, orange armband, belt with pouch, combat boots.
+Feather fishing rod resting on one shoulder.
+Plain flat light grey background (#DEDEDE), no shadow, no text, no watermark.
+```
+
+## 9. 폴드 (스코티시 폴드)
+
+**앞모습**
+```
+Anime-style semi-realistic illustration of an anthropomorphic cat on two legs, full body, vertical 9:20.
+Character: Scottish Fold, cream tabby with soft orange stripes, very round face, small folded-down ears, round orange eyes, chubby cute build.
+Outfit: Japanese school uniform - white sailor blouse with navy collar and orange trim, orange neckerchief and armband, navy shorts, brown utility belt, black lace-up combat boots.
+Action: jumping high in the air about to do a hip-drop slam, ground cracking with a shockwave ring below.
+Thick clean line art, cel shading. Background: simple grey gradient, faint ruins, embers at the bottom. No text, no watermark.
+```
+
+**뒷모습**
+```
+Same character seen from directly behind, standing upright and facing away, full body, vertical 9:20.
+Cream tabby fur, round head with folded ears, fluffy round tail. Same school uniform from behind, orange armband, belt with pouch, combat boots.
+Arms relaxed at the sides.
+Plain flat light grey background (#DEDEDE), no shadow, no text, no watermark.
+```
+
+## 10. 먼치 (먼치킨)
+
+**앞모습**
+```
+Anime-style semi-realistic illustration of an anthropomorphic cat girl on two legs, full body, vertical 9:20.
+Character: Munchkin cat with notably short legs, white fur with grey patches, big blue eyes, energetic tomboy.
+Outfit: Japanese school uniform - white sailor blouse with navy collar and orange trim, orange neckerchief and armband, navy shorts, brown utility belt, black lace-up combat boots.
+Weapon: rapid scratching flurry with both paws, many claw slash marks in the air in front.
+Thick clean line art, cel shading. Background: simple grey gradient, faint ruins, embers at the bottom. No text, no watermark.
+```
+
+**뒷모습**
+```
+Same character seen from directly behind, standing upright and facing away, full body, short legs, vertical 9:20.
+White fur with grey patches, grey tail. Same school uniform from behind, orange armband, belt with pouch, combat boots.
+Claws out on both hands at the sides.
+Plain flat light grey background (#DEDEDE), no shadow, no text, no watermark.
+```
+
+## 11. 페르 (페르시안)
+
+**앞모습**
+```
+Anime-style semi-realistic illustration of an anthropomorphic cat girl on two legs, full body, vertical 9:20.
+Character: white Persian cat with very long fluffy fur and a fluffy mane, flat face, big orange eyes, small gold crown, elegant princess idol.
+Outfit: Japanese school uniform - white sailor blouse with navy collar and orange trim, orange neckerchief and armband, navy pleated skirt, brown utility belt, white socks, black lace-up combat boots.
+Weapon: singing into a cute cat-shaped microphone, glowing music notes floating around, one paw raised to cheer allies.
+Thick clean line art, cel shading. Background: simple grey gradient, faint ruins, embers at the bottom. No text, no watermark.
+```
+
+**뒷모습**
+```
+Same character seen from directly behind, standing upright and facing away, full body, vertical 9:20.
+Long fluffy white fur, big plume tail, gold crown. Same school uniform from behind, orange armband, belt with pouch, combat boots.
+Microphone in one hand at the side.
+Plain flat light grey background (#DEDEDE), no shadow, no text, no watermark.
+```
+
+## 12. 쿤 (메인쿤)
+
+**앞모습**
+```
+Anime-style semi-realistic illustration of an anthropomorphic cat on two legs, full body, vertical 9:20.
+Character: very large muscular Maine Coon, brown tabby with long shaggy fur, lynx-like ear tufts, thick mane, gentle giant expression, golden eyes.
+Outfit: Japanese school uniform - white sailor blouse with navy collar and orange trim (stretched tight on the big frame), orange neckerchief and armband, navy shorts, brown utility belt, black lace-up combat boots.
+Action: raising one enormous oversized paw high to slam down on the ground, dust flying.
+Thick clean line art, cel shading. Background: simple grey gradient, faint ruins, embers at the bottom. No text, no watermark.
+```
+
+**뒷모습**
+```
+Same character seen from directly behind, standing upright and facing away, full body, broad shoulders, vertical 9:20.
+Long shaggy brown tabby fur, ear tufts, huge fluffy tail. Same school uniform from behind, orange armband, belt with pouch, combat boots.
+Big paws relaxed at the sides.
+Plain flat light grey background (#DEDEDE), no shadow, no text, no watermark.
+```
+
+## 13. 샴 (샴)
+
+**앞모습**
+```
+Anime-style semi-realistic illustration of an anthropomorphic cat girl on two legs, full body, vertical 9:20.
+Character: Siamese cat - cream body with dark seal-brown face mask, ears, paws and tail, sapphire blue eyes, confident chatty sharpshooter.
+Outfit: Japanese school uniform - white sailor blouse with navy collar and orange trim, orange neckerchief and armband, navy pleated skirt, brown utility belt, black lace-up combat boots.
+Weapon: aiming a sleek laser pointer like a pistol, a thin glowing red laser beam and red dot.
+Thick clean line art, cel shading. Background: simple grey gradient, faint ruins, embers at the bottom. No text, no watermark.
+```
+
+**뒷모습**
+```
+Same character seen from directly behind, standing upright and facing away, full body, vertical 9:20.
+Cream body with dark brown ears and tail. Same school uniform from behind, orange armband, belt with pouch, combat boots.
+Laser pointer in one hand at the side.
+Plain flat light grey background (#DEDEDE), no shadow, no text, no watermark.
+```
+
+## 14. 젖소 (젖소무늬 코숏)
+
+**앞모습**
+```
+Anime-style semi-realistic illustration of an anthropomorphic cat on two legs, full body, vertical 9:20.
+Character: white Korean shorthair with large black cow-like patches, yellow eyes, mischievous grin.
+Outfit: Japanese school uniform - white sailor blouse with navy collar and orange trim, orange neckerchief and armband, navy shorts, brown utility belt with many cat-treat tube sticks, black lace-up combat boots.
+Weapon: throwing a bundle of cat treat (churu) tube sticks like grenades, one exploding in the distance.
+Thick clean line art, cel shading. Background: simple grey gradient, faint ruins, embers at the bottom. No text, no watermark.
+```
+
+**뒷모습**
+```
+Same character seen from directly behind, standing upright and facing away, full body, vertical 9:20.
+White fur with black cow patches on head, back and tail. Same school uniform from behind, orange armband, belt with treat sticks, combat boots.
+Holding a treat stick in one hand at the side.
+Plain flat light grey background (#DEDEDE), no shadow, no text, no watermark.
+```
+
+## 15. 은비 (아메리칸 숏헤어)
+
+**앞모습**
+```
+Anime-style semi-realistic illustration of an anthropomorphic cat girl on two legs, full body, vertical 9:20.
+Character: American Shorthair with silver fur and bold black classic swirl tabby pattern, copper eyes, sporty confident.
+Outfit: Japanese school uniform - white sailor blouse with navy collar and orange trim, orange neckerchief and armband, navy pleated skirt, brown utility belt, black lace-up combat boots.
+Weapon: throwing a grey toy mouse like a boomerang, curved motion trail, catching hand ready.
+Thick clean line art, cel shading. Background: simple grey gradient, faint ruins, embers at the bottom. No text, no watermark.
+```
+
+**뒷모습**
+```
+Same character seen from directly behind, standing upright and facing away, full body, vertical 9:20.
+Silver fur with black swirl tabby pattern on the back and tail. Same school uniform from behind, orange armband, belt with pouch, combat boots.
+Toy mouse in one hand at the side.
+Plain flat light grey background (#DEDEDE), no shadow, no text, no watermark.
+```
+
+## 16. 아비 (아비시니안)
+
+**앞모습**
+```
+Anime-style semi-realistic illustration of an anthropomorphic cat girl on two legs, full body, vertical 9:20.
+Character: Abyssinian, warm ruddy ticked coat, very large ears, almond golden eyes, curious explorer.
+Outfit: Japanese school uniform - white sailor blouse with navy collar and orange trim, orange neckerchief and armband, navy shorts, brown utility belt with pouches full of hairballs, black lace-up combat boots.
+Weapon: crouching and placing fluffy hairball traps on the ground, one trap glowing ready to explode.
+Thick clean line art, cel shading. Background: simple grey gradient, faint ruins, embers at the bottom. No text, no watermark.
+```
+
+**뒷모습**
+```
+Same character seen from directly behind, standing upright and facing away, full body, vertical 9:20.
+Ruddy ticked fur, large ears, slim tail. Same school uniform from behind, orange armband, belt with pouches, combat boots.
+Holding a fluffy hairball in one hand at the side.
+Plain flat light grey background (#DEDEDE), no shadow, no text, no watermark.
+```
+
+## 17. 노르 (노르웨이숲)
+
+**앞모습**
+```
+Anime-style semi-realistic illustration of an anthropomorphic cat on two legs, full body, vertical 9:20.
+Character: Norwegian Forest Cat, long thick brown tabby fur, white chest and fluffy mane, ear tufts, green eyes, calm.
+Outfit: Japanese school uniform - white sailor blouse with navy collar and orange trim, orange neckerchief and armband, navy pleated skirt, brown utility belt, black lace-up combat boots.
+Weapon: static electricity crackling from the fluffy fur, blue lightning arcs jumping from raised paw toward enemies.
+Thick clean line art, cel shading. Background: simple grey gradient, faint ruins, embers at the bottom. No text, no watermark.
+```
+
+**뒷모습**
+```
+Same character seen from directly behind, standing upright and facing away, full body, vertical 9:20.
+Long brown tabby fur, big fluffy tail, small blue sparks on the fur. Same school uniform from behind, orange armband, belt with pouch, combat boots.
+Arms at the sides.
+Plain flat light grey background (#DEDEDE), no shadow, no text, no watermark.
+```
+
+## 18. 구름 (랙돌)
+
+**앞모습**
+```
+Anime-style semi-realistic illustration of an anthropomorphic cat girl on two legs, full body, vertical 9:20.
+Character: Ragdoll, cream colorpoint with soft brown face mask and ears, very fluffy, big blue eyes, sleepy gentle smile.
+Outfit: Japanese school uniform - white sailor blouse with navy collar and orange trim, orange neckerchief and armband, navy pleated skirt, brown utility belt, white socks, black lace-up combat boots.
+Weapon: hugging a large cloud-shaped cushion that glows with a soft blue protective barrier.
+Thick clean line art, cel shading. Background: simple grey gradient, faint ruins, embers at the bottom. No text, no watermark.
+```
+
+**뒷모습**
+```
+Same character seen from directly behind, standing upright and facing away, full body, vertical 9:20.
+Fluffy cream fur with brown ears and fluffy brown tail. Same school uniform from behind, orange armband, belt with pouch, combat boots.
+Cloud cushion held under one arm.
+Plain flat light grey background (#DEDEDE), no shadow, no text, no watermark.
+```
+
+## 19. 벵이 (벵갈)
+
+**앞모습**
+```
+Anime-style semi-realistic illustration of an anthropomorphic cat girl on two legs, full body, vertical 9:20.
+Character: Bengal cat with golden fur and dark leopard rosette spots, white belly, green eyes, athletic and fierce hunter.
+Outfit: Japanese school uniform - white sailor blouse with navy collar and orange trim, orange neckerchief and armband, navy shorts, brown utility belt, black lace-up combat boots.
+Action: pouncing forward low to the ground with claws out, predatory focused eyes.
+Thick clean line art, cel shading. Background: simple grey gradient, faint ruins, embers at the bottom. No text, no watermark.
+```
+
+**뒷모습**
+```
+Same character seen from directly behind, standing upright and facing away, full body, vertical 9:20.
+Golden fur with leopard rosette spots on head, arms and ringed tail. Same school uniform from behind, orange armband, belt with pouch, combat boots.
+Claws out at the sides.
+Plain flat light grey background (#DEDEDE), no shadow, no text, no watermark.
+```
+
+## 20. 스피 (스핑크스)
+
+**앞모습**
+```
+Anime-style semi-realistic illustration of an anthropomorphic cat on two legs, full body, vertical 9:20.
+Character: hairless Sphynx cat with pinkish wrinkled skin, very large ears, big green eyes, smug playful expression.
+Outfit: Japanese school uniform - white sailor blouse with navy collar and orange trim, orange neckerchief and armband, navy pleated skirt, brown utility belt, black lace-up combat boots.
+Weapon: spraying a water spray bottle like a pistol, a wide fan of water droplets.
+Thick clean line art, cel shading. Background: simple grey gradient, faint ruins, embers at the bottom. No text, no watermark.
+```
+
+**뒷모습**
+```
+Same character seen from directly behind, standing upright and facing away, full body, vertical 9:20.
+Hairless pink skin, large ears, thin tail. Same school uniform from behind, orange armband, belt with pouch, combat boots.
+Spray bottle in one hand at the side.
+Plain flat light grey background (#DEDEDE), no shadow, no text, no watermark.
+```
+
+---
+
+## 참고: 완성된 치즈태비 (5번)
+앞모습: `cheesetabby-full.jpg` · 뒷모습: `cheesetabby-back.png`
+다른 캐릭터를 만들 때 이 두 장을 참고 이미지로 함께 넣어 주세요.

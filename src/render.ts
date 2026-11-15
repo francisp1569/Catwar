@@ -784,9 +784,11 @@ function drawSquad(ctx: Ctx, game: Game, t: number): void {
     if (enter > 0) ctx.scale(1 - enter * 0.3, 1 + enter * 0.2);
     const art = getArt(m.def.id, 'back');
     if (art) {
-      const h = s * 3.4;
+      // 일러스트 뒷모습: 공격할 때 살짝 튕기듯
+      const h = s * 4.2;
       const w = (art.naturalWidth / art.naturalHeight) * h;
-      ctx.drawImage(art, -w / 2, -h + s * 0.15 - m.swing * 4, w, h);
+      ctx.scale(1 + m.swing * 0.05, 1 - m.swing * 0.04);
+      ctx.drawImage(art, -w / 2, -h + s * 0.25 - m.swing * 5, w, h);
     } else {
       // 공격할 때 살짝 찌그러졌다 펴지는 탄성
       ctx.scale(1 + m.swing * 0.1, 1 - m.swing * 0.08);
