@@ -1,1 +1,3 @@
-{}
+{
+  "cheese": { "face": "cheese-face.jpg", "faceFocus": [0.52, 0.58, 0.32] }
+}

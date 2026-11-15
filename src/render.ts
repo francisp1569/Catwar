@@ -1,6 +1,6 @@
 // 세로형 전투 화면 렌더링 — 모든 그래픽은 코드로 그린다 (외부 에셋 없음)
 import { drawCatBackToon, drawCatFaceToon, drawCatLookToon, drawToon, heart, IDLE_POSE } from './catdraw';
-import { getArt } from './art';
+import { drawFaceArtCircle, getArt } from './art';
 import { RARITY_COLOR, type CatLook } from './data/cats';
 import { CONFIG } from './data/config';
 import type { EnemyDef } from './data/enemies';
@@ -112,6 +112,13 @@ function wrap(ctx: Ctx, s: string, maxW: number, size: number): string[] {
   }
   if (cur.trim()) lines.push(cur.trim());
   return lines;
+}
+
+/** 얼굴 그림(사진)이 있으면 원 안에 그리고, 없으면 코드로 그린 얼굴 */
+function iconFace(ctx: Ctx, id: string, cx: number, cy: number, r: number, fallback: () => void): void {
+  const art = getArt(id, 'face');
+  if (art) drawFaceArtCircle(ctx, id, art, cx, cy, r);
+  else fallback();
 }
 
 function drawFaceAt(ctx: Ctx, look: CatLook, x: number, y: number, R: number, t: number): void {
@@ -802,7 +809,7 @@ function drawHud(ctx: Ctx, game: Game, t: number, pressed: string | null): void 
       circle(ctx, cx, cy, r.w / 2, ready ? '#ffcf5a' : '#8a8090');
       ctx.save();
       ctx.beginPath(); ctx.arc(cx, cy, r.w / 2 - 3, 0, Math.PI * 2); ctx.clip();
-      drawFaceAt(ctx, game.hero.def.look, cx, cy + 4, 20, t);
+      iconFace(ctx, game.hero.def.id, cx, cy, r.w / 2 - 3, () => drawFaceAt(ctx, game.hero.def.look, cx, cy + 4, 20, t));
       if (game.rallyCd > 0) {
         ctx.fillStyle = 'rgba(30,15,30,0.6)';
         ctx.beginPath(); ctx.moveTo(cx, cy);
@@ -825,7 +832,7 @@ function drawHud(ctx: Ctx, game: Game, t: number, pressed: string | null): void 
   ctx.save();
   roundRect(ctx, 12, 74, 44, 42, 8); ctx.clip();
   ctx.fillStyle = '#ffe1c2'; ctx.fillRect(12, 74, 44, 42);
-  drawFaceAt(ctx, game.hero.def.look, 34, 100, 15, t);
+  iconFace(ctx, game.hero.def.id, 34, 95, 22, () => drawFaceAt(ctx, game.hero.def.look, 34, 100, 15, t));
   ctx.restore();
   text(ctx, `Lv.${game.level}`, 62, 88, 15, '#fff', 'left');
   text(ctx, `${game.xp}/${game.xpNeed}`, 172, 88, 12, '#ffe0e8', 'right');
@@ -891,7 +898,7 @@ function drawSkillChip(ctx: Ctx, m: Member, x: number, y: number, t: number): vo
   ctx.save();
   ctx.beginPath(); ctx.arc(x + 24, y + 22, 21, 0, Math.PI * 2); ctx.clip();
   ctx.fillStyle = '#3d2a40'; ctx.fillRect(x, y, 48, 48);
-  drawFaceAt(ctx, m.def.look, x + 24, y + 28, 14, t);
+  iconFace(ctx, m.def.id, x + 24, y + 22, 21, () => drawFaceAt(ctx, m.def.look, x + 24, y + 28, 14, t));
   ctx.restore();
   circle(ctx, x + 42, y + 38, 10, '#2a1a22');
   text(ctx, `${m.level}`, x + 42, y + 38, 12, '#ffe98a', 'center', false);

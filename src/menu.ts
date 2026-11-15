@@ -185,14 +185,21 @@ export class Menu {
       const id = c.dataset.look!;
       const art = id === '?' ? null : getArt(id, 'face');
       if (art) {
+        // 사진: 둥근 모서리로 꽉 차게
         const ctx = c.getContext('2d')!;
         const dpr = Math.min(window.devicePixelRatio || 1, 2);
         c.width = Math.round(c.clientWidth * dpr);
         c.height = Math.round(c.clientHeight * dpr);
-        const sc = Math.min(c.width / art.naturalWidth, c.height / art.naturalHeight);
+        const sc = Math.max(c.width / art.naturalWidth, c.height / art.naturalHeight);
         const w = art.naturalWidth * sc;
         const h = art.naturalHeight * sc;
+        const rr = c.width * 0.14;
+        ctx.save();
+        ctx.beginPath();
+        ctx.roundRect(0, 0, c.width, c.height, rr);
+        ctx.clip();
         ctx.drawImage(art, (c.width - w) / 2, (c.height - h) / 2, w, h);
+        ctx.restore();
         return;
       }
       const look = id === '?' ? SILHOUETTE : CAT_BY_ID[id].look;
