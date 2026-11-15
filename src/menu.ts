@@ -1,5 +1,6 @@
 // 로비 (DOM): 하단 5탭 — 상점 · 가방 · 전투 · 고양이 · 지도
 import { drawFaceArtCircle, getArt } from './art';
+import { sound } from './audio';
 import { drawCatLookToon, drawCatPortrait, IDLE_POSE } from './catdraw';
 import { CATS, CAT_BY_ID, HERO_ID, RARITY_COLOR, type CatDef, type CatLook } from './data/cats';
 import { SLOTS, SLOT_INFO, ITEM_MAX_LV, type Slot } from './data/items';
@@ -72,6 +73,7 @@ export class Menu {
 
   /** 전투 후 집사 레벨업 연출 */
   celebrateLevel(level: number, tuna: number): void {
+    sound.play('levelup');
     this.openModal(`
       <div class="lvup">
         <div class="lvup-band">집사 레벨 업!</div>
@@ -127,7 +129,10 @@ export class Menu {
     const act = el.dataset.act!;
     const arg = el.dataset.arg ?? '';
     const s = this.save;
+    sound.play('click');
     switch (act) {
+      case 'toggle-sfx': sound.setSfx(!sound.sfxOn); this.openSettings(); break;
+      case 'toggle-music': sound.setMusic(!sound.musicOn); this.openSettings(); break;
       case 'tab': this.tab = arg as Tab; this.closeModal(); this.render(); break;
       case 'start': {
         const st = STAGES.find((x) => x.id === arg)!;
@@ -152,6 +157,7 @@ export class Menu {
         const r = canLevelUp(s, arg);
         if (!r.ok) { this.toast(r.reason); break; }
         levelUp(s, arg);
+        sound.play('card');
         this.commit();
         break;
       }
@@ -159,6 +165,8 @@ export class Menu {
         const r = canStarUp(s, arg);
         if (!r.ok) { this.toast(r.reason); break; }
         starUp(s, arg);
+        sound.play('levelup');
+        sound.play('meow');
         this.commit();
         this.toast(`${CAT_BY_ID[arg].name} 성급 상승! ✨`);
         break;
@@ -699,6 +707,10 @@ export class Menu {
     this.openModal(`
       <button class="x" data-act="close">✕</button>
       <h2>⚙️ 설정</h2>
+      <div class="row center gap">
+        <button class="btn ${sound.sfxOn ? 'blue' : 'off'}" data-act="toggle-sfx">${sound.sfxOn ? '🔊 효과음 켜짐' : '🔇 효과음 꺼짐'}</button>
+        <button class="btn ${sound.musicOn ? 'blue' : 'off'}" data-act="toggle-music">${sound.musicOn ? '🎵 배경음악 켜짐' : '🎵 배경음악 꺼짐'}</button>
+      </div>
       <p class="muted">진행 상황은 이 브라우저에 자동 저장돼요.</p>
       <p class="muted">낮잠 보상: 시간당 🪙${napRate(this.save)} (최대 ${NAP_MAX_HOURS}시간 쌓임)</p>
       <button class="btn ${this.resetArmed ? 'danger' : 'off'}" data-act="reset">${this.resetArmed ? '정말 초기화할까요? 한 번 더 누르면 삭제돼요' : '진행 상황 초기화'}</button>`);
@@ -743,6 +755,8 @@ export class Menu {
   }
 
   private openPullResult(res: PullResult[], items: Item[]): void {
+    sound.play('gacha');
+    if (res.some((r) => r.isNew)) setTimeout(() => sound.play('meow'), 350);
     const cards = res.map((r, i) => `
       <button class="pull-card" data-act="goto-cat" data-arg="${r.def.id}" style="--rc:${RARITY_COLOR[r.def.rarity]};animation-delay:${i * 0.08}s">
         ${rarityBadge(r.def.rarity)}
@@ -759,6 +773,7 @@ export class Menu {
   }
 
   private openItemsResult(items: Item[], title: string): void {
+    sound.play('gacha');
     this.openModal(`
       <button class="x" data-act="close">✕</button>
       <h2>${title}</h2>

@@ -62,9 +62,10 @@ export interface Shot {
   spin: number;
   style?: WeaponFx;
   src: number;
+  trail?: { x: number; y: number }[];
 }
 
-export type FxKind = 'beam' | 'slam' | 'quake' | 'snipe' | 'dash' | 'heal' | 'thorns';
+export type FxKind = 'beam' | 'slam' | 'quake' | 'snipe' | 'dash' | 'heal' | 'thorns' | 'spark' | 'boom' | 'poof';
 export interface Fx { kind: FxKind; x: number; y: number; x2?: number; y2?: number; r: number; t: number; life: number; color: string; style?: WeaponFx; }
 
 export interface Field { x: number; y: number; r: number; t: number; life: number; slow: number; dmg: number; tick: number; sx: number; sy: number; src: number; }
@@ -135,6 +136,8 @@ export class Game {
   private burstsDone = new Set<number>();
 
   readonly bonus: Bonus;
+  /** 효과음 이벤트 (main에서 꺼내 재생) */
+  events: string[] = [];
   /** 이번 전투에서 처음 본 적 */
   discovered: string[] = [];
   private seen: Set<string>;
@@ -195,6 +198,8 @@ export class Game {
     this.repair(this.maxHp * r.heal);
     this.banner = { text: '📣 치즈의 꾹꾹이 응원!', t: 1.4 };
     this.say(this.hero, RALLY_LINE);
+    this.sfx('meow-hi');
+    this.sfx('heal');
     for (const s of this.squad) if (s.level > 0) s.wakeFx = 0.8;
     return true;
   }
@@ -208,7 +213,8 @@ export class Game {
       m.level = c.next;
       m.wakeFx = 1;
       m.timer = this.params(m).interval * 0.5;
-      if (c.next === 1) this.say(m, JOIN_LINES[m.def.id] ?? '냥!');
+      if (c.next === 1) { this.say(m, JOIN_LINES[m.def.id] ?? '냥!'); this.sfx('meow'); }
+      this.sfx('card');
       this.addFloat(m.x, m.y - 70, c.next === 1 ? `${m.def.name} 합류!` : `${m.def.skillName} Lv.${c.next}`, '#ffe98a', 18);
     } else {
       this.generic[c.id]++;
@@ -252,6 +258,7 @@ export class Game {
 
   private openChoice(): void {
     this.choice = this.rollCards();
+    this.sfx('levelup');
   }
 
   // ───────────── 메인 업데이트 ─────────────
@@ -287,6 +294,7 @@ export class Game {
 
   private finish(victory: boolean): void {
     this.phase = victory ? 'victory' : 'defeat';
+    this.sfx(victory ? 'win' : 'lose');
     this.choice = null;
     const ratio = this.hp / this.maxHp;
     const stars = !victory ? 0 : ratio >= 0.7 ? 3 : ratio >= 0.35 ? 2 : 1;
@@ -317,6 +325,7 @@ export class Game {
       this.seen.add(kind);
       this.discovered.push(kind);
       this.banner = { text: `🔍 첫 발견! ${def.name}`, t: 2 };
+      this.sfx('discover');
     }
     this.enemies.push(e);
     return e;
@@ -345,6 +354,7 @@ export class Game {
       if (st.boss) {
         for (let i = 0; i < st.boss.count; i++) this.spawn(st.boss.kind, W / 2 + (i - (st.boss.count - 1) / 2) * 160, CONFIG.fieldTop - 40);
         this.banner = { text: `👑 ${ENEMIES[st.boss.kind].name} 등장! 쓰러뜨리면 승리!`, t: 2.5 };
+        this.sfx('boss');
       } else {
         const kind = this.pickKind(st.late);
         for (let j = 0; j < 24; j++) this.spawn(kind, 30 + ((j + 0.5) / 24) * (W - 60), CONFIG.fieldTop - 20 - (j % 2) * 26);
@@ -419,6 +429,7 @@ export class Game {
   }
 
   private damageBarricade(dmg: number, x: number): void {
+    this.sfx('hurt');
     const real = dmg * (1 - this.guard.reduce) * (1 - this.bonus.reduce);
     this.hp -= real;
     this.hitFlash = 0.12;
@@ -439,7 +450,9 @@ export class Game {
     if (e.dead) return;
     if (o.src !== undefined && o.src >= 0) this.squad[o.src].dealt += Math.min(dmg, e.hp);
     e.hp -= dmg;
-    e.hitFlash = 0.1;
+    if (o.crit) { this.sfx('crit'); this.fx.push({ kind: 'boom', x: e.x, y: e.y - e.def.size * 0.3, r: 16 + e.def.size * 0.4, t: 0, life: 0.35, color: '#ffb347' }); }
+    else if (!o.quiet) this.sfx('hit');
+    e.hitFlash = 0.12;
     if (o.slow) { e.slowAmt = Math.max(e.def.boss ? o.slow * 0.5 : o.slow, e.slowT > 0 ? e.slowAmt : 0); e.slowT = Math.max(e.slowT, o.slowDur ?? 1); }
     if (o.stun) e.stunT = Math.max(e.stunT, e.def.boss ? o.stun * 0.3 : o.stun);
     if (o.knock && !e.def.boss) e.y = Math.max(CONFIG.fieldTop - 10, e.y - o.knock);
@@ -452,7 +465,10 @@ export class Game {
       e.dead = true;
       e.deathT = 0;
       this.kills++;
-      this.burst(e.x, e.y, e.def.color, e.def.boss ? 24 : 6);
+      this.burst(e.x, e.y, e.def.color, e.def.boss ? 24 : 4);
+      this.fx.push({ kind: 'poof', x: e.x, y: e.y, r: e.def.size * 1.5, t: 0, life: 0.45, color: '#ffffff' });
+      this.sfx(e.def.boss ? 'boom' : 'kill');
+      if (e.def.boss) this.fx.push({ kind: 'boom', x: e.x, y: e.y, r: 90, t: 0, life: 0.6, color: '#ff8a3d' });
       const goo = e.def.id === 'mouse' || e.def.id === 'ratking' ? 'rgba(200,195,210,0.55)' : e.def.id === 'spider' ? 'rgba(150,110,200,0.45)' : 'rgba(150,190,60,0.42)';
       this.decals.push({ x: e.x, y: e.y, r: e.def.size * (e.def.boss ? 2.2 : 1.4), color: goo, t: 0, seed: Math.random() * 10 });
       if (this.decals.length > 70) this.decals.shift();
@@ -511,6 +527,10 @@ export class Game {
     return bestN < 0 ? null : bestX;
   }
 
+  sfx(name: string): void {
+    if (this.events.length < 40) this.events.push(name);
+  }
+
   say(m: Member, text: string): void {
     m.speech = { text, t: 2.4 };
   }
@@ -543,7 +563,17 @@ export class Game {
     }
   }
 
+  private static FIRE_SFX: Partial<Record<WeaponFx, string>> = {
+    paw: 'pop', yarn: 'yarn', claws: 'scratch', scratch: 'scratch', wheel: 'wheel', bell: 'bell', feather: 'yarn', butt: 'thud', laser: 'laser', groom: 'heal',
+  };
+
   private fire(m: Member, p: WeaponParams): boolean {
+    const ok = this.fireInner(m, p);
+    if (ok) { const n = Game.FIRE_SFX[m.weapon.fx]; if (n) this.sfx(n); }
+    return ok;
+  }
+
+  private fireInner(m: Member, p: WeaponParams): boolean {
     const dmg = m.power * p.dmg * this.dmgMul;
     const list = this.alive();
     const ox = m.x;
@@ -652,6 +682,7 @@ export class Game {
     const list = this.enemies;
     for (const s of this.shots) {
       s.spin += dt * 12;
+      if (s.kind === 'bolt') { (s.trail ??= []).push({ x: s.x, y: s.y }); if (s.trail.length > 6) s.trail.shift(); }
       s.x += s.vx * dt;
       s.y += s.vy * dt;
       if (s.kind === 'web') {
@@ -672,7 +703,7 @@ export class Game {
         if (Math.hypot(e.x - s.x, e.y - s.y) <= s.radius + e.def.size) {
           s.hit.add(e.uid);
           this.damageEnemy(e, s.dmg, { crit: s.crit, src: s.src });
-          this.burst(s.x, s.y, s.color, 3);
+          this.fx.push({ kind: 'spark', x: s.x, y: s.y, r: 14 + s.radius, t: 0, life: 0.18, color: s.color });
           if (s.pierce-- <= 0) { s.done = true; break; }
         }
       }
@@ -697,6 +728,8 @@ export class Game {
       s.delay -= dt;
       if (s.delay <= 0) {
         this.fx.push({ kind: 'slam', x: s.x, y: s.y, r: s.r, t: 0, life: 0.5, color: '#9b7350' });
+        this.fx.push({ kind: 'boom', x: s.x, y: s.y, r: s.r * 0.7, t: 0, life: 0.45, color: '#ffb347' });
+        this.sfx('boom');
         this.shake = Math.max(this.shake, 0.25);
         for (const e of this.enemies) {
           if (!e.dead && Math.hypot(e.x - s.x, e.y - s.y) <= s.r + e.def.size * 0.5) this.damageEnemy(e, s.dmg, { knock: s.knock, src: s.src });

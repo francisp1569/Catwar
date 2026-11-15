@@ -1,5 +1,6 @@
 import './style.css';
 import { loadArt } from './art';
+import { sound } from './audio';
 import { CONFIG, applyLayout } from './data/config';
 import { STAGES } from './data/stages';
 import { Game, buildSquad } from './game';
@@ -30,6 +31,7 @@ function startBattle(stageId: string): void {
   menu.hide();
   canvas.hidden = false;
   resize();
+  sound.music('battle');
 }
 
 function endBattle(): void {
@@ -38,6 +40,7 @@ function endBattle(): void {
   game = null;
   canvas.hidden = true;
   menu.show(save);
+  sound.music('lobby');
   // 로비로 돌아오는 터치가 모달 바깥 클릭으로 이어져 바로 닫히지 않게 조금 뒤에 띄운다
   if (lv) setTimeout(() => menu.celebrateLevel(lv[1], lt), 400);
 }
@@ -83,6 +86,7 @@ function press(g: Game, b: Button): void {
     case 'reroll': g.reroll(); break;
     case 'resume': g.paused = false; break;
     case 'quit': endBattle(); break;
+    case 'sound': { const on = !(sound.sfxOn || sound.musicOn); sound.setSfx(on); sound.setMusic(on); break; }
   }
 }
 
@@ -146,6 +150,8 @@ function frame(now: number): void {
   const g = game;
   if (g) {
     g.update(dt);
+    for (const ev of g.events) sound.play(ev);
+    g.events.length = 0;
     if (g.phase !== 'playing' && !reward) {
       reward = applyResult(save, g.stage, g.result!);
       writeSave(save);
@@ -167,6 +173,9 @@ requestAnimationFrame(frame);
 
 canvas.hidden = true;
 menu.show(save);
+sound.music('lobby');
+// 브라우저 정책: 첫 터치/키 입력 때 소리를 켠다
+for (const ev of ['pointerdown', 'keydown'] as const) document.addEventListener(ev, () => sound.unlock(), { capture: true });
 void loadArt().then(() => setTimeout(() => menu.refresh(), 300));
 
 // 디버그/테스트용 훅

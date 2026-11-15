@@ -8,7 +8,8 @@ export type ButtonId =
   | { type: 'card'; index: number }
   | { type: 'reroll' }
   | { type: 'resume' }
-  | { type: 'quit' };
+  | { type: 'quit' }
+  | { type: 'sound' };
 
 export interface Button { id: ButtonId; rect: Rect; }
 
@@ -26,6 +27,7 @@ export const CHOICE_BUTTONS: Button[] = [
 export const PAUSE_BUTTONS: Button[] = [
   { id: { type: 'resume' }, rect: { x: 120, y: 420, w: 300, h: 60 } },
   { id: { type: 'quit' }, rect: { x: 120, y: 500, w: 300, h: 60 } },
+  { id: { type: 'sound' }, rect: { x: 120, y: 580, w: 300, h: 60 } },
 ];
 
 export function hit(r: Rect, x: number, y: number): boolean {

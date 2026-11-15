@@ -13,10 +13,35 @@ export interface CatPose {
 
 export const IDLE_POSE: CatPose = { t: 0, walking: false, attacking: false, swing: 0, stride: 5 };
 
-function ellipse(ctx: Ctx, x: number, y: number, rx: number, ry: number, fill: string, rot = 0): void {
+/** #rrggbb 색을 밝게(+)/어둡게(-) */
+export function shadeHex(hex: string, amt: number): string {
+  const n = parseInt(hex.slice(1), 16);
+  let r = n >> 16;
+  let g = (n >> 8) & 255;
+  let b = n & 255;
+  if (amt >= 0) { r += (255 - r) * amt; g += (255 - g) * amt; b += (255 - b) * amt; }
+  else { r *= 1 + amt; g *= 1 + amt; b *= 1 + amt; }
+  return `rgb(${r | 0},${g | 0},${b | 0})`;
+}
+
+const HEX = /^#[0-9a-f]{6}$/i;
+
+/** 입체 타원: 왼쪽 위에서 빛이 오는 그라데이션 (단색 #rrggbb일 때) */
+export function ellipse(ctx: Ctx, x: number, y: number, rx: number, ry: number, fill: string, rot = 0): void {
+  rx = Math.max(0.1, rx);
+  ry = Math.max(0.1, ry);
   ctx.beginPath();
-  ctx.ellipse(x, y, Math.max(0.1, rx), Math.max(0.1, ry), rot, 0, Math.PI * 2);
-  ctx.fillStyle = fill;
+  ctx.ellipse(x, y, rx, ry, rot, 0, Math.PI * 2);
+  if (HEX.test(fill) && Math.max(rx, ry) >= 3) {
+    const m = Math.max(rx, ry);
+    const g = ctx.createRadialGradient(x - rx * 0.35, y - ry * 0.45, m * 0.08, x, y, m * 1.08);
+    g.addColorStop(0, shadeHex(fill, 0.3));
+    g.addColorStop(0.5, fill);
+    g.addColorStop(1, shadeHex(fill, -0.25));
+    ctx.fillStyle = g;
+  } else {
+    ctx.fillStyle = fill;
+  }
   ctx.fill();
 }
 

@@ -96,11 +96,11 @@ export const WEAPONS: Record<string, WeaponDef> = {
   cheesetabby: {
     kind: 'roll', fx: 'wheel', icon: '🎡', color: '#f4a24c',
     levels: [
-      { interval: 5, dmg: 0.55, radius: 36, speed: 90, count: 1 },
-      { interval: 5, dmg: 0.55, radius: 50, speed: 90, count: 1 },
-      { interval: 5, dmg: 0.85, radius: 50, speed: 90, count: 1 },
-      { interval: 3.5, dmg: 0.85, radius: 54, speed: 90, count: 1 },
-      { interval: 3.5, dmg: 1.0, radius: 58, speed: 95, count: 2 },
+      { interval: 5, dmg: 0.77, radius: 36, speed: 160, count: 1 },
+      { interval: 5, dmg: 0.77, radius: 50, speed: 160, count: 1 },
+      { interval: 5, dmg: 1.19, radius: 50, speed: 160, count: 1 },
+      { interval: 3.5, dmg: 1.19, radius: 54, speed: 160, count: 1 },
+      { interval: 3.5, dmg: 1.4, radius: 58, speed: 165, count: 2 },
     ],
     desc: ['캣휠을 굴려 보내 닿는 적을 계속 깔아뭉갠다.', '캣휠 크기 증가', '캣휠 피해 증가', '굴리는 간격 단축', '캣휠 2개 동시에 굴리기'],
   },
