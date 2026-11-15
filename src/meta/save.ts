@@ -27,6 +27,7 @@ export interface SaveData {
   napAt: number;       // 낮잠 보상 마지막 수령 시각(ms)
   freeDay: string;     // 무료 상자를 받은 날짜 (YYYY-MM-DD)
   selectedStage: string;
+  seen: string[];      // 발견한 적 종류
 }
 
 const KEY = 'catwar.save.v1';
@@ -39,7 +40,7 @@ export function newSave(): SaveData {
     version: 1, coins: 300, tuna: 300, yarn: 0, exp: 0, cats, deck: [...STARTER_IDS], stages: {}, pulls: 0,
     // 시작 장비: 기본 목걸이와 장난감
     items: [{ uid: 1, slot: 'collar', rarity: 'N', level: 1 }, { uid: 2, slot: 'toy', rarity: 'N', level: 1 }],
-    equip: { collar: 1, toy: 2 }, nextItemUid: 3, napAt: Date.now(), freeDay: '', selectedStage: 's1',
+    equip: { collar: 1, toy: 2 }, nextItemUid: 3, napAt: Date.now(), freeDay: '', selectedStage: 's1', seen: [],
   };
 }
 
@@ -59,6 +60,7 @@ export function loadSave(): SaveData {
         data.napAt ??= Date.now();
         data.freeDay ??= '';
         data.selectedStage ??= 's1';
+        data.seen ??= [];
         for (const id of Object.keys(data.cats)) if (!CAT_BY_ID[id]) delete data.cats[id];
         data.deck = data.deck.filter((id) => data.cats[id] && id !== HERO_ID).slice(0, DECK_SIZE);
         for (const s of SLOTS) if (data.equip[s] !== undefined && !data.items.some((i) => i.uid === data.equip[s])) delete data.equip[s];

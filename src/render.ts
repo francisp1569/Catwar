@@ -6,14 +6,14 @@ import { CONFIG } from './data/config';
 import { ENEMIES, type EnemyDef, type EnemyKind } from './data/enemies';
 import type { Area, StageDef } from './data/stages';
 import { GENERIC } from './data/weapons';
-import type { Card, Decal, Enemy, Game, Member } from './game';
+import { fmtDmg, type Card, type Decal, type Enemy, type Game, type Member } from './game';
 import { CHOICE_BUTTONS, HUD_BUTTONS, PAUSE_BUTTONS, buttonKey, type Rect } from './ui';
 
 type Ctx = CanvasRenderingContext2D;
 const W = CONFIG.width;
 const FONT = '"Jua", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif';
 
-export interface RewardView { coins: number; tuna: number; yarn: number; exp: number; heroShards: number; firstClear: boolean; newStars: number; items: { slot: string; rarity: string }[]; }
+export interface RewardView { coins: number; tuna: number; yarn: number; exp: number; heroShards: number; firstClear: boolean; newStars: number; items: { slot: string; rarity: string }[]; discovered: number; }
 
 function roundRect(ctx: Ctx, x: number, y: number, w: number, h: number, r: number): void {
   ctx.beginPath();
@@ -531,6 +531,27 @@ function drawSquad(ctx: Ctx, game: Game, t: number): void {
     } else if (m.slot !== 0) {
       text(ctx, `Lv.${m.level}`, m.x, m.y + 12, 12, '#fff7d0');
     }
+  }
+  for (const m of game.squad) {
+    if (!m.speech) continue;
+    const s = m.slot === 0 ? 40 : 33;
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, m.speech.t * 3);
+    ctx.font = `bold 13px ${FONT}`;
+    const tw = ctx.measureText(m.speech.text).width + 20;
+    const bx = Math.max(6, Math.min(W - tw - 6, m.x - tw / 2));
+    const by = m.y - s * 3.3 - 30;
+    roundRect(ctx, bx, by, tw, 28, 8);
+    ctx.fillStyle = '#fffdf8';
+    ctx.fill();
+    ctx.strokeStyle = '#3b2228';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.fillStyle = '#fffdf8';
+    ctx.beginPath(); ctx.moveTo(m.x - 6, by + 27); ctx.lineTo(m.x + 6, by + 27); ctx.lineTo(m.x, by + 36); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(m.x - 6, by + 28); ctx.lineTo(m.x, by + 36); ctx.lineTo(m.x + 6, by + 28); ctx.stroke();
+    text(ctx, m.speech.text, bx + tw / 2, by + 14, 13, '#3b2228', 'center', false);
+    ctx.restore();
   }
   if (game.rallyT > 0) {
     ctx.save();
@@ -1073,21 +1094,21 @@ function drawResult(ctx: Ctx, game: Game, t: number, reward: RewardView | null):
   ctx.translate(0, (CONFIG.height - 960) / 2);
   const res = game.result!;
   if (res.victory) {
-    text(ctx, '승리! 🎉', W / 2, 270, 56, '#ffe98a');
+    text(ctx, '승리! 🎉', W / 2, 250, 56, '#ffe98a');
     for (let i = 0; i < 3; i++) {
       const on = i < res.stars;
-      text(ctx, '★', W / 2 - 80 + i * 80, 350, on ? 60 : 48, on ? '#ffd84d' : '#6b5a66');
+      text(ctx, '★', W / 2 - 80 + i * 80, 330, on ? 60 : 48, on ? '#ffd84d' : '#6b5a66');
     }
   } else {
     text(ctx, '패배...', W / 2, 280, 56, '#ff8a8a');
     text(ctx, '고양이를 키우거나 편성을 바꿔서 다시 도전!', W / 2, 345, 17, '#fff');
   }
-  text(ctx, `처치 ${res.kills} · 레벨 ${game.level} · ${Math.round(res.progress * 100)}% 진행`, W / 2, 410, 16, '#ffd6e4');
+  text(ctx, `처치 ${res.kills} · 레벨 ${game.level} · ${Math.round(res.progress * 100)}% 진행`, W / 2, 400, 16, '#ffd6e4');
   if (reward) {
-    roundRect(ctx, 50, 440, W - 100, 100, 18);
+    roundRect(ctx, 50, 425, W - 100, 118, 18);
     ctx.fillStyle = 'rgba(255,255,255,0.12)';
     ctx.fill();
-    text(ctx, reward.firstClear ? '첫 클리어 보상' : '보상', W / 2, 464, 15, '#ffe98a');
+    text(ctx, reward.firstClear ? '첫 클리어 보상' : '보상', W / 2, 452, 15, '#ffe98a');
     const parts = [`🪙 ${reward.coins}`];
     if (reward.tuna > 0) parts.push(`🥫 ${reward.tuna}`);
     if (reward.yarn > 0) parts.push(`🧶 ${reward.yarn}`);
@@ -1095,11 +1116,32 @@ function drawResult(ctx: Ctx, game: Game, t: number, reward: RewardView | null):
     const extra = [`집사 경험치 +${reward.exp}`];
     if (reward.heroShards > 0) extra.push(`치즈 조각 +${reward.heroShards}`);
     if (reward.items.length) extra.push(`장비 ${reward.items.length}개 획득!`);
-    text(ctx, extra.join(' · '), W / 2, 527, 14, '#ffe0ec');
+    if (reward.discovered > 0) extra.push(`첫 발견 ${reward.discovered}종 🥫+${reward.discovered * 10}`);
+    text(ctx, extra.join(' · '), W / 2, 527, 13, '#ffe0ec');
+  }
+  // 고양이별 피해 통계
+  const rows = game.squad.filter((m) => m.dealt > 0).sort((a, b) => b.dealt - a.dealt);
+  if (rows.length) {
+    const top = 562;
+    roundRect(ctx, 40, top, W - 80, 30 + rows.length * 30, 12);
+    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    ctx.fill();
+    text(ctx, '스킬', 70, top + 15, 12, '#ffe98a', 'left', false);
+    text(ctx, '총 피해', 360, top + 15, 12, '#ffe98a', 'right', false);
+    text(ctx, '평균 DPS', W - 60, top + 15, 12, '#ffe98a', 'right', false);
+    const maxD = rows[0].dealt;
+    rows.forEach((m, i) => {
+      const y = top + 44 + i * 30;
+      ctx.fillStyle = 'rgba(255,207,90,0.18)';
+      ctx.fillRect(64, y - 11, (W - 128) * (m.dealt / maxD), 22);
+      text(ctx, `${m.weapon.icon} ${m.def.name} · ${m.def.skillName}`, 70, y, 13, '#fff', 'left', false);
+      text(ctx, fmtDmg(m.dealt), 360, y, 14, '#fff', 'right', false);
+      text(ctx, `${Math.round(m.dealt / Math.max(1, res.time))}`, W - 60, y, 14, '#fff', 'right', false);
+    });
   }
   ctx.save();
   ctx.globalAlpha = 0.6 + 0.4 * Math.sin(t * 4);
-  text(ctx, '터치해서 로비로', W / 2, 600, 24, '#fff');
+  text(ctx, '터치해서 로비로', W / 2, rows.length ? 562 + 44 + rows.length * 30 + 30 : 600, 22, '#fff');
   ctx.restore();
   ctx.restore();
 }

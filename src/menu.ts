@@ -70,6 +70,18 @@ export class Menu {
     this.modal.addEventListener('click', (e) => this.onClick(e));
   }
 
+  /** 전투 후 집사 레벨업 연출 */
+  celebrateLevel(level: number, tuna: number): void {
+    this.openModal(`
+      <div class="lvup">
+        <div class="lvup-band">집사 레벨 업!</div>
+        <div class="lvup-num">${level}</div>
+        <small class="muted">획득 보상</small>
+        <div class="lvup-reward">🥫 ${tuna}</div>
+        <button class="btn gold" data-act="close">확인</button>
+      </div>`, 'celebrate');
+  }
+
   refresh(): void {
     if (!this.root.hidden) this.render();
   }

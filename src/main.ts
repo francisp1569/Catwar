@@ -25,7 +25,7 @@ function startBattle(stageId: string): void {
   applyLayout(window.innerWidth, window.innerHeight);
   layoutButtons(CONFIG.height);
   save.selectedStage = stage.id;
-  game = new Game(stage, buildSquad(save.cats, save.deck), bonuses(save));
+  game = new Game(stage, buildSquad(save.cats, save.deck), bonuses(save), save.seen);
   reward = null;
   menu.hide();
   canvas.hidden = false;
@@ -33,9 +33,13 @@ function startBattle(stageId: string): void {
 }
 
 function endBattle(): void {
+  const lv = reward && (reward as { levelUp?: [number, number] | null }).levelUp;
+  const lt = reward ? (reward as { levelTuna?: number }).levelTuna ?? 0 : 0;
   game = null;
   canvas.hidden = true;
   menu.show(save);
+  // 로비로 돌아오는 터치가 모달 바깥 클릭으로 이어져 바로 닫히지 않게 조금 뒤에 띄운다
+  if (lv) setTimeout(() => menu.celebrateLevel(lv[1], lt), 400);
 }
 
 // ───────────── 화면 스케일 (세로 540x960을 화면에 맞춤) ─────────────
