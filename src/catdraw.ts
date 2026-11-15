@@ -142,7 +142,7 @@ export function drawCatLook(ctx: Ctx, look: CatLook, s: number, pose: CatPose): 
   });
 
   // 머리 위치
-  const hr = s * (look.fluffy ? 0.66 : look.kitten ? 0.7 : 0.62);
+  const hr = s * (look.fluffy ? 0.76 : look.kitten ? 0.78 : 0.72);
   const hx = s * 0.85;
   const hy = -s * 1.15 + ly;
 
@@ -264,7 +264,7 @@ export function drawCatLook(ctx: Ctx, look: CatLook, s: number, pose: CatPose): 
     ctx.beginPath(); ctx.moveTo(hx + hr * 0.6, hy - hr * 0.2); ctx.lineTo(hx + hr * 0.4, hy - hr * 0.05); ctx.lineTo(hx + hr * 0.6, hy + hr * 0.1); ctx.stroke();
   } else {
     for (const ex of [0, 0.52]) {
-      const k = look.kitten ? 1.25 : 1;
+      const k = look.kitten ? 1.4 : 1.28;
       ellipse(ctx, hx + ex * hr, hy - hr * 0.05, hr * 0.16 * k, hr * 0.21 * k, look.eye);
       ellipse(ctx, hx + ex * hr + hr * 0.02, hy - hr * 0.03, hr * 0.08 * k, hr * 0.15 * k, '#1e1820');
       ellipse(ctx, hx + ex * hr + hr * 0.06, hy - hr * 0.14, hr * 0.055 * k, hr * 0.055 * k, '#fff');
@@ -335,7 +335,7 @@ export function drawCatFace(ctx: Ctx, look: CatLook, R: number, t = 0): void {
   const p = look.pattern;
   const white = look.belly ?? '#fffaf2';
   const accent = look.patch ?? look.base;
-  const kit = look.kitten ? 1.15 : 1;
+  const kit = look.kitten ? 1.2 : 1.1;
   const earCol = (side: number) => p === 'bicolor' || p === 'point' ? accent : p === 'calico' ? (side < 0 ? accent : look.patch2 ?? '#333') : look.base;
   ctx.save();
   // 가슴
@@ -490,6 +490,88 @@ export function drawCatFace(ctx: Ctx, look: CatLook, R: number, t = 0): void {
   ctx.restore();
 }
 
+
+// ───────────── 만화 스타일 렌더링: 굵은 외곽선 + 부드러운 명암 ─────────────
+
+interface ToonBuf { a: HTMLCanvasElement; b: HTMLCanvasElement; }
+const toonBufs = new Map<string, ToonBuf>();
+
+function buf(key: string, w: number, h: number): ToonBuf {
+  let t = toonBufs.get(key);
+  if (!t) {
+    t = { a: document.createElement('canvas'), b: document.createElement('canvas') };
+    toonBufs.set(key, t);
+  }
+  for (const c of [t.a, t.b]) {
+    if (c.width < w) c.width = w;
+    if (c.height < h) c.height = h;
+  }
+  return t;
+}
+
+export interface ToonOpt { outline?: string; width?: number; shade?: boolean; }
+
+/**
+ * box(로컬 좌표) 안에 draw로 그린 그림을 따로 그린 뒤,
+ * 아래로 갈수록 어두워지는 명암과 실루엣 외곽선을 입혀서 ctx에 찍는다.
+ */
+export function drawToon(ctx: Ctx, key: string, box: { x: number; y: number; w: number; h: number }, draw: (c: Ctx) => void, opt: ToonOpt = {}): void {
+  const tr = ctx.getTransform();
+  const k = Math.min(4, Math.max(1, Math.hypot(tr.a, tr.b)));
+  const pw = Math.ceil(box.w * k);
+  const ph = Math.ceil(box.h * k);
+  if (pw <= 0 || ph <= 0) return;
+  const { a, b } = buf(key, pw, ph);
+  const ac = a.getContext('2d')!;
+  const bc = b.getContext('2d')!;
+  ac.setTransform(1, 0, 0, 1, 0, 0);
+  ac.globalCompositeOperation = 'source-over';
+  ac.clearRect(0, 0, pw, ph);
+  ac.setTransform(k, 0, 0, k, -box.x * k, -box.y * k);
+  draw(ac);
+  ac.setTransform(1, 0, 0, 1, 0, 0);
+  if (opt.shade !== false) {
+    ac.globalCompositeOperation = 'source-atop';
+    const g = ac.createLinearGradient(0, 0, pw * 0.3, ph);
+    g.addColorStop(0, 'rgba(255,255,255,0.18)');
+    g.addColorStop(0.45, 'rgba(255,255,255,0)');
+    g.addColorStop(1, 'rgba(70,30,50,0.26)');
+    ac.fillStyle = g;
+    ac.fillRect(0, 0, pw, ph);
+    ac.globalCompositeOperation = 'source-over';
+  }
+  bc.setTransform(1, 0, 0, 1, 0, 0);
+  bc.globalCompositeOperation = 'source-over';
+  bc.clearRect(0, 0, pw, ph);
+  bc.drawImage(a, 0, 0, pw, ph, 0, 0, pw, ph);
+  bc.globalCompositeOperation = 'source-in';
+  bc.fillStyle = opt.outline ?? '#3b2228';
+  bc.fillRect(0, 0, pw, ph);
+  bc.globalCompositeOperation = 'source-over';
+
+  const ow = opt.width ?? 2;
+  for (let i = 0; i < 8; i++) {
+    const ang = (i / 8) * Math.PI * 2;
+    ctx.drawImage(b, 0, 0, pw, ph, box.x + Math.cos(ang) * ow, box.y + Math.sin(ang) * ow, box.w, box.h);
+  }
+  ctx.drawImage(a, 0, 0, pw, ph, box.x, box.y, box.w, box.h);
+}
+
+/** 옆모습을 만화 스타일로 (원점 = 발밑, s = 크기) */
+export function drawCatLookToon(ctx: Ctx, key: string, look: CatLook, s: number, pose: CatPose, width = 2): void {
+  drawToon(ctx, key, { x: -s * 2.3, y: -s * 3.4, w: s * 4.8, h: s * 3.7 }, (c) => drawCatLook(c, look, s, pose), { width });
+}
+
+/** 뒷모습을 만화 스타일로 */
+export function drawCatBackToon(ctx: Ctx, key: string, look: CatLook, s: number, t: number, opt: { sleep: boolean; swing: number }, width = 2.2): void {
+  drawToon(ctx, key, { x: -s * 1.8, y: -s * 3.9, w: s * 3.9, h: s * 4.1 }, (c) => drawCatBack(c, look, s, t, opt), { width });
+}
+
+/** 정면 얼굴을 만화 스타일로 (원점 = 머리 중심) */
+export function drawCatFaceToon(ctx: Ctx, key: string, look: CatLook, R: number, t = 0, width = Math.max(1.2, R * 0.07)): void {
+  drawToon(ctx, key, { x: -R * 1.75, y: -R * 2.15, w: R * 3.5, h: R * 4.3 }, (c) => drawCatFace(c, look, R, t), { width });
+}
+
 /** 메뉴용 초상화: 캔버스 중앙에 고양이 얼굴을 그린다 */
 export function drawCatPortrait(canvas: HTMLCanvasElement, look: CatLook, t = 0): void {
   const ctx = canvas.getContext('2d');
@@ -505,7 +587,7 @@ export function drawCatPortrait(canvas: HTMLCanvasElement, look: CatLook, t = 0)
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   const R = Math.min(cssW, cssH) * 0.27;
   ctx.setTransform(dpr, 0, 0, dpr, dpr * (cssW / 2), dpr * (cssH * 0.52));
-  drawCatFace(ctx, look, R, t);
+  drawCatFaceToon(ctx, 'portrait', look, R, t);
 }
 
 /** 뒷모습 (전투 화면 아래쪽에서 적을 바라보는 고양이). 발밑 중앙이 원점. */
@@ -521,7 +603,7 @@ export function drawCatBack(ctx: Ctx, look: CatLook, s: number, t: number, opt: 
   const bodyRx = s * (fluffy ? 0.95 : 0.82) * (1 + breathe);
   const bodyRy = s * (look.shortLegs ? 0.66 : 0.76);
   const by = -bodyRy;
-  const hr = s * (fluffy ? 0.62 : look.kitten ? 0.64 : 0.56);
+  const hr = s * (fluffy ? 0.7 : look.kitten ? 0.72 : 0.66);
   const hy = by - bodyRy * 0.78 - hr * 0.55 + (opt.sleep ? s * 0.22 : 0) - opt.swing * s * 0.12;
   const hx = opt.sleep ? s * 0.08 : 0;
 

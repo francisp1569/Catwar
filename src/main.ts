@@ -1,4 +1,5 @@
 import './style.css';
+import { loadArt } from './art';
 import { CONFIG, applyLayout } from './data/config';
 import { STAGES } from './data/stages';
 import { Game, buildSquad } from './game';
@@ -160,6 +161,7 @@ requestAnimationFrame(frame);
 
 canvas.hidden = true;
 menu.show(save);
+void loadArt().then(() => setTimeout(() => menu.refresh(), 300));
 
 // 디버그/테스트용 훅
 Object.assign(window as object, {

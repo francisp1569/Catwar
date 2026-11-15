@@ -3,7 +3,7 @@ import { CAT_BY_ID, HERO_ID, type CatDef } from './data/cats';
 import { CONFIG } from './data/config';
 import { ENEMIES, type EnemyDef, type EnemyKind } from './data/enemies';
 import type { Mix, StageDef } from './data/stages';
-import { GENERIC, MAX_WEAPON_LV, rally, type GenericCard, type WeaponDef, type WeaponParams } from './data/weapons';
+import { GENERIC, MAX_WEAPON_LV, rally, type GenericCard, type WeaponDef, type WeaponFx, type WeaponParams } from './data/weapons';
 import { catStats } from './meta/progression';
 import type { OwnedCat } from './meta/save';
 
@@ -55,12 +55,13 @@ export interface Shot {
   tick: number;
   done: boolean;
   spin: number;
+  style?: WeaponFx;
 }
 
 export type FxKind = 'beam' | 'slam' | 'quake' | 'snipe' | 'dash' | 'heal' | 'thorns';
-export interface Fx { kind: FxKind; x: number; y: number; x2?: number; y2?: number; r: number; t: number; life: number; color: string; }
+export interface Fx { kind: FxKind; x: number; y: number; x2?: number; y2?: number; r: number; t: number; life: number; color: string; style?: WeaponFx; }
 
-export interface Field { x: number; y: number; r: number; t: number; life: number; slow: number; dmg: number; tick: number; }
+export interface Field { x: number; y: number; r: number; t: number; life: number; slow: number; dmg: number; tick: number; sx: number; sy: number; }
 export interface PendingSlam { x: number; y: number; r: number; delay: number; dmg: number; knock: number; }
 
 export interface Decal { x: number; y: number; r: number; color: string; t: number; seed: number; }
@@ -523,7 +524,7 @@ export class Game {
         for (let i = 0; i < n; i++) {
           const a = base + (i - (n - 1) / 2) * 0.12;
           const sp = p.speed ?? 700;
-          this.shots.push({ kind: 'bolt', x: ox, y: oy, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, dmg, radius: p.radius ?? 7, pierce: p.pierce ?? 0, color, crit: false, hit: new Set(), tick: 0, done: false, spin: 0 });
+          this.shots.push({ kind: 'bolt', x: ox, y: oy, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, dmg, radius: p.radius ?? 7, pierce: p.pierce ?? 0, color, crit: false, hit: new Set(), tick: 0, done: false, spin: 0, style: m.weapon.fx });
         }
         return true;
       }
@@ -532,7 +533,7 @@ export class Game {
         const n = p.count ?? 1;
         for (let i = 0; i < n; i++) {
           const x = n === 1 ? (this.bestColumn(list, 80) ?? W / 2) : 90 + i * (W - 180);
-          this.shots.push({ kind: 'roll', x, y: CONFIG.barricadeY - 20, vx: 0, vy: -(p.speed ?? 90), dmg, radius: p.radius ?? 40, pierce: 999, color, crit: false, hit: new Set(), tick: 0, done: false, spin: 0 });
+          this.shots.push({ kind: 'roll', x, y: CONFIG.barricadeY - 20, vx: 0, vy: -(p.speed ?? 90), dmg, radius: p.radius ?? 40, pierce: 999, color, crit: false, hit: new Set(), tick: 0, done: false, spin: 0, style: m.weapon.fx });
         }
         return true;
       }
@@ -541,7 +542,7 @@ export class Game {
         for (const e of list) if (!t || e.hp > t.hp) t = e;
         if (!t) return false;
         const crit = Math.random() < (p.crit ?? 0);
-        this.fx.push({ kind: 'snipe', x: ox, y: oy, x2: t.x, y2: t.y, r: 3, t: 0, life: 0.25, color: crit ? '#ffd84d' : '#ffffff' });
+        this.fx.push({ kind: 'snipe', x: ox, y: oy, x2: t.x, y2: t.y, r: 3, t: 0, life: 0.35, color: crit ? '#ffd84d' : '#ffffff', style: m.weapon.fx });
         this.damageEnemy(t, crit ? dmg * (p.critMul ?? 2) : dmg, { crit });
         return true;
       }
@@ -564,7 +565,7 @@ export class Game {
       case 'frost': {
         const c = this.densest(list, p.radius ?? 70);
         if (!c) return false;
-        this.fields.push({ x: c.x, y: c.y, r: p.radius ?? 70, t: 0, life: p.range ?? 3, slow: p.slow ?? 0.4, dmg, tick: 0 });
+        this.fields.push({ x: c.x, y: c.y, r: p.radius ?? 70, t: 0, life: p.range ?? 3, slow: p.slow ?? 0.4, dmg, tick: 0, sx: m.x + 14, sy: m.y - 70 });
         return true;
       }
       case 'quake': {

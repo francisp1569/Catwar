@@ -1,4 +1,5 @@
 // 로비 화면 (DOM): 스테이지 / 고양이 도감·성장 / 편성 / 뽑기
+import { getArt } from './art';
 import { drawCatPortrait } from './catdraw';
 import { CATS, CAT_BY_ID, HERO_ID, RARITY_COLOR, RARITY_ORDER, type CatDef, type CatLook } from './data/cats';
 import { rallyDesc } from './data/weapons';
@@ -45,6 +46,11 @@ export class Menu {
     this.modal = document.getElementById('modal')!;
     this.root.addEventListener('click', (e) => this.onClick(e));
     this.modal.addEventListener('click', (e) => this.onClick(e));
+  }
+
+  /** 그림 파일을 불러온 뒤 다시 그리기 */
+  refresh(): void {
+    if (!this.root.hidden) this.render();
   }
 
   show(save: SaveData): void {
@@ -177,6 +183,18 @@ export class Menu {
   private paintPortraits(scope: HTMLElement): void {
     scope.querySelectorAll<HTMLCanvasElement>('canvas[data-look]').forEach((c) => {
       const id = c.dataset.look!;
+      const art = id === '?' ? null : getArt(id, 'face');
+      if (art) {
+        const ctx = c.getContext('2d')!;
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        c.width = Math.round(c.clientWidth * dpr);
+        c.height = Math.round(c.clientHeight * dpr);
+        const sc = Math.min(c.width / art.naturalWidth, c.height / art.naturalHeight);
+        const w = art.naturalWidth * sc;
+        const h = art.naturalHeight * sc;
+        ctx.drawImage(art, (c.width - w) / 2, (c.height - h) / 2, w, h);
+        return;
+      }
       const look = id === '?' ? SILHOUETTE : CAT_BY_ID[id].look;
       drawCatPortrait(c, look);
     });
