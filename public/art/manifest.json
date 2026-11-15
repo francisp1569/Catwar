@@ -1,3 +1,4 @@
 {
-  "cheese": { "face": "cheese-face.jpg", "faceFocus": [0.52, 0.58, 0.32] }
+  "cheese": { "face": "cheese-face.jpg", "faceFocus": [0.52, 0.58, 0.32] },
+  "cheesetabby": { "full": "cheesetabby-full.jpg", "face": "cheesetabby-full.jpg", "faceFocus": [0.476, 0.27, 0.16] }
 }

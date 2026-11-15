@@ -3,7 +3,7 @@
 //   { "godeungeo": ["back", "face"],                              → godeungeo-back.png, godeungeo-face.png
 //     "cheese": { "face": "cheese-face.jpg", "faceFocus": [0.52, 0.6, 0.3] } }
 // faceFocus = [얼굴 중심 x, y, 반지름] (그림 가로 대비 비율). 동그란 아이콘으로 자를 때 사용.
-export type ArtKind = 'back' | 'face' | 'card';
+export type ArtKind = 'back' | 'face' | 'card' | 'full';
 
 type Entry = ArtKind[] | Partial<Record<ArtKind, string>> & { faceFocus?: [number, number, number] };
 
@@ -19,7 +19,7 @@ export async function loadArt(): Promise<void> {
     for (const [id, entry] of Object.entries(manifest)) {
       const files: [ArtKind, string][] = Array.isArray(entry)
         ? entry.map((k) => [k, `${id}-${k}.png`])
-        : (['back', 'face', 'card'] as ArtKind[]).filter((k) => typeof entry[k] === 'string').map((k) => [k, entry[k] as string]);
+        : (['back', 'face', 'card', 'full'] as ArtKind[]).filter((k) => typeof entry[k] === 'string').map((k) => [k, entry[k] as string]);
       if (!Array.isArray(entry) && entry.faceFocus) focus.set(id, entry.faceFocus);
       for (const [kind, file] of files) {
         const img = new Image();
@@ -49,4 +49,30 @@ export function drawFaceArtCircle(ctx: CanvasRenderingContext2D, id: string, img
   ctx.clip();
   ctx.drawImage(img, cx - fx * img.naturalWidth * scale, cy - fy * img.naturalHeight * scale, img.naturalWidth * scale, img.naturalHeight * scale);
   ctx.restore();
+}
+
+export function getFocus(id: string): [number, number, number] {
+  return focus.get(id) ?? [0.5, 0.5, 0.5];
+}
+
+/** 얼굴 중심으로 정사각형을 잘라 (dx,dy,size) 칸에 그린다 */
+export function drawFaceArtSquare(ctx: CanvasRenderingContext2D, id: string, img: HTMLImageElement, dx: number, dy: number, size: number): void {
+  const [fx, fy, fr] = getFocus(id);
+  const side = Math.min(img.naturalWidth, img.naturalHeight, fr * 2.7 * img.naturalWidth);
+  const sx = Math.max(0, Math.min(img.naturalWidth - side, fx * img.naturalWidth - side / 2));
+  const sy = Math.max(0, Math.min(img.naturalHeight - side, fy * img.naturalHeight - side / 2));
+  ctx.drawImage(img, sx, sy, side, side, dx, dy, size, size);
+}
+
+/** 전신 일러스트에서 상반신(얼굴~허리)을 잘라 (dx,dy,dw,dh) 칸에 그린다 */
+export function drawBustArt(ctx: CanvasRenderingContext2D, id: string, img: HTMLImageElement, dx: number, dy: number, dw: number, dh: number): void {
+  const [fx, fy, fr] = getFocus(id);
+  const W = img.naturalWidth;
+  const H = img.naturalHeight;
+  let sw = Math.min(W, fr * W * 4.2);
+  let sh = (sw * dh) / dw;
+  if (sh > H) { sh = H; sw = (sh * dw) / dh; }
+  const sx = Math.max(0, Math.min(W - sw, fx * W - sw / 2));
+  const sy = Math.max(0, Math.min(H - sh, fy * H - fr * W * 1.25));
+  ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
 }

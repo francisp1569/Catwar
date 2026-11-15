@@ -1,6 +1,6 @@
 // 세로형 전투 화면 렌더링 — 모든 그래픽은 코드로 그린다 (외부 에셋 없음)
 import { drawCatBackToon, drawCatFaceToon, drawCatLookToon, drawToon, ellipse as vellipse, heart, IDLE_POSE, shadeHex } from './catdraw';
-import { drawFaceArtCircle, getArt } from './art';
+import { drawBustArt, drawFaceArtCircle, getArt } from './art';
 import { sound } from './audio';
 import { RARITY_COLOR, type CatLook } from './data/cats';
 import { CONFIG } from './data/config';
@@ -1549,8 +1549,33 @@ function drawCard(ctx: Ctx, game: Game, c: Card, r: Rect, t: number, _glow: numb
     g.addColorStop(0, info.color + 'aa'); g.addColorStop(1, info.color + '00');
     ctx.fillStyle = g;
     ctx.fillRect(r.x - 30, r.y - 130, r.w + 60, 200);
-    const art = c.type !== 'generic' ? getArt(game.squad[c.slot].def.id, 'card') : null;
-    if (art) {
+    const cid = c.type !== 'generic' ? game.squad[c.slot].def.id : '';
+    const art = cid ? getArt(cid, 'card') : null;
+    const full = cid && !art ? getArt(cid, 'full') : null;
+    if (full) {
+      // 일러스트 상반신을 카드 위에 액자처럼
+      const bx = r.x + 6;
+      const by = r.y - 124;
+      const bw = r.w - 12;
+      const bh = 170;
+      ctx.save();
+      roundRect(ctx, bx, by, bw, bh, 12);
+      ctx.clip();
+      drawBustArt(ctx, cid, full, bx, by, bw, bh);
+      const fade = ctx.createLinearGradient(0, by + bh - 50, 0, by + bh);
+      fade.addColorStop(0, 'rgba(0,0,0,0)'); fade.addColorStop(1, 'rgba(20,10,20,0.45)');
+      ctx.fillStyle = fade;
+      ctx.fillRect(bx, by, bw, bh);
+      ctx.restore();
+      roundRect(ctx, bx, by, bw, bh, 12);
+      ctx.strokeStyle = '#2a1420';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      ctx.strokeStyle = info.color;
+      ctx.lineWidth = 1.5;
+      roundRect(ctx, bx + 3, by + 3, bw - 6, bh - 6, 10);
+      ctx.stroke();
+    } else if (art) {
       const h = 150;
       const w = (art.naturalWidth / art.naturalHeight) * h;
       ctx.drawImage(art, r.x + r.w / 2 - w / 2, r.y + 40 - h, w, h);

@@ -1,5 +1,5 @@
 // 로비 (DOM): 하단 5탭 — 상점 · 가방 · 전투 · 고양이 · 지도
-import { drawFaceArtCircle, getArt } from './art';
+import { drawFaceArtCircle, drawFaceArtSquare, getArt } from './art';
 import { sound } from './audio';
 import { drawCatLookToon, drawCatPortrait, IDLE_POSE } from './catdraw';
 import { CATS, CAT_BY_ID, HERO_ID, RARITY_COLOR, type CatDef, type CatLook } from './data/cats';
@@ -326,6 +326,27 @@ export class Menu {
     } else if (c.dataset.anim === 'cat') {
       const id = c.dataset.id!;
       const owned = !!this.save.cats[id];
+      const full = owned ? getArt(id, 'full') : null;
+      if (full) {
+        // 일러스트가 있으면 전신 그림을 크게 (숨쉬듯 살짝 움직임)
+        const sc = Math.min((h * 1.02) / full.naturalHeight, (w * 0.95) / full.naturalWidth);
+        const dw = full.naturalWidth * sc;
+        const dh = full.naturalHeight * sc;
+        const breathe = 1 + Math.sin(t * 2) * 0.008;
+        ctx.save();
+        ctx.translate(w / 2, h);
+        ctx.scale(breathe, breathe);
+        const g = ctx.createRadialGradient(0, -dh * 0.5, 10, 0, -dh * 0.5, dh * 0.7);
+        g.addColorStop(0, 'rgba(255,255,255,0.5)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = g;
+        ctx.fillRect(-w, -h, w * 2, h);
+        ctx.beginPath();
+        ctx.roundRect(-dw / 2, -dh, dw, dh, 16);
+        ctx.clip();
+        ctx.drawImage(full, -dw / 2, -dh, dw, dh);
+        ctx.restore();
+        return;
+      }
       const look = owned ? CAT_BY_ID[id].look : SILHOUETTE;
       const s = Math.min(h * 0.27, w / 5.2);
       ctx.save();
@@ -390,12 +411,11 @@ export class Menu {
         if (!ctx) return;
         const w = c.clientWidth;
         const h = c.clientHeight;
-        const sc = Math.max(w / art.naturalWidth, h / art.naturalHeight);
         ctx.save();
         ctx.beginPath();
         ctx.roundRect(0, 0, w, h, w * 0.14);
         ctx.clip();
-        ctx.drawImage(art, (w - art.naturalWidth * sc) / 2, (h - art.naturalHeight * sc) / 2, art.naturalWidth * sc, art.naturalHeight * sc);
+        drawFaceArtSquare(ctx, id, art, (w - Math.max(w, h)) / 2, (h - Math.max(w, h)) / 2, Math.max(w, h));
         ctx.restore();
         return;
       }
@@ -504,7 +524,7 @@ export class Menu {
         </div>
         <canvas class="bigcat" data-anim="cat" data-id="${def.id}"></canvas>
         <div class="side left">
-          ${getArt(def.id, 'face') ? `<button class="side-btn" data-act="album" data-arg="${def.id}"><span>📷</span><small>앨범</small></button>` : ''}
+          ${getArt(def.id, 'face') || getArt(def.id, 'full') ? `<button class="side-btn" data-act="album" data-arg="${def.id}"><span>📷</span><small>앨범</small></button>` : ''}
         </div>
         <div class="side right">
           <button class="side-btn" data-act="skills" data-arg="${def.id}"><span>${def.weapon.icon}</span><small>스킬</small></button>
@@ -700,7 +720,7 @@ export class Menu {
     this.openModal(`
       <button class="x" data-act="close">✕</button>
       <h2>📷 ${def.name}의 앨범</h2>
-      <canvas class="album-photo" data-look="${id}"></canvas>
+      ${getArt(id, 'full') ? `<img class="album-full" src="${getArt(id, 'full')!.src}" alt="${def.name} 일러스트">` : `<canvas class="album-photo" data-look="${id}"></canvas>`}
       <p class="muted center">${esc(def.bio)}</p>`, 'album');
   }
 
