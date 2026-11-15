@@ -4,6 +4,7 @@ import { CONFIG } from './data/config';
 import { ENEMIES, type EnemyDef, type EnemyKind } from './data/enemies';
 import type { Mix, StageDef } from './data/stages';
 import { GENERIC, MAX_WEAPON_LV, rally, type GenericCard, type WeaponDef, type WeaponFx, type WeaponParams } from './data/weapons';
+import type { Bonus } from './meta/items';
 import { catStats } from './meta/progression';
 import type { OwnedCat } from './meta/save';
 
@@ -128,7 +129,10 @@ export class Game {
   private spawnAcc = 0;
   private burstsDone = new Set<number>();
 
-  constructor(readonly stage: StageDef, entries: SquadEntry[]) {
+  readonly bonus: Bonus;
+
+  constructor(readonly stage: StageDef, entries: SquadEntry[], bonus?: Bonus) {
+    this.bonus = bonus ?? { atk: 0, hp: 0, speed: 0, reduce: 0, xp: 0, coin: 0, collection: 0 };
     let hp = stage.baseHp;
     this.squad = entries.map((e, i) => {
       const s = catStats(e.def, e.owned);
@@ -139,7 +143,7 @@ export class Game {
         x: CONFIG.squadX[i], y: CONFIG.squadY + (i === 0 ? 8 : i > 2 ? -6 : 0), swing: 0, wakeFx: 0,
       };
     });
-    this.maxHp = Math.round(hp);
+    this.maxHp = Math.round(hp * (1 + this.bonus.hp));
     this.hp = this.maxHp;
     this.banner = { text: `STAGE ${stage.no} · ${stage.name}`, t: 2.5 };
   }
@@ -152,12 +156,12 @@ export class Game {
   private get active(): boolean { return this.phase === 'playing' && !this.paused && !this.choice && !this.pickAnim; }
 
   get dmgMul(): number {
-    let m = 1 + 0.12 * this.generic.tuna;
+    let m = 1 + 0.12 * this.generic.tuna + this.bonus.atk + this.bonus.collection;
     for (const s of this.squad) if (s.level > 0 && s.weapon.kind === 'aura') m += this.params(s).buff ?? 0;
     return m;
   }
   get speedMul(): number {
-    return (1 + 0.12 * this.generic.catnip) * (1 + (this.rallyT > 0 ? this.heroRally.speed : 0));
+    return (1 + 0.12 * this.generic.catnip + this.bonus.speed) * (1 + (this.rallyT > 0 ? this.heroRally.speed : 0));
   }
   private get guard(): { reduce: number; thorns: number; power: number } {
     const g = this.squad.find((s) => s.level > 0 && s.weapon.kind === 'guard');
@@ -399,7 +403,7 @@ export class Game {
   }
 
   private damageBarricade(dmg: number, x: number): void {
-    const real = dmg * (1 - this.guard.reduce);
+    const real = dmg * (1 - this.guard.reduce) * (1 - this.bonus.reduce);
     this.hp -= real;
     this.hitFlash = 0.12;
     if (Math.random() < 0.35) this.addFloat(x, CONFIG.barricadeY + 18, `-${Math.round(real)}`, '#ff6b6b', 13);
@@ -442,7 +446,7 @@ export class Game {
 
   private gainXp(n: number): void {
     if (this.phase !== 'playing') return;
-    this.xp += n;
+    this.xp += n * (1 + this.bonus.xp);
     while (this.xp >= this.xpNeed) {
       this.xp -= this.xpNeed;
       this.level++;

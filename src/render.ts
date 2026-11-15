@@ -3,8 +3,8 @@ import { drawCatBackToon, drawCatFaceToon, drawCatLookToon, drawToon, heart, IDL
 import { drawFaceArtCircle, getArt } from './art';
 import { RARITY_COLOR, type CatLook } from './data/cats';
 import { CONFIG } from './data/config';
-import type { EnemyDef } from './data/enemies';
-import type { Area } from './data/stages';
+import { ENEMIES, type EnemyDef, type EnemyKind } from './data/enemies';
+import type { Area, StageDef } from './data/stages';
 import { GENERIC } from './data/weapons';
 import type { Card, Decal, Enemy, Game, Member } from './game';
 import { CHOICE_BUTTONS, HUD_BUTTONS, PAUSE_BUTTONS, buttonKey, type Rect } from './ui';
@@ -13,7 +13,7 @@ type Ctx = CanvasRenderingContext2D;
 const W = CONFIG.width;
 const FONT = '"Jua", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif';
 
-export interface RewardView { coins: number; tuna: number; heroShards: number; firstClear: boolean; newStars: number; }
+export interface RewardView { coins: number; tuna: number; yarn: number; exp: number; heroShards: number; firstClear: boolean; newStars: number; items: { slot: string; rarity: string }[]; }
 
 function roundRect(ctx: Ctx, x: number, y: number, w: number, h: number, r: number): void {
   ctx.beginPath();
@@ -835,7 +835,7 @@ function drawHud(ctx: Ctx, game: Game, t: number, pressed: string | null): void 
   iconFace(ctx, game.hero.def.id, 34, 95, 22, () => drawFaceAt(ctx, game.hero.def.look, 34, 100, 15, t));
   ctx.restore();
   text(ctx, `Lv.${game.level}`, 62, 88, 15, '#fff', 'left');
-  text(ctx, `${game.xp}/${game.xpNeed}`, 172, 88, 12, '#ffe0e8', 'right');
+  text(ctx, `${Math.floor(game.xp)}/${game.xpNeed}`, 172, 88, 12, '#ffe0e8', 'right');
   ctx.fillStyle = 'rgba(0,0,0,0.4)';
   ctx.fillRect(62, 102, 110, 8);
   ctx.fillStyle = '#ffd84d';
@@ -1090,8 +1090,12 @@ function drawResult(ctx: Ctx, game: Game, t: number, reward: RewardView | null):
     text(ctx, reward.firstClear ? '첫 클리어 보상' : '보상', W / 2, 464, 15, '#ffe98a');
     const parts = [`🪙 ${reward.coins}`];
     if (reward.tuna > 0) parts.push(`🥫 ${reward.tuna}`);
-    if (reward.heroShards > 0) parts.push(`치즈 조각 +${reward.heroShards}`);
-    text(ctx, parts.join('   '), W / 2, 505, 22, '#fff');
+    if (reward.yarn > 0) parts.push(`🧶 ${reward.yarn}`);
+    text(ctx, parts.join('   '), W / 2, 497, 22, '#fff');
+    const extra = [`집사 경험치 +${reward.exp}`];
+    if (reward.heroShards > 0) extra.push(`치즈 조각 +${reward.heroShards}`);
+    if (reward.items.length) extra.push(`장비 ${reward.items.length}개 획득!`);
+    text(ctx, extra.join(' · '), W / 2, 527, 14, '#ffe0ec');
   }
   ctx.save();
   ctx.globalAlpha = 0.6 + 0.4 * Math.sin(t * 4);
@@ -1128,4 +1132,42 @@ export function render(ctx: Ctx, game: Game, t: number, pressed: string | null, 
   if (game.phase !== 'playing') drawResult(ctx, game, t, reward);
   else if (game.choice || game.pickAnim) drawChoice(ctx, game, t, pressed);
   else if (game.paused) drawPause(ctx, pressed);
+}
+
+/** 로비용 스테이지 미리보기: 그 스테이지 바닥과 몰려오는 적들 */
+export function drawStagePreview(ctx: Ctx, stage: StageDef, w: number, h: number, t: number, locked: boolean): void {
+  const sc = w / W;
+  const viewH = h / sc;
+  ctx.save();
+  ctx.scale(sc, sc);
+  ctx.translate(0, -30);
+  drawField(ctx, stage.area, t);
+  let seed = stage.no * 7919 + 13;
+  const rnd = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+  const kinds = [...new Set([...Object.keys(stage.early), ...Object.keys(stage.late)])] as EnemyKind[];
+  const list: { d: EnemyDef; x: number; y: number; ph: number }[] = [];
+  for (let i = 0; i < 16 + stage.no * 2; i++) {
+    const d = ENEMIES[kinds[Math.floor(rnd() * kinds.length)]];
+    const sp = d.speed * 0.25;
+    const y0 = 110 + rnd() * (viewH - 60);
+    list.push({ d, x: 30 + rnd() * (W - 60), y: 110 + ((y0 - 110 + t * sp) % (viewH - 40)), ph: rnd() * 6 });
+  }
+  if (stage.boss) list.push({ d: ENEMIES[stage.boss.kind], x: W / 2, y: 110 + viewH * 0.38, ph: 0 });
+  list.sort((a, b) => a.y - b.y);
+  for (const e of list) {
+    const frame = Math.floor(t * 6 + e.ph) % 6;
+    const spr = enemySprite(ctx, e.d, frame);
+    ellipse(ctx, e.x, e.y + e.d.size * 0.4, e.d.size * 0.9, e.d.size * 0.4, 'rgba(40,20,10,0.22)');
+    ctx.drawImage(spr.c, e.x + spr.box.x, e.y + spr.box.y, spr.box.w, spr.box.h);
+  }
+  ctx.restore();
+  const g = ctx.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.3, w / 2, h / 2, Math.max(w, h) * 0.75);
+  g.addColorStop(0, 'rgba(20,10,20,0)');
+  g.addColorStop(1, 'rgba(20,10,20,0.55)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, w, h);
+  if (locked) {
+    ctx.fillStyle = 'rgba(20,10,20,0.6)';
+    ctx.fillRect(0, 0, w, h);
+  }
 }

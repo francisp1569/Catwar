@@ -4,6 +4,7 @@ import { CONFIG, applyLayout } from './data/config';
 import { STAGES } from './data/stages';
 import { Game, buildSquad } from './game';
 import { Menu } from './menu';
+import { bonuses } from './meta/items';
 import { applyResult } from './meta/rewards';
 import { loadSave, writeSave, type SaveData } from './meta/save';
 import { render, type RewardView } from './render';
@@ -23,7 +24,8 @@ function startBattle(stageId: string): void {
   if (!stage) return;
   applyLayout(window.innerWidth, window.innerHeight);
   layoutButtons(CONFIG.height);
-  game = new Game(stage, buildSquad(save.cats, save.deck));
+  save.selectedStage = stage.id;
+  game = new Game(stage, buildSquad(save.cats, save.deck), bonuses(save));
   reward = null;
   menu.hide();
   canvas.hidden = false;

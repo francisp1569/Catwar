@@ -1,7 +1,9 @@
 // 골판지 상자 뽑기
 import { CATS, type CatDef, type Rarity } from '../data/cats';
 import { DUPE_SHARDS } from './progression';
-import type { SaveData } from './save';
+import { SLOTS } from '../data/items';
+import { newItem, rollRarity as rollItemRarity } from './items';
+import type { Item, SaveData } from './save';
 
 export const PULL_COST = 100;
 export const PULL10_COST = 900;
@@ -44,4 +46,36 @@ export function pull(save: SaveData, count: 1 | 10, rng: () => number = Math.ran
   }
   save.pulls += count;
   return results;
+}
+
+// ───────────── 장비 상자 ─────────────
+export const ITEM_BOX_COST = 60;
+export const ITEM_BOX10_COST = 540;
+
+export function pullItems(save: SaveData, count: 1 | 10): Item[] | null {
+  const cost = count === 10 ? ITEM_BOX10_COST : ITEM_BOX_COST;
+  if (save.tuna < cost) return null;
+  save.tuna -= cost;
+  const best = Math.max(1, ...Object.keys(save.stages).map((id) => Number(id.slice(1))));
+  return Array.from({ length: count }, (_, i) => {
+    const slot = SLOTS[Math.floor(Math.random() * SLOTS.length)];
+    const r = count === 10 && i === 9 ? (Math.random() < 0.2 ? 'SSR' : 'SR') : rollItemRarity(best + 3);
+    return newItem(save, slot, r);
+  });
+}
+
+/** 하루 한 번 무료: 고양이 1회 + 장비 1개 */
+export function today(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+}
+
+export function claimFree(save: SaveData): { cat: PullResult; item: Item } | null {
+  if (save.freeDay === today()) return null;
+  save.freeDay = today();
+  save.tuna += PULL_COST;
+  const cat = pull(save, 1)![0];
+  const slot = SLOTS[Math.floor(Math.random() * SLOTS.length)];
+  const item = newItem(save, slot, rollItemRarity(3));
+  return { cat, item };
 }
