@@ -785,8 +785,9 @@ function drawSquad(ctx: Ctx, game: Game, t: number): void {
     const art = getArt(m.def.id, 'back');
     if (art) {
       // 일러스트 뒷모습: 공격할 때 살짝 튕기듯
-      const h = s * 4.2;
-      const w = (art.naturalWidth / art.naturalHeight) * h;
+      // 폭 기준으로 맞춘다 (무릎 아래를 잘라낸 그림도 같은 크기로 보이게)
+      const w = s * 2.35;
+      const h = (art.naturalHeight / art.naturalWidth) * w;
       ctx.scale(1 + m.swing * 0.05, 1 - m.swing * 0.04);
       ctx.drawImage(art, -w / 2, -h + s * 0.25 - m.swing * 5, w, h);
     } else {

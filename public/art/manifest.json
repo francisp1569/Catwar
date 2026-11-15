@@ -1,9 +1,207 @@
 {
-  "cheese": {
-    "face": "cheese-face.jpg",
-    "faceFocus": [0.52, 0.58, 0.32],
-    "full": "cheese-full.jpg",
-    "fullFocus": [0.476, 0.27, 0.16],
-    "back": "cheese-back.png"
-  }
+ "cheese": {
+  "face": "cheese-face.jpg",
+  "faceFocus": [
+   0.52,
+   0.58,
+   0.32
+  ],
+  "full": "cheese-full.jpg",
+  "fullFocus": [
+   0.476,
+   0.27,
+   0.16
+  ],
+  "back": "cheese-back.png"
+ },
+ "godeungeo": {
+  "full": "godeungeo-full.jpg",
+  "face": "godeungeo-full.jpg",
+  "faceFocus": [
+   0.59,
+   0.17,
+   0.15
+  ],
+  "back": "godeungeo-back.webp"
+ },
+ "huindungi": {
+  "full": "huindungi-full.jpg",
+  "face": "huindungi-full.jpg",
+  "faceFocus": [
+   0.7,
+   0.18,
+   0.15
+  ],
+  "back": "huindungi-back.webp"
+ },
+ "chaos": {
+  "full": "chaos-full.jpg",
+  "face": "chaos-full.jpg",
+  "faceFocus": [
+   0.52,
+   0.2,
+   0.15
+  ],
+  "back": "chaos-back.webp"
+ },
+ "cheesetabby": {
+  "full": "cheesetabby-full.jpg",
+  "face": "cheesetabby-full.jpg",
+  "faceFocus": [
+   0.55,
+   0.15,
+   0.15
+  ],
+  "back": "cheesetabby-back.webp"
+ },
+ "tuxedo": {
+  "full": "tuxedo-full.jpg",
+  "face": "tuxedo-full.jpg",
+  "faceFocus": [
+   0.57,
+   0.15,
+   0.15
+  ],
+  "back": "tuxedo-back.webp"
+ },
+ "samsaek": {
+  "full": "samsaek-full.jpg",
+  "face": "samsaek-full.jpg",
+  "faceFocus": [
+   0.57,
+   0.17,
+   0.15
+  ],
+  "back": "samsaek-back.webp"
+ },
+ "russianblue": {
+  "full": "russianblue-full.jpg",
+  "face": "russianblue-full.jpg",
+  "faceFocus": [
+   0.6,
+   0.18,
+   0.15
+  ],
+  "back": "russianblue-back.webp"
+ },
+ "scottish": {
+  "full": "scottish-full.jpg",
+  "face": "scottish-full.jpg",
+  "faceFocus": [
+   0.6,
+   0.15,
+   0.15
+  ],
+  "back": "scottish-back.webp"
+ },
+ "munchkin": {
+  "full": "munchkin-full.jpg",
+  "face": "munchkin-full.jpg",
+  "faceFocus": [
+   0.55,
+   0.23,
+   0.15
+  ],
+  "back": "munchkin-back.webp"
+ },
+ "persian": {
+  "full": "persian-full.jpg",
+  "face": "persian-full.jpg",
+  "faceFocus": [
+   0.5,
+   0.17,
+   0.15
+  ],
+  "back": "persian-back.webp"
+ },
+ "mainecoon": {
+  "full": "mainecoon-full.jpg",
+  "face": "mainecoon-full.jpg",
+  "faceFocus": [
+   0.6,
+   0.17,
+   0.15
+  ],
+  "back": "mainecoon-back.webp"
+ },
+ "siamese": {
+  "full": "siamese-full.jpg",
+  "face": "siamese-full.jpg",
+  "faceFocus": [
+   0.62,
+   0.16,
+   0.15
+  ],
+  "back": "siamese-back.webp"
+ },
+ "cow": {
+  "full": "cow-full.jpg",
+  "face": "cow-full.jpg",
+  "faceFocus": [
+   0.7,
+   0.17,
+   0.15
+  ],
+  "back": "cow-back.webp"
+ },
+ "americanshort": {
+  "full": "americanshort-full.jpg",
+  "face": "americanshort-full.jpg",
+  "faceFocus": [
+   0.57,
+   0.16,
+   0.15
+  ],
+  "back": "americanshort-back.webp"
+ },
+ "abyssinian": {
+  "full": "abyssinian-full.jpg",
+  "face": "abyssinian-full.jpg",
+  "faceFocus": [
+   0.57,
+   0.14,
+   0.15
+  ],
+  "back": "abyssinian-back.webp"
+ },
+ "norwegian": {
+  "full": "norwegian-full.jpg",
+  "face": "norwegian-full.jpg",
+  "faceFocus": [
+   0.6,
+   0.16,
+   0.15
+  ],
+  "back": "norwegian-back.webp"
+ },
+ "ragdoll": {
+  "full": "ragdoll-full.jpg",
+  "face": "ragdoll-full.jpg",
+  "faceFocus": [
+   0.57,
+   0.16,
+   0.15
+  ],
+  "back": "ragdoll-back.webp"
+ },
+ "bengal": {
+  "full": "bengal-full.jpg",
+  "face": "bengal-full.jpg",
+  "faceFocus": [
+   0.6,
+   0.16,
+   0.15
+  ],
+  "back": "bengal-back.webp"
+ },
+ "sphynx": {
+  "full": "sphynx-full.jpg",
+  "face": "sphynx-full.jpg",
+  "faceFocus": [
+   0.57,
+   0.14,
+   0.15
+  ],
+  "back": "sphynx-back.webp"
+ }
 }
