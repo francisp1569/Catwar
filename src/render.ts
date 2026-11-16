@@ -495,6 +495,17 @@ function drawBarricade(ctx: Ctx, game: Game, t: number): void {
   const w = W / items.length;
   ctx.save();
   if (game.hitFlash > 0) ctx.translate((Math.random() - 0.5) * 3, 0);
+  const bar = getWorld(ratio > 0.6 ? 'barricade-0' : ratio > 0.3 ? 'barricade-1' : 'barricade-2');
+  if (bar) {
+    ctx.fillStyle = 'rgba(40,20,20,0.3)';
+    ctx.fillRect(0, y + 44, W, 14);
+    const bw = W + 16;
+    const bh = (bw * bar.naturalHeight) / bar.naturalWidth;
+    ctx.drawImage(bar, -8, y + 54 - bh, bw, bh);
+    if (game.hitFlash > 0) { ctx.globalCompositeOperation = 'source-atop'; ctx.fillStyle = 'rgba(255,60,60,0.25)'; ctx.fillRect(0, y + 54 - bh, W, bh); }
+    ctx.restore();
+    return;
+  }
   // 바리케이드 그림자
   ctx.fillStyle = 'rgba(40,20,20,0.3)';
   ctx.fillRect(0, y + 44, W, 14);
@@ -857,8 +868,14 @@ function drawSquad(ctx: Ctx, game: Game, t: number): void {
     ctx.save();
     ctx.translate(m.x, m.y + (enter > 0 ? -Math.sin((1 - enter) * Math.PI) * 60 + enter * enter * 70 : 0));
     if (enter > 0) ctx.scale(1 - enter * 0.3, 1 + enter * 0.2);
+    const atkArt = m.slot === 0 && m.swing > 0.35 ? getWorld('cheese-attack') : null;
     const art = getArt(m.def.id, 'back');
-    if (art) {
+    if (atkArt) {
+      // 치즈: 쏘는 순간엔 공격 포즈
+      const h = s * 3.3;
+      const w = (atkArt.naturalWidth / atkArt.naturalHeight) * h;
+      ctx.drawImage(atkArt, -w * 0.42, -h + s * 0.25, w, h);
+    } else if (art) {
       // 일러스트 뒷모습: 공격할 때 살짝 튕기듯
       // 폭 기준으로 맞춘다 (무릎 아래를 잘라낸 그림도 같은 크기로 보이게)
       const w = s * 2.35;
@@ -1239,11 +1256,24 @@ function drawFields(ctx: Ctx, game: Game, t: number): void {
   }
 }
 
+const FX_ART: Partial<Record<string, string>> = { boom: 'fx-boom', poof: 'fx-poof', spark: 'fx-spark' };
+
 function drawFx(ctx: Ctx, game: Game): void {
   for (const f of game.fx) {
     const k = f.t / f.life;
     ctx.save();
     ctx.globalAlpha = 1 - k;
+    const fa = FX_ART[f.kind] ? getWorld(FX_ART[f.kind]!) : null;
+    if (fa) {
+      // 그림 이펙트: 톡 커졌다가 사라짐
+      const pop = f.kind === 'spark' ? 0.6 + k * 0.7 : 0.55 + Math.min(1, k * 3) * 0.6;
+      ctx.globalAlpha = k < 0.6 ? 1 : (1 - k) / 0.4;
+      ctx.translate(f.x, f.y - (f.kind === 'poof' ? k * 10 : 0));
+      ctx.rotate(f.kind === 'spark' ? f.x * 0.37 + k * 0.6 : 0);
+      drawContain(ctx, fa, 0, 0, f.r * 2.4 * pop);
+      ctx.restore();
+      continue;
+    }
     switch (f.kind) {
       case 'beam': {
         // 레이저 포인터
@@ -1302,6 +1332,8 @@ function drawFx(ctx: Ctx, game: Game): void {
         ctx.globalAlpha = 1 - k;
         ctx.lineCap = 'round';
         const reach = (f.y - f.y2!) * Math.min(1, k * 2.5);
+        const cl = getWorld('fx-claw');
+        if (cl) { drawContain(ctx, cl, f.x, f.y - reach, f.r * 1.6); break; }
         for (const dx of [-0.32, 0, 0.32]) {
           ctx.strokeStyle = '#3b2228';
           ctx.lineWidth = 9;
@@ -1420,6 +1452,8 @@ function drawFx(ctx: Ctx, game: Game): void {
         g.addColorStop(0, 'rgba(190,235,255,0.75)'); g.addColorStop(1, 'rgba(120,200,255,0.05)');
         ctx.fillStyle = g;
         ctx.beginPath(); ctx.moveTo(f.x, f.y); ctx.arc(f.x, f.y, rr, a0, a1); ctx.closePath(); ctx.fill();
+        const sp = getWorld('fx-splash');
+        if (sp && k > 0.25) { const am = f.ang ?? -Math.PI / 2; drawContain(ctx, sp, f.x + Math.cos(am) * rr * 0.85, f.y + Math.sin(am) * rr * 0.85, f.r * 0.7); }
         for (let i = 0; i < 16; i++) {
           const a = a0 + ((a1 - a0) * ((i * 7) % 16)) / 15;
           const d = rr * (0.3 + ((i * 13) % 10) / 14);
@@ -1435,9 +1469,12 @@ function drawFx(ctx: Ctx, game: Game): void {
         ctx.fillRect(0, f.y - 60 - k * 20, W, 110);
         break;
       }
-      case 'heal':
-        for (let i = 0; i < 10; i++) text(ctx, '+', (i + 0.5) * (W / 10), f.y - k * 30 - (i % 2) * 8, 18, f.color, 'center', false);
+      case 'heal': {
+        const hi = getWorld('fx-heal');
+        if (hi) for (let i = 0; i < 5; i++) drawContain(ctx, hi, (i + 0.5) * (W / 5), f.y - k * 40 - (i % 2) * 12, 54);
+        else for (let i = 0; i < 10; i++) text(ctx, '+', (i + 0.5) * (W / 10), f.y - k * 30 - (i % 2) * 8, 18, f.color, 'center', false);
         break;
+      }
       case 'thorns':
         ctx.strokeStyle = '#fff';
         ctx.lineWidth = 2;
@@ -1593,6 +1630,54 @@ function drawHud(ctx: Ctx, game: Game, t: number, pressed: string | null): void 
     text(ctx, game.banner.text, W / 2, 204, 19, '#fff');
     ctx.restore();
   }
+}
+
+/** 보스 등장 컷인: 얼굴 그림이 옆에서 미끄러져 들어오는 띠 */
+function drawBossIntro(ctx: Ctx, game: Game): void {
+  const bi = game.bossIntro!;
+  const e = game.time - bi.at;
+  if (e > 2.6) return;
+  const inK = Math.min(1, e / 0.35);
+  const outK = e > 2.2 ? (e - 2.2) / 0.4 : 0;
+  const ease = 1 - Math.pow(1 - inK, 3);
+  const cy = CONFIG.height * 0.36;
+  const bh = 150;
+  ctx.save();
+  ctx.globalAlpha = 1 - outK;
+  // 띠
+  ctx.save();
+  ctx.translate(0, cy);
+  ctx.transform(1, -0.08, 0, 1, 0, 0);
+  ctx.fillStyle = 'rgba(20,8,16,0.85)';
+  ctx.fillRect(-20, -bh / 2, (W + 40) * ease, bh);
+  ctx.fillStyle = '#ff4d6d';
+  ctx.fillRect(-20, -bh / 2 - 6, (W + 40) * ease, 6);
+  ctx.fillRect(W + 20 - (W + 40) * ease, bh / 2, (W + 40) * ease, 6);
+  ctx.restore();
+  // 얼굴들
+  const n = bi.kinds.length;
+  bi.kinds.forEach((kd, i) => {
+    const img = getWorld(`boss-${kd}`);
+    const size = n > 1 ? 120 : 140;
+    const x = W - 20 - size / 2 - i * (size + 10) + (1 - ease) * 300;
+    const y = cy - 10 + i * 6;
+    if (img) {
+      ctx.save();
+      ctx.beginPath(); ctx.arc(x, y, size / 2, 0, Math.PI * 2); ctx.closePath();
+      ctx.fillStyle = '#fff'; ctx.fill();
+      ctx.clip();
+      ctx.drawImage(img, x - size / 2, y - size / 2, size, size);
+      ctx.restore();
+      ctx.strokeStyle = '#ff4d6d'; ctx.lineWidth = 5;
+      ctx.beginPath(); ctx.arc(x, y, size / 2, 0, Math.PI * 2); ctx.stroke();
+    }
+  });
+  const names = bi.kinds.map((kd) => ENEMIES[kd].name).join(' & ');
+  const tx = 24 - (1 - ease) * 200;
+  text(ctx, 'WARNING', tx + 70, cy - 36, 22, '#ff8fa3', 'center');
+  text(ctx, names, tx, cy + 4, n > 1 ? 24 : 30, '#fff', 'left');
+  text(ctx, '쓰러뜨리면 승리!', tx, cy + 40, 16, '#ffe98a', 'left');
+  ctx.restore();
 }
 
 /** 그림을 (cx, cy) 중심, 긴 변 size 크기로 비율 유지해서 그린다 */
@@ -1825,6 +1910,14 @@ function drawResult(ctx: Ctx, game: Game, t: number, reward: RewardView | null):
   ctx.save();
   ctx.translate(0, (CONFIG.height - 960) / 2);
   const res = game.result!;
+  const pose = getWorld(res.victory ? 'cheese-win' : 'cheese-lose');
+  if (pose) {
+    const ph = res.victory ? 175 : 150;
+    const pw = (pose.naturalWidth / pose.naturalHeight) * ph;
+    const hop = res.victory ? Math.abs(Math.sin(t * 4)) * 10 : 0;
+    ellipse(ctx, W / 2, res.victory ? 214 : 240, pw * 0.35, 10, 'rgba(0,0,0,0.3)');
+    ctx.drawImage(pose, W / 2 - pw / 2, (res.victory ? 212 : 242) - ph - hop, pw, ph);
+  }
   if (res.victory) {
     text(ctx, '승리! 🎉', W / 2, 250, 56, '#ffe98a');
     for (let i = 0; i < 3; i++) {
@@ -1943,6 +2036,7 @@ export function render(ctx: Ctx, game: Game, t: number, pressed: string | null, 
   ctx.restore();
 
   drawHud(ctx, game, t, pressed);
+  if (game.bossIntro && game.phase === 'playing') drawBossIntro(ctx, game);
   pressedKey = pressed;
   if (game.phase !== 'playing') drawResult(ctx, game, t, reward);
   else if (game.choice || game.pickAnim) drawChoice(ctx, game, t, pressed);

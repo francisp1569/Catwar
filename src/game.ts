@@ -143,6 +143,8 @@ export class Game {
 
   kills = 0;
   banner: { text: string; t: number } | null = null;
+  /** 보스 등장 컷인 (등장 시각) */
+  bossIntro: { kinds: EnemyKind[]; at: number } | null = null;
   result: BattleResult | null = null;
   bossSpawned = false;
   shake = 0;
@@ -421,6 +423,7 @@ export class Game {
         for (let i = 0; i < st.boss.count; i++) kinds.push(st.boss.kind);
         if (st.boss.with) kinds.push(st.boss.with);
         kinds.forEach((kd, i) => this.spawn(kd, W / 2 + (i - (kinds.length - 1) / 2) * 180, CONFIG.fieldTop - 40));
+        this.bossIntro = { kinds: [...new Set(kinds)], at: this.time };
         this.banner = { text: `👑 ${ENEMIES[st.boss.kind].name}${st.boss.with ? `와 ${ENEMIES[st.boss.with].name}` : ''} 등장!`, t: 2.5 };
         this.sfx('boss');
       } else {

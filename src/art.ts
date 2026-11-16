@@ -84,13 +84,19 @@ export function drawBustArt(ctx: CanvasRenderingContext2D, id: string, img: HTML
 export const WORLD_FILES: Record<string, string> = {};
 const ENEMY_ART = ['ant', 'mouse', 'roach', 'mosquito', 'spider', 'ratking', 'fly', 'shieldmouse', 'roachgen', 'spiderqueen'];
 for (const id of ENEMY_ART) WORLD_FILES[`enemy-${id}`] = `enemies/${id}.webp`;
-for (const id of ['vacuum', 'web', 'girl-happy', 'girl-worried', 'girl-cry', 'barricade']) WORLD_FILES[id] = `props/${id}.webp`;
+for (const id of ['vacuum', 'web', 'girl-happy', 'girl-worried', 'girl-cry', 'barricade', 'barricade-0', 'barricade-1', 'barricade-2',
+  'cheese-attack', 'cheese-win', 'cheese-lose', 'box', 'box-open', 'boss-ratking', 'boss-roachgen', 'boss-spiderqueen']) WORLD_FILES[id] = `props/${id}.webp`;
+for (const id of ['claw', 'spark', 'boom', 'poof', 'splash', 'zap', 'heal', 'notes']) WORLD_FILES[`fx-${id}`] = `fx/${id}.webp`;
+for (const id of ['lobby', 'map']) WORLD_FILES[`bg-${id}`] = `bg/${id}.jpg`;
 for (const id of ['entrance', 'living', 'kitchen', 'attic']) WORLD_FILES[`bg-${id}`] = `bg/${id}.jpg`;
 export const ICON_IDS = [
   'coin', 'tuna', 'yarn', 'chest', 'chest-open', 'chest-royal',
   ...['cheese', 'godeungeo', 'huindungi', 'chaos', 'cheesetabby', 'tuxedo', 'samsaek', 'russianblue', 'scottish', 'munchkin',
     'persian', 'mainecoon', 'siamese', 'cow', 'americanshort', 'abyssinian', 'norwegian', 'ragdoll', 'bengal', 'sphynx'].map((c) => `w-${c}`),
-  'g-snack', 'g-tuna', 'g-catnip',
+  'g-snack', 'g-tuna', 'g-catnip', 'rally', 'atk', 'def',
+  'tab-shop', 'tab-bag', 'tab-battle', 'tab-cats', 'tab-map', 'btn-nap', 'btn-settings', 'btn-gift',
+  'eq-hat-SR', 'eq-hat-SSR', 'eq-toy-N', 'eq-toy-SSR', 'eq-cushion-N', 'eq-cushion-SR', 'eq-cushion-SSR',
+  'eq-bowl-N', 'eq-bowl-R', 'eq-bowl-SR', 'eq-bell-N', 'eq-bell-R', 'eq-bell-SR', 'eq-bell-SSR',
   'eq-collar-N', 'eq-collar-R', 'eq-collar-SR', 'eq-collar-SSR', 'eq-hat-N', 'eq-hat-R', 'eq-toy-R', 'eq-toy-SR', 'eq-cushion', 'eq-bowl', 'eq-bell',
 ];
 for (const id of ICON_IDS) WORLD_FILES[id] = `icons/${id}.webp`;

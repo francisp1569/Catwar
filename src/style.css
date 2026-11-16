@@ -430,3 +430,18 @@ canvas#game { display: block; position: fixed; inset: 0; width: 100vw; height: 1
 .team-strip .team-note small { font-size: 11px; color: #fff; opacity: 0.85; }
 .team-strip .mini-face.small { width: 30px; height: 30px; opacity: 0.85; }
 .team-strip .mini-more { font-size: 12px; color: #fff; opacity: 0.8; margin-left: 2px; }
+
+.tab-img { width: 34px; height: 34px; object-fit: contain; filter: drop-shadow(0 2px 2px #0005); }
+.box-img { width: 150px; height: 150px; object-fit: contain; display: block; margin: 4px auto 0; filter: drop-shadow(0 6px 10px #0006); animation: boxwiggle 2.4s ease-in-out infinite; }
+@keyframes boxwiggle { 0%, 80%, 100% { transform: rotate(0); } 85% { transform: rotate(-5deg); } 90% { transform: rotate(5deg); } 95% { transform: rotate(-3deg); } }
+.box-open-img { width: 120px; height: 120px; object-fit: contain; display: block; margin: -10px auto -6px; }
+.side-btn span .ico-img { width: 28px; height: 28px; }
+
+/* 일러스트 배경 */
+#menu .view.tab-battle, #menu .view.tab-cats, #menu .view.tab-shop {
+  background: linear-gradient(#2b1d2ec4, #2b1d2ee0), url(/art/world/bg/lobby.jpg) center / cover no-repeat;
+}
+#menu .view.tab-map {
+  background: linear-gradient(#1a1430cc, #1a1430dd), url(/art/world/bg/map.jpg) center top / cover no-repeat;
+  background-attachment: local;
+}

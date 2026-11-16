@@ -26,10 +26,14 @@ const TUNA = (): string => iconHtml('tuna', '🥫');
 const YARN = (): string => iconHtml('yarn', '🧶');
 const CHEST = (): string => iconHtml('chest', '🎁');
 const wIcon = (c: CatDef): string => iconHtml(`w-${c.id}`, c.weapon.icon);
-const EQ_DEFAULT: Record<Slot, string> = { collar: 'eq-collar-R', hat: 'eq-hat-R', toy: 'eq-toy-R', cushion: 'eq-cushion', bowl: 'eq-bowl', bell: 'eq-bell' };
+const EQ_DEFAULT: Record<Slot, string> = { collar: 'eq-collar-R', hat: 'eq-hat-R', toy: 'eq-toy-R', cushion: 'eq-cushion', bowl: 'eq-bowl', bell: 'eq-bell-R' };
 const EQ_RARITY: Partial<Record<string, string>> = {
   'collar-N': 'eq-collar-N', 'collar-R': 'eq-collar-R', 'collar-SR': 'eq-collar-SR', 'collar-SSR': 'eq-collar-SSR',
-  'hat-N': 'eq-hat-N', 'hat-R': 'eq-hat-R', 'toy-R': 'eq-toy-R', 'toy-SR': 'eq-toy-SR',
+  'hat-N': 'eq-hat-N', 'hat-R': 'eq-hat-R', 'hat-SR': 'eq-hat-SR', 'hat-SSR': 'eq-hat-SSR',
+  'toy-N': 'eq-toy-N', 'toy-R': 'eq-toy-R', 'toy-SR': 'eq-toy-SR', 'toy-SSR': 'eq-toy-SSR',
+  'cushion-N': 'eq-cushion-N', 'cushion-R': 'eq-cushion', 'cushion-SR': 'eq-cushion-SR', 'cushion-SSR': 'eq-cushion-SSR',
+  'bowl-N': 'eq-bowl-N', 'bowl-R': 'eq-bowl-R', 'bowl-SR': 'eq-bowl-SR', 'bowl-SSR': 'eq-bowl',
+  'bell-N': 'eq-bell-N', 'bell-R': 'eq-bell-R', 'bell-SR': 'eq-bell-SR', 'bell-SSR': 'eq-bell-SSR',
 };
 const eqIcon = (slot: Slot, rarity?: string): string => iconHtml((rarity && EQ_RARITY[`${slot}-${rarity}`]) || EQ_DEFAULT[slot], SLOT_INFO[slot].icon);
 
@@ -353,7 +357,7 @@ export class Menu {
   private render(): void {
     const s = this.save;
     const pl = playerLevel(s.exp);
-    const tabs: [Tab, string, string][] = [['shop', '🏪', '상점'], ['bag', '🎒', '가방'], ['battle', '⚔️', '전투'], ['cats', '🐱', '고양이'], ['map', '🗺️', '지도']];
+    const tabs: [Tab, string, string][] = [['shop', iconHtml('tab-shop', '🏪', 'tab-img'), '상점'], ['bag', iconHtml('tab-bag', '🎒', 'tab-img'), '가방'], ['battle', iconHtml('tab-battle', '⚔️', 'tab-img'), '전투'], ['cats', iconHtml('tab-cats', '🐱', 'tab-img'), '고양이'], ['map', iconHtml('tab-map', '🗺️', 'tab-img'), '지도']];
     const freeReady = s.freeDay !== today();
     let body = '';
     if (this.tab === 'battle') body = this.battleView();
@@ -457,13 +461,13 @@ export class Menu {
         <canvas data-anim="stage" data-stage="${st.id}"></canvas>
         ${unlocked ? '' : '<div class="lock-cover">🔒<small>이전 스테이지를 클리어하면 열려요</small></div>'}
         <div class="side left">
-          <button class="side-btn" data-act="nap"><span>💤</span><small>낮잠 보상</small>${nap.coins > 0 ? `<em>${fmt(nap.coins)}</em>` : ''}</button>
-          <button class="side-btn" data-act="tab" data-arg="shop"><span>${CHEST()}</span><small>무료 상자</small>${freeReady ? '<i class="dot"></i>' : ''}</button>
+          <button class="side-btn" data-act="nap"><span>${iconHtml('btn-nap', '💤')}</span><small>낮잠 보상</small>${nap.coins > 0 ? `<em>${fmt(nap.coins)}</em>` : ''}</button>
+          <button class="side-btn" data-act="tab" data-arg="shop"><span>${iconHtml('btn-gift', '🎁')}</span><small>무료 상자</small>${freeReady ? '<i class="dot"></i>' : ''}</button>
         </div>
         <div class="side right">
-          <button class="side-btn" data-act="tab" data-arg="cats"><span>🐱</span><small>고양이</small></button>
-          <button class="side-btn" data-act="tab" data-arg="map"><span>🗺️</span><small>지도</small></button>
-          <button class="side-btn" data-act="settings"><span>⚙️</span><small>설정</small></button>
+          <button class="side-btn" data-act="tab" data-arg="cats"><span>${iconHtml('tab-cats', '🐱')}</span><small>고양이</small></button>
+          <button class="side-btn" data-act="tab" data-arg="map"><span>${iconHtml('tab-map', '🗺️')}</span><small>지도</small></button>
+          <button class="side-btn" data-act="settings"><span>${iconHtml('btn-settings', '⚙️')}</span><small>설정</small></button>
         </div>
       </section>
       <section class="chests">
@@ -522,7 +526,7 @@ export class Menu {
         <div class="side right">
           <button class="side-btn" data-act="skills" data-arg="${def.id}"><span>${wIcon(def)}</span><small>스킬</small></button>
         </div>
-        <div class="skill-badge"><span class="ic">${wIcon(def)}</span>${esc(def.skillName)}<small>⚔️ ${st.atk} · 🛡 +${st.hp}</small></div>
+        <div class="skill-badge"><span class="ic">${wIcon(def)}</span>${esc(def.skillName)}<small>${iconHtml('atk', '⚔️')} ${st.atk} · ${iconHtml('def', '🛡')} +${st.hp}</small></div>
         <div class="cat-actions">
           <button class="btn ${canLevelUp(s, def.id).ok ? '' : 'off'}" data-act="levelup" data-arg="${def.id}">레벨 업<small>${o.level >= cap ? '상한 도달' : `${COIN()} ${fmt(lvCost)}`}</small></button>
           <button class="btn gold ${canStarUp(s, def.id).ok ? '' : 'off'}" data-act="starup" data-arg="${def.id}">★ 성급 업<small>${o.stars >= MAX_STARS ? 'MAX' : `조각 ${o.shards}/${need}`}</small></button>
@@ -613,7 +617,7 @@ export class Menu {
         <button class="btn ${freeReady ? 'gold' : 'off'}" data-act="free">${freeReady ? '받기' : '내일 또!'}</button>
       </section>
       <section class="shop-card big">
-        <div class="box"><div class="box-lid"></div><div class="box-body">📦<span>FRAGILE · 냥</span></div><div class="ears"><i></i><i></i></div></div>
+        ${iconHtml('box', '<div class="box"><div class="box-lid"></div><div class="box-body">📦<span>FRAGILE · 냥</span></div><div class="ears"><i></i><i></i></div></div>', 'box-img')}
         <b class="sc-title">골판지 상자 뽑기</b>
         <small class="muted">새 고양이를 만나요. 이미 있는 고양이는 성급 조각 +10</small>
         <div class="rates">${rates}</div>
@@ -753,6 +757,7 @@ export class Menu {
       </button>`).join('');
     this.openModal(`
       <button class="x" data-act="close">✕</button>
+      ${iconHtml('box-open', '', 'box-open-img')}
       <h2>상자에서 나온 고양이들!</h2>
       <div class="pull-grid ${res.length === 1 ? 'single' : ''}">${cards}</div>
       ${items.length ? `<h3>함께 받은 장비</h3><div class="inv-grid">${items.map((it) => this.itemCard(it)).join('')}</div>` : ''}
