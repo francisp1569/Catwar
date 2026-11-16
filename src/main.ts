@@ -10,7 +10,7 @@ import { applyResult, isUnlocked } from './meta/rewards';
 import { loadSave, writeSave, type SaveData } from './meta/save';
 import { chipAt, render, type RewardView } from './render';
 import { ch2Cuts, story } from './story';
-import { cloudFlush, cloudInit, cloudPush } from './cloud';
+import { cloud, cloudFlush, cloudInit, cloudPush } from './cloud';
 import * as gacha from './meta/gacha';
 import * as items from './meta/items';
 import * as progression from './meta/progression';
@@ -320,6 +320,7 @@ Object.assign(window as object, {
     start: startBattle,
     sound,
     hero: () => HERO_ID,
+    cloud,
     meta: { gacha, items, progression, rewards, save: saveMod, stages: stagesMod, cats: CAT_BY_ID },
   },
 });

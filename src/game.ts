@@ -837,7 +837,7 @@ export class Game {
   };
 
   /** 대장 전용 공격 '대장의 발도장': 적이 가장 몰린 곳에 거대한 금빛 발바닥을 찍는다 */
-  static readonly STAMP_EVERY = 2.8;
+  static readonly STAMP_EVERY = 3.4;
   private leaderStamp(m: Member, dt: number): void {
     const [dmgK, freqK] = LEADER_STAMP[m.def.id] ?? [1, 1];
     m.stampT = (m.stampT ?? 0) + dt * this.speedMul * freqK;
@@ -848,7 +848,7 @@ export class Game {
     m.stampT = 0;
     const grow = (1 + 0.12 * (m.level - 1)) * (m.evolved ? 1.6 : 1);
     const r = 62 + Math.min(40, m.level * 3);
-    const dmg = m.power * 1.5 * dmgK * grow * this.dmgMul;
+    const dmg = m.power * 1.0 * dmgK * grow * this.dmgMul;
     for (const e of list) {
       if (Math.hypot(e.x - c.x, e.y - c.y) <= r + e.def.size * 0.5) { this.stampDealt += Math.min(dmg, e.hp); this.damageEnemy(e, dmg, { src: m.slot, knock: 16, stun: 0.25, quiet: true, color: '#ffd84d' }); }
     }
