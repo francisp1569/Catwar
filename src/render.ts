@@ -857,6 +857,15 @@ function drawEnemy(ctx: Ctx, e: Enemy): void {
     return;
   }
   if (d.hop && !e.dead) ctx.translate(0, -Math.max(0, Math.sin(t * 4)) * s * 1.2);
+  if (!e.dead) {
+    // 맞는 순간 찌그러졌다 펴짐 + 밀려날 땐 뒤로 젖혀짐
+    const hk = Math.max(0, e.hitFlash / 0.12);
+    const lean = Math.min(0.35, (e.kbV ?? 0) / 600);
+    ctx.translate(0, s * 0.6);
+    ctx.rotate((e.uid % 2 ? 1 : -1) * lean);
+    ctx.scale(1 + hk * 0.16, 1 - hk * 0.12);
+    ctx.translate(0, -s * 0.6);
+  }
   const spr = enemySprite(ctx, d, frame, e.hitFlash > 0 && !e.dead);
   ctx.drawImage(spr.c, spr.box.x, spr.box.y, spr.box.w, spr.box.h);
   ctx.restore();
@@ -867,7 +876,21 @@ function drawEnemy(ctx: Ctx, e: Enemy): void {
       text(ctx, '★', e.x + Math.cos(a) * s * 0.9, e.y - s * 1.2 + Math.sin(a) * 4, 10, '#ffe14d', 'center', false);
     }
     if (e.slowT > 0) {
+      // 느려짐: 발밑 얼음빛 고리 + 하트
+      ctx.save();
+      ctx.globalAlpha = 0.55;
+      ctx.strokeStyle = '#9fe3ff';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.ellipse(e.x, e.y + s * 0.4, s * 1.1, s * 0.4, 0, 0, Math.PI * 2); ctx.stroke();
+      ctx.restore();
       heart(ctx, e.x + Math.sin(e.animT * 4) * s * 0.6, e.y - s * 1.5, 9);
+    }
+    if ((e.kbV ?? 0) > 60) {
+      // 밀려나는 중: 발밑 먼지
+      ctx.save();
+      ctx.globalAlpha = Math.min(0.6, (e.kbV ?? 0) / 400);
+      for (let i = 0; i < 3; i++) circle(ctx, e.x + (i - 1) * s * 0.6, e.y + s * 0.6 + i * 2, s * 0.25, '#e8dccb');
+      ctx.restore();
     }
     if (e.hp < e.maxHp && !e.def.boss) {
       const w = Math.max(20, s * 1.8);

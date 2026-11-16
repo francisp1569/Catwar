@@ -10,6 +10,13 @@ import { applyResult, isUnlocked } from './meta/rewards';
 import { loadSave, writeSave, type SaveData } from './meta/save';
 import { render, type RewardView } from './render';
 import { CH2_CUTS, story } from './story';
+import * as gacha from './meta/gacha';
+import * as items from './meta/items';
+import * as progression from './meta/progression';
+import * as rewards from './meta/rewards';
+import * as saveMod from './meta/save';
+import * as stagesMod from './data/stages';
+import { CAT_BY_ID } from './data/cats';
 import { CHOICE_BUTTONS, HUD_BUTTONS, PAUSE_BUTTONS, RESULT_BUTTONS, buttonKey, hit, layoutButtons, type Button } from './ui';
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
@@ -273,5 +280,6 @@ Object.assign(window as object, {
     setSave(s: SaveData) { save = s; writeSave(save); menu.show(save); },
     start: startBattle,
     sound,
+    meta: { gacha, items, progression, rewards, save: saveMod, stages: stagesMod, cats: CAT_BY_ID },
   },
 });

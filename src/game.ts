@@ -36,6 +36,8 @@ export interface Enemy {
   fleeT?: number;
   /** 땅속 (공격 불가) */
   burrowed?: boolean;
+  /** 맞고 뒤로 밀려나는 속도 (px/s, 점점 줄어듦) */
+  kbV?: number;
 }
 
 export interface Member {
@@ -103,6 +105,12 @@ export type Card =
 export type Phase = 'playing' | 'victory' | 'defeat';
 export interface BattleResult { victory: boolean; stars: number; kills: number; time: number; progress: number; discovered: string[]; bonusCoins?: number; }
 
+/** 공격 종류별 밀려나는 거리 (px). 보스는 15%만 */
+const KNOCK_BY_KIND: Partial<Record<string, number>> = {
+  bolt: 4, guard: 6, dash: 10, roll: 9, snipe: 14, frost: 3, quake: 12, slam: 18, beam: 1,
+  lob: 11, chain: 2, pounce: 12, boomerang: 5, spray: 14,
+};
+
 export function fmtDmg(v: number): string {
   return v >= 10000 ? `${(v / 1000).toFixed(0)}K` : v >= 1000 ? `${(v / 1000).toFixed(1)}K` : `${Math.round(v)}`;
 }
@@ -152,6 +160,8 @@ export class Game {
 
   kills = 0;
   banner: { text: string; t: number } | null = null;
+  /** 이번 전투에서 바리케이드 체력이 가장 낮았던 비율 (밸런스 측정용) */
+  minHpRatio = 1;
   /** 황금쥐로 번 코인 */
   bonusCoins = 0;
   /** 결과 화면 '다음' 버튼으로 이어 할 스테이지 */
@@ -482,6 +492,12 @@ export class Game {
       e.slowT = Math.max(0, e.slowT - dt);
       if (e.dead) { e.deathT += dt; continue; }
       if (e.stunT > 0) { e.stunT -= dt; continue; }
+      if (e.kbV && e.kbV > 0) {
+        e.y = Math.max(CONFIG.fieldTop - 10, e.y - e.kbV * dt);
+        e.kbV *= Math.exp(-7 * dt);
+        if (e.kbV < 6) e.kbV = 0;
+        if (e.kbV > 25 && !e.def.boss) { e.attacking = false; continue; }
+      }
       const slow = e.slowT > 0 ? 1 - e.slowAmt : 1;
       const stopY = CONFIG.barricadeY - e.def.size * 0.6 - (e.def.range ?? 0);
       if (e.def.flee) {
@@ -582,6 +598,7 @@ export class Game {
       if (real <= 0) return;
     }
     this.hp -= real;
+    this.minHpRatio = Math.min(this.minHpRatio, Math.max(0, this.hp / this.maxHp));
     this.hitFlash = 0.12;
     if (Math.random() < 0.35) this.addFloat(x, CONFIG.barricadeY + 18, `-${Math.round(real)}`, '#ff6b6b', 13);
   }
@@ -606,7 +623,14 @@ export class Game {
     e.hitFlash = 0.12;
     if (o.slow) { e.slowAmt = Math.max(e.def.boss ? o.slow * 0.5 : o.slow, e.slowT > 0 ? e.slowAmt : 0); e.slowT = Math.max(e.slowT, o.slowDur ?? 1); }
     if (o.stun) e.stunT = Math.max(e.stunT, e.def.boss ? o.stun * 0.3 : o.stun);
-    if (o.knock && !e.def.boss) e.y = Math.max(CONFIG.fieldTop - 10, e.y - o.knock);
+    // 넉백: 공격 종류에 따라 뒤로 '스윽' 밀려남 (속도로 주고 점점 감속)
+    const kindKnock = o.src !== undefined && o.src >= 0 ? KNOCK_BY_KIND[this.squad[o.src].weapon.kind] ?? 0 : 0;
+    const knock = (o.knock ?? 0) + kindKnock * (o.crit ? 1.6 : 1);
+    if (knock > 0) {
+      const resist = e.def.boss ? 0.15 : e.def.armor ? 1 - e.def.armor * 0.8 : 1;
+      e.kbV = Math.min(900, (e.kbV ?? 0) + knock * resist * 7);
+    }
+    if (!o.quiet && Math.random() < 0.4) this.fx.push({ kind: 'spark', x: e.x + (Math.random() - 0.5) * e.def.size, y: e.y - e.def.size * 0.4, r: 8 + e.def.size * 0.5, t: 0, life: 0.18, color: o.color ?? '#fff3b0' });
     if (!o.quiet || o.crit || Math.random() < 0.3) {
       this.addFloat(e.x + (Math.random() - 0.5) * 16, e.y - e.def.size - 6, o.crit ? `${fmtDmg(dmg)}!` : fmtDmg(dmg),
         o.crit ? '#ff4d5e' : o.color ?? '#ffffff', o.crit ? 28 : dmg > 300 ? 22 : 17);
