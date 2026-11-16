@@ -27,6 +27,50 @@ Thick clean black line art, cel shading with soft highlights, vivid colors, cute
 
 ---
 
+## ⚡⚡ 2차 한 장 원샷 (바리케이드·이펙트·UI 아이콘·장비 나머지·치즈 연출·로비 배경)
+
+1차 시트로 못 채운 나머지 그림을 **그림 1장**에 넣는 프롬프트입니다. Claude가 칸별로 잘라 씁니다.
+- 치즈(혜옹이) 앞모습·뒷모습 그림을 **참고 이미지로 함께** 넣으세요.
+- 비율 **2:3 세로**, 가능한 **가장 높은 해상도**.
+- 칸 배치 (가로 8칸 × 세로 12칸):
+  - 1~4줄: 로비 배경(2×4) · 지도(2×4) · 치즈 공격 뒷모습(2×2) · 치즈 패배(2×2) · 치즈 승리(2×2) · 뽑기 상자(2×2)
+  - 5~7줄: 바리케이드 가로 띠 3단계 (각 8칸 × 1줄)
+  - 8줄: 보스 얼굴 3 · 열린 뽑기 상자 · 강화 카드 3 · 응원 아이콘
+  - 9줄: 이펙트 8종
+  - 10줄: 하단 탭 5 · 옆 버튼 3
+  - 11~12줄: 장비 나머지 14종 + 공격력·체력 아이콘
+
+```
+ONE single image, portrait 2:3, highest resolution: a complete second game asset sheet for a cute mobile tower-defense game where anthropomorphic school-uniform cats defend a girl's house from a gang of bugs and mice.
+Match the art style of the attached orange tabby cat illustrations exactly: thick clean black line art, cel shading with soft highlights, vivid colors, cute anime game style.
+
+LAYOUT (very important): the whole image is a precise, perfectly even grid of 8 columns x 12 rows of equal square cells, separated by straight pure white gutters. Every cell and every multi-cell block has a plain flat light grey background (#DEDEDE) unless it is a background scene. Each item sits fully inside its own cell or block, centered, never crossing the gutters, nothing cut off. No text, no letters, no numbers, no watermark anywhere.
+
+ROWS 1-4 (big blocks):
+Block A (columns 1-2, rows 1-4, tall): lobby background scene, a cozy girl's bedroom at dusk seen from inside, bed with cat plushies, window with pink-purple sunset, tall cat tower, fairy lights, cat posters, slightly dark purple tone, no characters.
+Block B (columns 3-4, rows 1-4, tall): world map, cute cross-section dollhouse view of a two-story house, from bottom to top: entrance hall, living room, kitchen, dusty attic under the roof, a winding dotted path with small round empty markers connecting them, night sky with stars, no characters.
+Block C (columns 5-6, rows 1-2): the attached orange tabby cat girl seen from directly BEHIND, full body, aiming both toy pistols forward and firing, muzzle flash, tail swishing, same school uniform.
+Block D (columns 7-8, rows 1-2): the same orange tabby cat girl from the front, defeated, sitting on the floor exhausted with swirly dizzy eyes, uniform messy, pistols dropped.
+Block E (columns 5-6, rows 3-4): the same orange tabby cat girl from the front, victory pose, jumping with one fist up and a pistol spinning on a finger, big happy smile, confetti.
+Block F (columns 7-8, rows 3-4): a closed cardboard gift box shaped like a cat with cat ears on the lid, paw-print tape, a red ribbon.
+
+ROW 5 (one wide strip across all 8 columns): a cute homemade barricade wall in one straight horizontal line filling the whole width: fluffy colorful cushions (pink, sky blue, yellow), cardboard boxes with paw prints, stacked books, folded blanket, front view from slightly above, intact and neat.
+ROW 6 (one wide strip across all 8 columns): the same barricade, same layout, damaged: dented boxes, scratch marks, a few torn cushions.
+ROW 7 (one wide strip across all 8 columns): the same barricade, same layout, badly broken: crushed boxes, cushions torn with stuffing spilling out, scattered pages, holes.
+
+ROW 8: 1 face close-up of a fat grey rat king with crooked gold crown, angry grin; 2 face close-up of an armored cockroach general with military cap and antenna moustache; 3 face close-up of an elegant black-violet spider queen with silver tiara and glowing pink eyes; 4 the cat-shaped cardboard gift box opened with golden light and sparkles bursting out; 5 round badge: a churu cat treat tube with a pink heart (healing snack); 6 round badge: a big shiny tuna fish with a power-up arrow; 7 round badge: a sprig of green catnip leaves with sparkles; 8 round badge: a paw holding a cheering megaphone.
+
+ROW 9 (game effects, bright, on grey): 1 three white-pink claw slash marks; 2 yellow star-shaped hit spark; 3 cartoon orange explosion with smoke; 4 white smoke poof cloud; 5 blue water splash burst; 6 cyan lightning bolt zap; 7 burst of pink healing hearts with green plus signs; 8 floating golden music notes.
+
+ROW 10 (menu icons, bold silhouettes): 1 a cute shop stall with striped awning and a paw sign; 2 a red backpack; 3 two crossed swords with a paw emblem; 4 a cat head face; 5 a folded treasure map; 6 a sleeping cat curled up with Zzz; 7 a golden gear with a paw print; 8 a wrapped gift box with a ribbon.
+
+ROWS 11-12 (equipment icons, bold silhouettes, glossy):
+ROW 11: 1 a cat-ear hoodie hood; 2 a small jeweled crown headband; 3 a crumpled paper ball; 4 an automatic laser toy robot; 5 a folded bath towel cushion; 6 a cozy cat cave bed; 7 a cloud-shaped cat tower; 8 a plain plastic pet food bowl.
+ROW 12: 1 a ceramic food bowl with a fish pattern; 2 an automatic pet feeder; 3 a small brass bell; 4 a silver bell; 5 a four-leaf-clover lucky bell; 6 a lucky beckoning cat (maneki-neko) holding a bell; 7 a red sword with paw guard (attack icon); 8 a blue shield with a paw emblem (defense icon).
+```
+
+---
+
 ## ⚡⚡ 한 장 원샷 프롬프트 (모든 요소를 그림 1장에)
 
 **그림 1장**에 배경 4곳, 적, 소품, 아이콘을 모두 넣는 프롬프트입니다. 칸 배치가 정해져 있어서 받은 그림을 Claude가 칸별로 잘라 씁니다.

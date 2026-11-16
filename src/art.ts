@@ -90,6 +90,7 @@ export const ICON_IDS = [
   'coin', 'tuna', 'yarn', 'chest', 'chest-open', 'chest-royal',
   ...['cheese', 'godeungeo', 'huindungi', 'chaos', 'cheesetabby', 'tuxedo', 'samsaek', 'russianblue', 'scottish', 'munchkin',
     'persian', 'mainecoon', 'siamese', 'cow', 'americanshort', 'abyssinian', 'norwegian', 'ragdoll', 'bengal', 'sphynx'].map((c) => `w-${c}`),
+  'g-snack', 'g-tuna', 'g-catnip',
   'eq-collar-N', 'eq-collar-R', 'eq-collar-SR', 'eq-collar-SSR', 'eq-hat-N', 'eq-hat-R', 'eq-toy-R', 'eq-toy-SR', 'eq-cushion', 'eq-bowl', 'eq-bell',
 ];
 for (const id of ICON_IDS) WORLD_FILES[id] = `icons/${id}.webp`;

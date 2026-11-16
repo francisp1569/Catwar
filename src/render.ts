@@ -940,6 +940,16 @@ function drawShots(ctx: Ctx, game: Game): void {
       const gx = s.sx! + (s.tx! - s.sx!) * k;
       const gy = s.sy! + (s.ty! - s.sy!) * k;
       ellipse(ctx, gx, gy, 10 + k * 8, 4 + k * 3, 'rgba(40,20,10,0.25)');
+      const churu = getWorld('w-cow');
+      if (churu) {
+        ctx.save();
+        ctx.translate(s.x, s.y);
+        ctx.rotate(s.spin);
+        drawContain(ctx, churu, 0, 0, 40);
+        ctx.restore();
+        if (k > 0.85) { ctx.strokeStyle = 'rgba(255,90,90,0.6)'; ctx.setLineDash([5, 5]); ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(s.tx!, s.ty!, s.radius, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]); }
+        continue;
+      }
       ctx.save();
       ctx.translate(s.x, s.y);
       ctx.rotate(s.spin);
@@ -961,6 +971,8 @@ function drawShots(ctx: Ctx, game: Game): void {
       ctx.globalAlpha = 1;
       ctx.translate(s.x, s.y);
       ctx.rotate(s.spin * 1.5);
+      const bm = getWorld('w-americanshort');
+      if (bm) { drawContain(ctx, bm, 0, 0, s.radius * 3.4); ctx.restore(); continue; }
       const k = s.radius / 14;
       ctx.scale(k, k);
       ctx.strokeStyle = '#d07090'; ctx.lineWidth = 2.5;
@@ -1104,6 +1116,12 @@ function drawShots(ctx: Ctx, game: Game): void {
         ellipse(ctx, dx * r, dy * r, r * 0.2, r * 0.24, '#3b2228');
         ellipse(ctx, dx * r, dy * r, r * 0.15, r * 0.18, '#ff8fab');
       }
+    } else if (s.style === 'yarn' && getWorld('yarn')) {
+      ctx.strokeStyle = s.color;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(-s.radius, 0); ctx.quadraticCurveTo(-s.radius * 3, s.radius * Math.sin(s.spin), -s.radius * 5, 0); ctx.stroke();
+      ctx.rotate(s.spin);
+      drawContain(ctx, getWorld('yarn')!, 0, 0, s.radius * 2.8);
     } else if (s.style === 'yarn') {
       ctx.strokeStyle = s.color;
       ctx.lineWidth = 1.5;
@@ -1139,6 +1157,12 @@ function drawMines(ctx: Ctx, game: Game, t: number): void {
   for (const mn of game.mines) {
     const armed = mn.t >= 0.4;
     ellipse(ctx, mn.x, mn.y + 8, 15, 5, 'rgba(40,20,10,0.25)');
+    const trap = getWorld('w-abyssinian');
+    if (trap) {
+      drawContain(ctx, trap, mn.x, mn.y - 2, 38);
+      if (armed && Math.sin(t * 6 + mn.seed) > 0) circle(ctx, mn.x, mn.y - 16, 3, '#ff5a5a');
+      continue;
+    }
     ctx.save();
     ctx.translate(mn.x, mn.y);
     ctx.rotate(mn.seed);
@@ -1604,7 +1628,7 @@ function cardInfo(game: Game, c: Card) {
     return { title: mod.name, sub: `${m.def.name} · ${m.def.skillName}`, desc: mod.desc, badge: '', color: RARITY_COLOR[m.def.rarity], look: m.def.look as CatLook | null, icon: m.weapon.icon, iconId: `w-${m.def.id}` };
   }
   const g = GENERIC[c.id];
-  return { title: g.name, sub: c.id === 'snack' ? '회복' : `${game.generic[c.id] + 1}단계`, desc: g.desc, badge: '강화', color: '#7ad99a', look: null as CatLook | null, icon: g.icon, iconId: '' };
+  return { title: g.name, sub: c.id === 'snack' ? '회복' : `${game.generic[c.id] + 1}단계`, desc: g.desc, badge: '강화', color: '#7ad99a', look: null as CatLook | null, icon: g.icon, iconId: `g-${c.id}` };
 }
 
 function drawChoice(ctx: Ctx, game: Game, t: number, pressed: string | null): void {
@@ -1710,7 +1734,9 @@ function drawCard(ctx: Ctx, game: Game, c: Card, r: Rect, t: number, _glow: numb
     }
     ctx.restore();
   } else {
-    text(ctx, info.icon, r.x + r.w / 2, r.y - 30, 72, '#fff', 'center', false);
+    const gi = info.iconId ? getWorld(info.iconId) : null;
+    if (gi) drawContain(ctx, gi, r.x + r.w / 2, r.y - 30, 96);
+    else text(ctx, info.icon, r.x + r.w / 2, r.y - 30, 72, '#fff', 'center', false);
   }
   // 카드 본체 (왼쪽 위가 잘린 종이 카드)
   const cut = 54;
