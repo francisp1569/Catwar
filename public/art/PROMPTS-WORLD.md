@@ -27,6 +27,44 @@ Thick clean black line art, cel shading with soft highlights, vivid colors, cute
 
 ---
 
+## ⚡ 원샷 프롬프트 (한 번에 다 뽑기)
+
+아래 블록 **하나만 통째로** 붙여 넣으면 시트 3장(적·소품 / 배경 4곳 / 아이콘)이 나옵니다.
+치즈(혜옹이) 그림을 참고 이미지로 함께 넣어 주세요.
+그림 AI가 한 번에 1장만 만들면 "다음 시트" 라고 보내면 이어서 만듭니다.
+결과가 뭉개진 칸이 있으면 그 칸만 아래 개별 프롬프트(A~E)로 다시 뽑으면 됩니다.
+
+```
+Create 3 separate images for a cute mobile tower-defense game where anthropomorphic school-uniform cats defend a girl's house from a gang of bugs and mice called the "Squeak Bandits".
+Match the art style of the attached orange tabby cat illustration exactly: thick clean black line art, cel shading with soft highlights, vivid colors, cute anime game style.
+Every cell must be clearly separated in a clean even grid with generous empty space, each item fully inside its cell, nothing cut off. No text, no labels, no numbers, no watermark anywhere.
+
+IMAGE 1 — CHARACTER & PROP SHEET. Square 1:1, a clean 4x4 grid of equal cells, plain flat light grey background (#DEDEDE), no ground shadows.
+Enemies are cute but mischievous villains, seen from slightly above in front 3/4 view, walking toward the viewer.
+Row 1: (1) tiny dark-brown ant henchman with red bandana carrying a kibble piece; (2) chubby grey mouse thief with black bandit eye mask, striped shirt and a sack of stolen cheese; (3) glossy reddish-brown cockroach speedster with goggles and a flapping red scarf, running; (4) skinny grey mosquito with big red eyes, pilot cap and a needle nose like a rapier, flying.
+Row 2: (5) round fuzzy purple spider sniper with a small witch hat and a web slingshot; (6) BOSS: huge fat grey rat king with a crooked gold crown, red royal cape, cheese medallion and a giant fork scepter, drawn larger to fill its cell; (7) metallic-green housefly with chef bandana rubbing its hands; (8) stocky brown mouse soldier with bottle-cap helmet and tin-lid shield.
+Row 3: (9) BOSS: armored cockroach general with military cap, antenna moustache and toothpick sword; (10) BOSS: elegant black-violet spider queen with silver tiara and lace web cape; (11) round white robot vacuum seen from above with cute LED face and little cat ears; (12) sticky white spider web ball projectile and a small web splat.
+Row 4: (13)(14)(15) the same 10-year-old Korean girl, chest-up, brown low pigtails, pink ribbon, yellow cat-ear hoodie hugging a cushion — (13) happy cheering, (14) worried biting lip, (15) crying with big tears; (16) a short horizontal barricade of colorful cushions, cardboard boxes with paw prints and stacked books.
+
+IMAGE 2 — BATTLE BACKGROUNDS. Wide 9:5, four equal tall vertical panels side by side (each panel 9:20 portrait), thin white gaps between panels, no characters.
+Each panel is a top-down floor view seen from above at a slight angle: the top 8% is a wall with exactly three dark arched mouse holes evenly spaced left, center and right; the middle 75% is floor with the center left EMPTY and props only along the left and right edges; the bottom 17% is plain warm wooden floor.
+Panel 1 entrance hall: cream wallpaper, beige stone tiles, shoe rack, sneakers, umbrella, doormat, warm afternoon light.
+Panel 2 living room: mint wallpaper, honey wood floor with a round rug, sofa corner, TV stand with cobwebs, potted plant, cat toys.
+Panel 3 kitchen: white tiled wall, blue-and-white checkered floor, sink cabinets, fridge side, trash bin with spilled wrappers, cat food bowl.
+Panel 4 attic: slanted plank wall with cobwebs, old dark floorboards, boxes, old trunk, stacked books, moonbeam from a round window, moody purple-blue light.
+
+IMAGE 3 — ICON SHEET. Square 1:1, a clean 6x6 grid of equal cells, plain flat light grey background (#DEDEDE), bold readable silhouettes with glossy highlights.
+Row 1: gold coin with a paw stamp; blue tuna can; pink yarn ball; closed wooden chest with paw lock; open chest spilling golden light and coins; golden royal chest with cat crown emblem.
+Rows 2-6 are round colorful badge icons, one bold item in the center of each:
+Row 2: twin toy pistols with paw grips; round cardboard scratching-post shield; pink yarn ball with trailing thread; three claw slash marks; cat exercise wheel; jingle bell ball.
+Row 3: grooming brush; feather fishing-rod cat wand; bread loaf shaped like a sitting cat; pair of cat paws with claws out; pink microphone with music notes; giant fluffy cat paw punch.
+Row 4: red laser pointer with beam; churu treat tube bomb with a fuse; toy mouse boomerang; fur-ball trap; static electricity spark on fur; soft cushion shield with paw print.
+Row 5: pouncing leopard-spotted paw; water spray bottle; cotton collar; red collar with silver bell; pearl collar; golden collar with treat-shaped gem.
+Row 6: wool beanie; pink ribbon headband; toy mouse plush; feather wand; fluffy cushion; golden tuna bowl.
+```
+
+---
+
 ## A. 적 캐릭터 (현재 게임에 있는 6종)
 
 **공통 설정**: 고양이들의 집을 노리는 **"찍찍 도적단"**. 개미·바퀴·모기·거미는 도적단의 졸개, 대왕쥐가 두목입니다.
