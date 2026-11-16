@@ -1,5 +1,5 @@
 // 레벨업 / 성급(별) 성장 규칙
-import { CAT_BY_ID, RARITY_ORDER, type CatDef } from '../data/cats';
+import { CAT_BY_ID, LEADER_BASE, RARITY_ORDER, type CatDef } from '../data/cats';
 import { MAX_WEAPON_LV } from '../data/weapons';
 import type { OwnedCat, SaveData } from './save';
 
@@ -24,7 +24,9 @@ export function statMul(o: OwnedCat): number {
 
 export function catStats(def: CatDef, o: OwnedCat): { hp: number; atk: number } {
   const m = statMul(o);
-  return { hp: Math.round(def.hp * m), atk: Math.round(def.atk * m) };
+  const hp = def.hero ? Math.max(def.hp, LEADER_BASE.hp) : def.hp;
+  const atk = def.hero ? Math.max(def.atk, LEADER_BASE.atk) : def.atk;
+  return { hp: Math.round(hp * m), atk: Math.round(atk * m) };
 }
 
 export type GrowResult = { ok: true } | { ok: false; reason: string };

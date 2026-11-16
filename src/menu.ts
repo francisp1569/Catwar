@@ -2,8 +2,9 @@
 import { drawFaceArtCircle, drawFaceArtSquare, getArt, iconHtml } from './art';
 import { sound } from './audio';
 import { story } from './story';
+import { openHeroPicker } from './heroPick';
 import { drawCatLookToon, drawCatPortrait, IDLE_POSE } from './catdraw';
-import { CATS, CAT_BY_ID, HERO_ID, RARITY_COLOR, type CatDef, type CatLook } from './data/cats';
+import { CATS, CAT_BY_ID, HERO_ID, RARITY_COLOR, setHero, type CatDef, type CatLook } from './data/cats';
 import { SLOTS, SLOT_INFO, ITEM_MAX_LV, type Slot } from './data/items';
 import { AREA_NAME, CHAPTERS, STAGES, getStage, type StageDef } from './data/stages';
 import { rallyDesc } from './data/weapons';
@@ -264,6 +265,23 @@ export class Menu {
       }
       case 'settings': this.resetArmed = false; this.openSettings(); break;
       case 'story': this.closeModal(); story.play(() => {}); break;
+      case 'hero':
+        this.closeModal();
+        openHeroPicker({
+          title: '대장 고양이 바꾸기',
+          ids: CATS.filter((c) => s.cats[c.id]).map((c) => c.id),
+          current: HERO_ID,
+          currentName: s.heroName ?? '',
+          onPick: (id, name) => {
+            s.heroId = id;
+            s.heroName = name || undefined;
+            setHero(id, name);
+            this.commit();
+            this.toast(`이제 ${CAT_BY_ID[id].name}가 대장이에요!`);
+          },
+          onCancel: () => {},
+        });
+        break;
       case 'save-export': {
         const code = exportSave(this.save);
         this.openModal(`
@@ -521,7 +539,7 @@ export class Menu {
       </button>
       <button class="team-strip" data-act="tab" data-arg="cats">
         <canvas class="mini-face" data-face="${HERO_ID}"></canvas>
-        <span class="team-note"><b>치즈 출전</b><small>보유 고양이 ${team.length - 1}마리가 전투 중 랜덤 합류</small></span>
+        <span class="team-note"><b>${esc(CAT_BY_ID[HERO_ID].name)} 출전</b><small>보유 고양이 ${team.length - 1}마리가 전투 중 랜덤 합류</small></span>
         ${team.slice(1, 5).map((id) => `<canvas class="mini-face small" data-face="${id}"></canvas>`).join('')}${team.length > 5 ? `<span class="mini-more">+${team.length - 5}</span>` : ''}
       </button>`;
   }
@@ -745,7 +763,7 @@ export class Menu {
         <button class="btn ${sound.sfxOn ? 'blue' : 'off'}" data-act="toggle-sfx">${sound.sfxOn ? '🔊 효과음 켜짐' : '🔇 효과음 꺼짐'}</button>
         <button class="btn ${sound.musicOn ? 'blue' : 'off'}" data-act="toggle-music">${sound.musicOn ? '🎵 배경음악 켜짐' : '🎵 배경음악 꺼짐'}</button>
       </div>
-      <div class="row center gap"><button class="btn" data-act="story">📖 스토리 다시 보기</button></div>
+      <div class="row center gap"><button class="btn" data-act="story">📖 스토리 다시 보기</button><button class="btn" data-act="hero">👑 대장 바꾸기·이름</button></div>
       <div class="row center gap"><button class="btn small" data-act="save-export">💾 저장 코드 복사</button><button class="btn small" data-act="save-import">📥 저장 코드 불러오기</button></div>
       <p class="muted">진행 상황은 이 브라우저에 자동 저장돼요.</p>
       <p class="muted">낮잠 보상: 시간당 ${COIN()}${napRate(this.save)} (최대 ${NAP_MAX_HOURS}시간 쌓임)</p>

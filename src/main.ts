@@ -9,20 +9,22 @@ import { bonuses } from './meta/items';
 import { applyResult, isUnlocked } from './meta/rewards';
 import { loadSave, writeSave, type SaveData } from './meta/save';
 import { chipAt, render, type RewardView } from './render';
-import { CH2_CUTS, story } from './story';
+import { ch2Cuts, story } from './story';
 import * as gacha from './meta/gacha';
 import * as items from './meta/items';
 import * as progression from './meta/progression';
 import * as rewards from './meta/rewards';
 import * as saveMod from './meta/save';
 import * as stagesMod from './data/stages';
-import { CAT_BY_ID } from './data/cats';
+import { CAT_BY_ID, HERO_ID, setHero } from './data/cats';
+import { openHeroPicker } from './heroPick';
 import { CHOICE_BUTTONS, HUD_BUTTONS, PAUSE_BUTTONS, RESULT_BUTTONS, buttonKey, hit, layoutButtons, type Button } from './ui';
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
 const ctx = canvas.getContext('2d')!;
 
 let save: SaveData = loadSave();
+setHero(save.heroId ?? 'cheese', save.heroName);
 let game: Game | null = null;
 let reward: RewardView | null = null;
 
@@ -35,7 +37,7 @@ function startBattle(stageId: string): void {
   if (stage.no >= 11 && !save.ch2Seen) {
     canvas.hidden = true;
     game = null;
-    story.play(() => { save.ch2Seen = true; writeSave(save); startBattle(stageId); }, CH2_CUTS);
+    story.play(() => { save.ch2Seen = true; writeSave(save); startBattle(stageId); }, ch2Cuts());
     return;
   }
   applyLayout(window.innerWidth, window.innerHeight);
@@ -254,14 +256,25 @@ function enterGame(): void {
   loading.classList.add('out');
   setTimeout(() => loading.remove(), 500);
   sound.music('lobby');
-  // 처음 켜면 스토리 컷씬 → (아직 아무 판도 안 깼으면) 바로 1스테이지
-  if (!save.introSeen) {
+  // 처음 켜면: 대장 고양이 고르기 → 스토리 컷씬 → (아직 아무 판도 안 깼으면) 바로 1스테이지
+  const playIntro = (): void => {
     story.play(() => {
       save.introSeen = true;
       writeSave(save);
       if (!Object.keys(save.stages).length) startBattle('s1');
     });
-  }
+  };
+  if (!save.introSeen && !save.heroId && !Object.keys(save.stages).length) {
+    openHeroPicker({
+      onPick: (id, name) => {
+        saveMod.chooseHero(save, id, name);
+        setHero(id, name);
+        writeSave(save);
+        menu.show(save);
+        playIntro();
+      },
+    });
+  } else if (!save.introSeen) playIntro();
 }
 // 브라우저 정책: 첫 터치/키 입력 때 소리를 켠다
 // 브라우저마다 '사용자 동작'으로 인정하는 이벤트가 달라서 여러 개에 건다 (구형 iOS는 touchend/click만 인정)
@@ -284,9 +297,10 @@ Object.assign(window as object, {
   __catwar: {
     get game() { return game; },
     get save() { return save; },
-    setSave(s: SaveData) { save = s; writeSave(save); menu.show(save); },
+    setSave(s: SaveData) { save = s; setHero(save.heroId ?? 'cheese', save.heroName); writeSave(save); menu.show(save); },
     start: startBattle,
     sound,
+    hero: () => HERO_ID,
     meta: { gacha, items, progression, rewards, save: saveMod, stages: stagesMod, cats: CAT_BY_ID },
   },
 });

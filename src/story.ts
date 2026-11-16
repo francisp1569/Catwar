@@ -1,5 +1,7 @@
 // 처음 시작할 때 보여주는 스토리 컷씬 (터치로 넘기기, 건너뛰기 가능)
+import { getArt } from './art';
 import { sound } from './audio';
+import { CAT_BY_ID, HERO_ID } from './data/cats';
 
 interface Layer {
   /** 그림 경로 (art/ 아래). 없으면 html 사용 */
@@ -25,7 +27,7 @@ interface Cut {
 const W = 'art/world/';
 
 const S = `${W}story/`;
-const CUTS: Cut[] = [
+const CHEESE_CUTS: Cut[] = [
   { bg: `${S}1.jpg`, bgCls: 'kb-in panel', layers: [], text: '여기는 집사 누나와 고양이들이 함께 사는 평화로운 집.', sfx: ['meow-hi'] },
   { bg: `${S}2.jpg`, bgCls: 'kb-in panel', layers: [], text: '그런데 어느 날 밤… 벽 너머 쥐구멍에서 수상한 눈빛들이 반짝였다.', sfx: ['discover'] },
   {
@@ -56,8 +58,70 @@ const CUTS: Cut[] = [
   { bg: `${S}7.jpg`, bgCls: 'kb-in panel', layers: [], speaker: '치즈', text: '바리케이드가 무너지기 전에 전부 물리치자! 냥냥 방위대, 출동이다냥!', sfx: ['win'] },
 ];
 
+
+/** 대장 이름으로 대사를 바꾼다 ('치즈' → 고른 이름, 받침에 맞게 조사도) */
+function named(cuts: Cut[]): Cut[] {
+  const n = CAT_BY_ID[HERO_ID].name;
+  return cuts.map((c) => ({
+    ...c,
+    speaker: c.speaker === '치즈' ? n : c.speaker,
+    text: c.text.replace(/치즈가/g, n + josa(n, '이', '가')).replace(/치즈/g, n),
+  }));
+}
+function josa(w: string, withBatchim: string, without: string): string {
+  const code = w.charCodeAt(w.length - 1) - 0xac00;
+  if (code < 0 || code > 11171) return without;
+  return code % 28 ? withBatchim : without;
+}
+
+/** 치즈가 아닌 고양이를 대장으로 고르면, 대장이 나오는 컷은 그 고양이 그림으로 */
+function heroCuts(): Cut[] {
+  const id = HERO_ID;
+  const full = getArt(id, 'full')?.src ?? getArt(id, 'face')?.src ?? '';
+  const back = getArt(id, 'back')?.src ?? '';
+  const friends = ['cheese', 'godeungeo', 'huindungi', 'chaos', 'tuxedo', 'russianblue'].filter((f) => f !== id).slice(0, 5);
+  const cuts = CHEESE_CUTS.slice(0, 4);
+  cuts.push(
+    {
+      bg: '', bgCls: 'burst',
+      layers: [
+        { src: full, cls: 'st-hero hero-in' },
+        { html: '✦', cls: 'st-spark s1', delay: 0.5 },
+        { html: '✦', cls: 'st-spark s2', delay: 0.7 },
+        { html: '✦', cls: 'st-spark s3', delay: 0.9 },
+      ],
+      speaker: '치즈', text: CHEESE_CUTS[4].text, sfx: ['meow', 'levelup'],
+    },
+    {
+      bg: `${W}bg/living.jpg`, bgCls: 'kb-in dim',
+      layers: [
+        ...friends.map((f, i) => ({ src: getArt(f, 'face')?.src ?? '', cls: `st-face r${i + 1} pop`, delay: 0.1 + i * 0.15 })),
+        { html: '<b>LEVEL UP!</b><small>NEW 카드로 친구 합류</small>', cls: 'st-tag pop', delay: 1.0 },
+      ],
+      speaker: '치즈', text: CHEESE_CUTS[5].text, sfx: ['meow-hi', 'card'],
+    },
+    {
+      bg: `${W}bg/entrance.jpg`, bgCls: 'battle',
+      layers: [
+        { src: `${W}enemies/mouse.webp`, cls: 'st-far m1 walk', delay: 0.1 },
+        { src: `${W}enemies/ant.webp`, cls: 'st-far m2 walk', delay: 0.2 },
+        { src: `${W}enemies/roach.webp`, cls: 'st-far m3 walk', delay: 0.3 },
+        { src: `${W}props/barricade-0.webp`, cls: 'st-barricade rise' },
+        { src: back, cls: 'st-back rise', delay: 0.2 },
+      ],
+      speaker: '치즈', text: CHEESE_CUTS[6].text, sfx: ['win'],
+    },
+  );
+  return cuts;
+}
+
+/** 시작 스토리 (대장과 이름에 맞춰서) */
+export function introCuts(): Cut[] {
+  return named(HERO_ID === 'cheese' ? CHEESE_CUTS : heroCuts());
+}
+
 /** 2장 시작 컷씬 */
-export const CH2_CUTS: Cut[] = [
+const CH2_BASE: Cut[] = [
   {
     bg: `${S}title-ch2.jpg`, bgCls: 'kb-in wide',
     layers: [{ html: '<small>CHAPTER 2</small><b>찍찍 도적단의 역습</b>', cls: 'st-chapter pop', delay: 0.3 }],
@@ -84,6 +148,15 @@ export const CH2_CUTS: Cut[] = [
   },
 ];
 
+export function ch2Cuts(): Cut[] {
+  const cuts = CH2_BASE.slice();
+  if (HERO_ID !== 'cheese') {
+    // 마지막 컷(치즈가 문을 여는 그림)은 대장 그림으로
+    cuts[3] = { ...cuts[3], bg: '', bgCls: 'burst', layers: [{ src: getArt(HERO_ID, 'full')?.src ?? '', cls: 'st-hero hero-in' }] };
+  }
+  return named(cuts);
+}
+
 export class Story {
   private root: HTMLDivElement;
   private idx = 0;
@@ -104,9 +177,9 @@ export class Story {
     });
   }
 
-  private cuts: Cut[] = CUTS;
+  private cuts: Cut[] = [];
 
-  play(onDone: () => void, cuts: Cut[] = CUTS): void {
+  play(onDone: () => void, cuts: Cut[] = introCuts()): void {
     this.cuts = cuts;
     this.done = onDone;
     this.idx = 0;

@@ -170,5 +170,19 @@ export const CATS: CatDef[] = [
 ];
 
 export const CAT_BY_ID: Record<string, CatDef> = Object.fromEntries(CATS.map((c) => [c.id, c]));
-export const HERO_ID = 'cheese';
+/** 대장(주인공) 고양이. 처음 시작할 때 고르거나 설정에서 바꿀 수 있다 */
+export let HERO_ID = 'cheese';
+/** 대장은 등급과 상관없이 같은 기본 능력치 (외모로 골라도 손해 없게) */
+export const LEADER_BASE = { hp: 420, atk: 20 };
+const ORIGINAL_NAME = new Map(CATS.map((c) => [c.id, c.name]));
+export function originalName(id: string): string { return ORIGINAL_NAME.get(id) ?? id; }
+
+/** 대장 고양이와 이름 정하기 (이름은 그 고양이 표시 이름을 바꾼다) */
+export function setHero(id: string, name?: string): void {
+  if (!CAT_BY_ID[id]) id = 'cheese';
+  HERO_ID = id;
+  for (const c of CATS) { c.hero = c.id === id; c.name = ORIGINAL_NAME.get(c.id)!; }
+  const n = name?.trim();
+  if (n) CAT_BY_ID[id].name = n.slice(0, 8);
+}
 export const STARTER_IDS = ['godeungeo', 'huindungi', 'chaos'];

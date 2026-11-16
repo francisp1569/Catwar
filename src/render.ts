@@ -2,7 +2,7 @@
 import { drawCatBackToon, drawCatFaceToon, drawCatLookToon, drawToon, ellipse as vellipse, heart, IDLE_POSE, shadeHex } from './catdraw';
 import { drawBustArt, drawFaceArtCircle, getArt, getWorld } from './art';
 import { sound } from './audio';
-import { RARITY_COLOR, type CatLook } from './data/cats';
+import { CAT_BY_ID, HERO_ID, RARITY_COLOR, type CatLook } from './data/cats';
 import { CONFIG } from './data/config';
 import { ENEMIES, type EnemyDef, type EnemyKind } from './data/enemies';
 import { STAGES, type Area, type StageDef } from './data/stages';
@@ -2198,7 +2198,7 @@ function drawResult(ctx: Ctx, game: Game, t: number, reward: RewardView | null):
       text(ctx, `${n}`, px - 6, 497, 22, '#fff', 'left');
     });
     const extra = [`집사 경험치 +${reward.exp}`];
-    if (reward.heroShards > 0) extra.push(`치즈 조각 +${reward.heroShards}`);
+    if (reward.heroShards > 0) extra.push(`${CAT_BY_ID[HERO_ID].name} 조각 +${reward.heroShards}`);
     if (reward.items.length) extra.push(`장비 ${reward.items.length}개 획득!`);
     if (reward.discovered > 0) extra.push(`첫 발견 ${reward.discovered}종 🥫+${reward.discovered * 10}`);
     text(ctx, extra.join(' · '), W / 2, 527, 13, '#ffe0ec');

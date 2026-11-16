@@ -322,7 +322,7 @@ export class Game {
     this.rallyCd = r.cd;
     this.rallyT = r.dur;
     this.repair(this.maxHp * r.heal);
-    this.banner = { text: '📣 치즈의 꾹꾹이 응원!', t: 1.4 };
+    this.banner = { text: `📣 ${this.hero.def.name}의 꾹꾹이 응원!`, t: 1.4 };
     this.say(this.hero, RALLY_LINE);
     this.sfx('meow-hi');
     this.sfx('heal');

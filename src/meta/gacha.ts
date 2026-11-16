@@ -11,7 +11,8 @@ export const RATES: Record<Rarity, number> = { N: 0.5, R: 0.35, SR: 0.12, SSR: 0
 
 export interface PullResult { def: CatDef; isNew: boolean; shards: number; }
 
-const POOL = CATS.filter((c) => !c.hero);
+/** 뽑기 대상: 대장을 뺀 고양이 (대장은 바뀔 수 있어서 매번 계산) */
+const pool = (): typeof CATS => CATS.filter((c) => !c.hero);
 
 function rollRarity(rng: () => number, minSR: boolean): Rarity {
   let r = rng();
@@ -33,7 +34,7 @@ export function pull(save: SaveData, count: 1 | 10, rng: () => number = Math.ran
   const results: PullResult[] = [];
   for (let i = 0; i < count; i++) {
     const rarity = rollRarity(rng, count === 10 && i === 9);
-    const candidates = POOL.filter((c) => c.rarity === rarity);
+    const candidates = pool().filter((c) => c.rarity === rarity);
     const def = candidates[Math.floor(rng() * candidates.length)];
     const owned = save.cats[def.id];
     if (owned) {

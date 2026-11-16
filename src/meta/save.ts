@@ -32,9 +32,20 @@ export interface SaveData {
   tutorialDone?: boolean; // 첫 판 안내를 끝냈는지
   hardMode?: boolean;  // 로비에서 어려움 모드 선택
   ch2Seen?: boolean;   // 2장 컷씬을 봤는지
+  heroId?: string;     // 대장 고양이 (없으면 치즈)
+  heroName?: string;   // 대장 고양이에게 붙인 이름
 }
 
 const KEY = 'catwar.save.v1';
+
+/** 처음 고른 대장 고양이를 저장에 반영: 보유시키고, 시작 고양이 3마리는 유지 */
+export function chooseHero(save: SaveData, id: string, name: string): void {
+  save.heroId = id;
+  save.heroName = name.trim().slice(0, 8) || undefined;
+  if (!save.cats[id]) save.cats[id] = { level: 1, stars: 1, shards: 0 };
+  // 시작 고양이 중 하나를 골랐으면 그 자리는 치즈가 채운다
+  if (id !== 'cheese' && !save.cats.cheese) save.cats.cheese = { level: 1, stars: 1, shards: 0 };
+}
 
 /** 저장 코드 (다른 기기로 옮기기) */
 export function exportSave(save: SaveData): string {
@@ -71,7 +82,7 @@ export function loadSave(): SaveData {
     const raw = localStorage.getItem(KEY);
     if (raw) {
       const data = JSON.parse(raw) as SaveData;
-      if (data && data.version === 1 && data.cats && data.cats[HERO_ID]) {
+      if (data && data.version === 1 && data.cats && data.cats[data.heroId ?? HERO_ID]) {
         // 예전 저장 데이터에 새 항목 채우기
         const base = newSave();
         data.yarn ??= 0;
