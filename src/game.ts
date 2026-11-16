@@ -125,6 +125,7 @@ export const LEADER_STAMP: Partial<Record<string, [number, number]>> = {
   bengal: [1.5, 2.5], russianblue: [1.5, 2.5], scottish: [1.5, 2.5],
   samsaek: [1.4, 2], cheesetabby: [1.4, 2],
   persian: [1.3, 1.3], ragdoll: [1.3, 1.3],
+  cow: [1.5, 2.5], godeungeo: [1.3, 1.8], americanshort: [1.3, 1.8],
 };
 
 /** 공격 종류별 밀려나는 거리 (px). 보스는 15%만 */
