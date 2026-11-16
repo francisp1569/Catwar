@@ -622,12 +622,12 @@ function drawBarricade(ctx: Ctx, game: Game, t: number): void {
 // 적 그림을 애니메이션 프레임별로 한 번만 만화 스타일로 그려두고 재사용한다
 const enemySprites = new Map<string, { c: HTMLCanvasElement; box: { x: number; y: number; w: number; h: number } }>();
 
-/** tint: false/true(맞음, 붉게) 또는 'white'(쓰러지는 순간 하얗게) */
-function enemySprite(ctx: Ctx, d: EnemyDef, frame: number, tint: boolean | 'white' = false) {
+/** tint: false/true(맞음, 붉게) 또는 'white'(쓰러지는 순간 하얗게). variant: 걷기 2번째 동작('b'), 쓰러짐('ko') */
+function enemySprite(ctx: Ctx, d: EnemyDef, frame: number, tint: boolean | 'white' = false, variant: '' | 'b' | 'ko' = '') {
   const tr = ctx.getTransform();
   const k = Math.min(4, Math.max(1, Math.round(Math.hypot(tr.a, tr.b) * 2) / 2));
-  const art = getWorld(`enemy-${d.id}`);
-  const key = `${d.id}:${frame}:${k}:${tint === 'white' ? 2 : tint ? 1 : 0}:${art ? 1 : 0}`;
+  const art = (variant && getWorld(`enemy-${d.id}-${variant}`)) || getWorld(`enemy-${d.id}`);
+  const key = `${d.id}:${frame}:${k}:${tint === 'white' ? 2 : tint ? 1 : 0}:${art ? 1 : 0}:${variant}`;
   let sp = enemySprites.get(key);
   if (sp) return sp;
   const s = d.size;
@@ -843,9 +843,10 @@ function drawEnemy(ctx: Ctx, e: Enemy): void {
   if (e.dead) {
     // 쓰러짐: 하얗게 번쩍 → 톡 부풀었다가 납작해지며 사라짐
     const k = e.deathT / 0.45;
-    const pop = e.deathT < 0.1 ? 1 + (e.deathT / 0.1) * 0.25 : 1.25 - (k - 0.22) * 0.6;
-    ctx.globalAlpha = e.deathT < 0.1 ? 1 : Math.max(0, 1 - (k - 0.22) / 0.78);
-    ctx.scale(pop, e.deathT < 0.1 ? pop : pop * (1 - k * 0.5));
+    const ko = !!getWorld(`enemy-${d.id}-ko`);
+    const pop = e.deathT < 0.1 ? 1 + (e.deathT / 0.1) * 0.25 : ko ? 1.05 : 1.25 - (k - 0.22) * 0.6;
+    ctx.globalAlpha = e.deathT < 0.1 ? 1 : Math.max(0, 1 - Math.max(0, k - (ko ? 0.55 : 0.22)) / (ko ? 0.45 : 0.78));
+    ctx.scale(pop, e.deathT < 0.1 || ko ? pop : pop * (1 - k * 0.5));
   }
   if (e.attacking && !e.dead) ctx.translate(0, Math.sin(t * 18) * 2);
   const frame = moving ? Math.floor(((t * (d.speed / 4)) / (Math.PI * 2)) * 6) % 6 : 6;
@@ -869,7 +870,10 @@ function drawEnemy(ctx: Ctx, e: Enemy): void {
     ctx.scale(1 + hk * 0.16, 1 - hk * 0.12);
     ctx.translate(0, -s * 0.6);
   }
-  const spr = enemySprite(ctx, d, frame, e.dead ? (e.deathT < 0.1 ? 'white' : false) : e.hitFlash > 0);
+  // 걷기: 2번째 동작 그림이 있으면 번갈아, 쓰러질 땐 기절한 그림
+  const variant: '' | 'b' | 'ko' = e.dead ? (e.deathT >= 0.1 && getWorld(`enemy-${d.id}-ko`) ? 'ko' : '')
+    : moving && frame % 6 >= 3 && getWorld(`enemy-${d.id}-b`) ? 'b' : '';
+  const spr = enemySprite(ctx, d, variant ? 6 : frame, e.dead ? (e.deathT < 0.1 ? 'white' : false) : e.hitFlash > 0, variant);
   ctx.drawImage(spr.c, spr.box.x, spr.box.y, spr.box.w, spr.box.h);
   ctx.restore();
 
@@ -949,13 +953,14 @@ function drawSquad(ctx: Ctx, game: Game, t: number): void {
     ctx.save();
     ctx.translate(m.x, m.y + (enter > 0 ? -Math.sin((1 - enter) * Math.PI) * 60 + enter * enter * 70 : 0));
     if (enter > 0) ctx.scale(1 - enter * 0.3, 1 + enter * 0.2);
-    const atkArt = m.slot === 0 && m.swing > 0.35 ? getWorld('cheese-attack') : null;
+    const atkArt = m.swing > 0.35 || m.ultT > 0 && m.swing > 0.1 ? getWorld(`atk-${m.def.id}`) ?? (m.slot === 0 ? getWorld('cheese-attack') : null) : null;
     const art = getArt(m.def.id, 'back');
     if (atkArt) {
-      // 치즈: 쏘는 순간엔 공격 포즈
-      const h = s * 3.3;
+      // 공격하는 순간엔 공격 포즈 (발 위치를 맞추고, 높이는 평소 뒷모습과 비슷하게)
+      const baseH = art ? (art.naturalHeight / art.naturalWidth) * s * 2.35 : s * 3.3;
+      const h = Math.min(baseH * 0.98, s * 3.6);
       const w = (atkArt.naturalWidth / atkArt.naturalHeight) * h;
-      ctx.drawImage(atkArt, -w * 0.42, -h + s * 0.25, w, h);
+      ctx.drawImage(atkArt, -w / 2, -h + s * 0.25, w, h);
     } else if (art) {
       // 일러스트 뒷모습: 공격할 때 살짝 튕기듯
       // 폭 기준으로 맞춘다 (무릎 아래를 잘라낸 그림도 같은 크기로 보이게)
