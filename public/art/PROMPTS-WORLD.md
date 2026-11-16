@@ -27,7 +27,42 @@ Thick clean black line art, cel shading with soft highlights, vivid colors, cute
 
 ---
 
-## ⚡ 원샷 프롬프트 (한 번에 다 뽑기)
+## ⚡⚡ 한 장 원샷 프롬프트 (모든 요소를 그림 1장에)
+
+**그림 1장**에 배경 4곳, 적, 소품, 아이콘을 모두 넣는 프롬프트입니다. 칸 배치가 정해져 있어서 받은 그림을 Claude가 칸별로 잘라 씁니다.
+- 치즈(혜옹이) 그림을 참고 이미지로 함께 넣으세요.
+- 비율 **4:5 세로**, 가능한 **가장 높은 해상도**로 뽑으세요 (작은 칸은 Claude가 업스케일합니다).
+- 칸 배치 (가로 8칸 × 세로 10칸):
+  - 1~4줄: 전투 배경 4곳 (각각 가로 2칸 × 세로 4칸)
+  - 5~6줄: 적 10종 + 소품 6칸
+  - 7~8줄: 재화·상자 6칸 + 스킬 아이콘 10칸
+  - 9~10줄: 스킬 아이콘 10칸 + 장비 6칸
+
+```
+ONE single image, portrait 4:5, highest resolution: a complete game asset sheet for a cute mobile tower-defense game where anthropomorphic school-uniform cats defend a girl's house from a gang of bugs and mice called the "Squeak Bandits".
+Match the art style of the attached orange tabby cat illustration exactly: thick clean black line art, cel shading with soft highlights, vivid colors, cute anime game style.
+
+LAYOUT (very important): the whole image is a precise, perfectly even grid of 8 columns x 10 rows of equal square cells, separated by straight pure white gutters. Every cell has a plain flat light grey background (#DEDEDE) except the background panels. Each item sits fully inside its own cell, centered, never touching or crossing the gutters, nothing cut off. No text, no labels, no numbers, no watermark anywhere.
+
+ROWS 1-4: four tall battle background panels side by side, each panel exactly 2 columns wide and 4 rows tall, no characters. Each panel is a top-down floor view seen from above at a slight angle: the top strip is a wall with exactly three dark arched mouse holes evenly spaced left, center and right; the large middle is floor with the center left EMPTY and props only along the left and right edges; the bottom strip is plain warm wooden floor.
+Panel A (columns 1-2) entrance hall: cream wallpaper, beige stone tiles, shoe rack, sneakers, umbrella, doormat.
+Panel B (columns 3-4) living room: mint wallpaper, honey wood floor with a round rug, sofa corner, TV stand with cobwebs, potted plant, cat toys.
+Panel C (columns 5-6) kitchen: white tiled wall, blue-and-white checkered floor, sink cabinets, fridge side, trash bin with spilled wrappers.
+Panel D (columns 7-8) attic: slanted plank wall with cobwebs, old dark floorboards, boxes, old trunk, moonbeam from a round window, moody purple-blue light.
+
+ROW 5 (enemies, seen from slightly above in front 3/4 view, walking toward the viewer, cute but mischievous): 1 tiny dark-brown ant henchman with red bandana carrying a kibble piece; 2 chubby grey mouse thief with black bandit eye mask, striped shirt and sack of cheese; 3 reddish-brown cockroach speedster with goggles and red scarf, running; 4 skinny grey mosquito with big red eyes, pilot cap and needle nose, flying; 5 round fuzzy purple spider sniper with small witch hat and web slingshot; 6 BOSS huge fat grey rat king with crooked gold crown, red royal cape and giant fork scepter, filling its cell; 7 metallic-green housefly with chef bandana rubbing its hands; 8 stocky brown mouse soldier with bottle-cap helmet and tin-lid shield.
+ROW 6: 1 BOSS armored cockroach general with military cap and toothpick sword; 2 BOSS elegant black-violet spider queen with silver tiara; 3 round white robot vacuum seen from above with cute LED face and little cat ears; 4 sticky white spider web ball with a small web splat; 5 6 7 the same 10-year-old Korean girl chest-up, brown low pigtails, pink ribbon, yellow cat-ear hoodie hugging a cushion: 5 happy cheering, 6 worried, 7 crying with big tears; 8 a small barricade pile of colorful cushions, paw-print cardboard boxes and stacked books.
+
+ROWS 7-10 are icons with bold readable silhouettes and glossy highlights.
+ROW 7: 1 gold coin with paw stamp; 2 blue tuna can; 3 pink yarn ball; 4 closed wooden chest with paw lock; 5 open chest spilling golden light and coins; 6 golden royal chest with cat crown emblem; 7 round badge: twin toy pistols with paw grips; 8 round badge: round cardboard scratching-post shield.
+ROW 8 (round colorful badges, one item each): 1 pink yarn ball with thread; 2 three claw slash marks; 3 cat exercise wheel; 4 jingle bell ball; 5 grooming brush; 6 feather fishing-rod cat wand; 7 bread loaf shaped like a sitting cat; 8 pair of cat paws with claws out.
+ROW 9 (round colorful badges): 1 pink microphone with music notes; 2 giant fluffy cat paw punch; 3 red laser pointer with beam; 4 churu treat tube bomb with fuse; 5 toy mouse boomerang; 6 fur-ball trap; 7 static electricity spark on fur; 8 soft cushion shield with paw print.
+ROW 10: 1 round badge: pouncing leopard-spotted paw; 2 round badge: water spray bottle; 3 red collar with silver bell; 4 pink ribbon headband; 5 feather wand toy; 6 fluffy cat cushion bed; 7 golden tuna food bowl; 8 lucky beckoning-cat bell.
+```
+
+---
+
+## ⚡ 원샷 프롬프트 (시트 3장) (한 번에 다 뽑기)
 
 아래 블록 **하나만 통째로** 붙여 넣으면 시트 3장(적·소품 / 배경 4곳 / 아이콘)이 나옵니다.
 치즈(혜옹이) 그림을 참고 이미지로 함께 넣어 주세요.
