@@ -9,6 +9,7 @@ import { bonuses } from './meta/items';
 import { applyResult } from './meta/rewards';
 import { loadSave, writeSave, type SaveData } from './meta/save';
 import { render, type RewardView } from './render';
+import { story } from './story';
 import { CHOICE_BUTTONS, HUD_BUTTONS, PAUSE_BUTTONS, RESULT_BUTTONS, buttonKey, hit, layoutButtons, type Button } from './ui';
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
@@ -199,6 +200,14 @@ requestAnimationFrame(frame);
 canvas.hidden = true;
 menu.show(save);
 sound.music('lobby');
+// 처음 켜면 스토리 컷씬 → (아직 아무 판도 안 깼으면) 바로 1스테이지
+if (!save.introSeen) {
+  story.play(() => {
+    save.introSeen = true;
+    writeSave(save);
+    if (!Object.keys(save.stages).length) startBattle('s1');
+  });
+}
 // 브라우저 정책: 첫 터치/키 입력 때 소리를 켠다
 // 브라우저마다 '사용자 동작'으로 인정하는 이벤트가 달라서 여러 개에 건다 (구형 iOS는 touchend/click만 인정)
 for (const ev of ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown'] as const) document.addEventListener(ev, () => sound.unlock(), { capture: true });

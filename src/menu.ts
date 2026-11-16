@@ -1,6 +1,7 @@
 // 로비 (DOM): 하단 5탭 — 상점 · 가방 · 전투 · 고양이 · 지도
 import { drawFaceArtCircle, drawFaceArtSquare, getArt, iconHtml } from './art';
 import { sound } from './audio';
+import { story } from './story';
 import { drawCatLookToon, drawCatPortrait, IDLE_POSE } from './catdraw';
 import { CATS, CAT_BY_ID, HERO_ID, RARITY_COLOR, type CatDef, type CatLook } from './data/cats';
 import { SLOTS, SLOT_INFO, ITEM_MAX_LV, type Slot } from './data/items';
@@ -256,6 +257,7 @@ export class Menu {
         break;
       }
       case 'settings': this.resetArmed = false; this.openSettings(); break;
+      case 'story': this.closeModal(); story.play(() => {}); break;
       case 'reset':
         if (!this.resetArmed) { this.resetArmed = true; this.openSettings(); break; }
         this.save = resetSave();
@@ -702,6 +704,7 @@ export class Menu {
         <button class="btn ${sound.sfxOn ? 'blue' : 'off'}" data-act="toggle-sfx">${sound.sfxOn ? '🔊 효과음 켜짐' : '🔇 효과음 꺼짐'}</button>
         <button class="btn ${sound.musicOn ? 'blue' : 'off'}" data-act="toggle-music">${sound.musicOn ? '🎵 배경음악 켜짐' : '🎵 배경음악 꺼짐'}</button>
       </div>
+      <div class="row center"><button class="btn" data-act="story">📖 스토리 다시 보기</button></div>
       <p class="muted">진행 상황은 이 브라우저에 자동 저장돼요.</p>
       <p class="muted">낮잠 보상: 시간당 ${COIN()}${napRate(this.save)} (최대 ${NAP_MAX_HOURS}시간 쌓임)</p>
       <button class="btn ${this.resetArmed ? 'danger' : 'off'}" data-act="reset">${this.resetArmed ? '정말 초기화할까요? 한 번 더 누르면 삭제돼요' : '진행 상황 초기화'}</button>`);

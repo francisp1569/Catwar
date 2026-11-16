@@ -445,3 +445,81 @@ canvas#game { display: block; position: fixed; inset: 0; width: 100vw; height: 1
   background: linear-gradient(#1a1430cc, #1a1430dd), url(/art/world/bg/map.jpg) center top / cover no-repeat;
   background-attachment: local;
 }
+
+/* ───────── 스토리 컷씬 ───────── */
+#story { position: fixed; inset: 0; z-index: 200; max-width: 560px; margin: 0 auto; background: #0d0710; overflow: hidden; user-select: none; -webkit-user-select: none; font-family: inherit; }
+#story[hidden] { display: none; }
+.st-stage { position: absolute; inset: 0; overflow: hidden; }
+.st-stage.shake { animation: stShake 0.5s 0.9s; }
+@keyframes stShake { 0%, 100% { transform: none; } 20% { transform: translate(-8px, 4px); } 40% { transform: translate(7px, -5px); } 60% { transform: translate(-5px, 3px); } 80% { transform: translate(4px, -2px); } }
+.st-bg { position: absolute; inset: -4%; background: center / cover no-repeat; animation: stFade 0.6s both; }
+.st-bg.kb-in { animation: stFade 0.6s both, stKb 8s ease-out both; }
+.st-bg.dim::after, .st-bg.night::after { content: ''; position: absolute; inset: 0; background: rgba(20, 10, 40, 0.35); }
+.st-bg.night { filter: brightness(0.45) saturate(0.7) hue-rotate(200deg); }
+.st-bg.night::after { background: radial-gradient(circle at 50% 10%, transparent 20%, rgba(5, 0, 20, 0.6) 80%); }
+.st-bg.top { background-position: center top; background-size: 180% auto; animation: stFade 0.6s both, stPanTop 6s ease-out both; }
+@keyframes stPanTop { from { background-size: 140% auto; } to { background-size: 190% auto; } }
+.st-bg.battle { background-position: center top; }
+.st-bg.burst { background: repeating-conic-gradient(from 0deg at 50% 45%, #ffcf5a 0 10deg, #ff9f43 10deg 20deg); animation: stFade 0.3s both, stSpin 14s linear infinite; inset: -60%; }
+@keyframes stSpin { to { transform: rotate(360deg); } }
+@keyframes stFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes stKb { from { transform: scale(1); } to { transform: scale(1.1); } }
+
+.st-layer { position: absolute; animation-fill-mode: both; filter: drop-shadow(0 6px 10px #0008); }
+.pop { animation: stPop 0.5s cubic-bezier(.3, 1.6, .5, 1) both; }
+@keyframes stPop { from { transform: scale(0.2); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.float { animation: stPop 0.5s cubic-bezier(.3, 1.6, .5, 1) both, stFloat 2.4s ease-in-out 0.6s infinite; }
+@keyframes stFloat { 50% { translate: 0 -10px; } }
+.tremble { animation: stPop 0.4s both, stTremble 0.18s linear 0.4s infinite; }
+@keyframes stTremble { 50% { translate: 3px 0; } }
+.walk { animation: stWalk 1.2s ease-out both; }
+@keyframes stWalk { from { opacity: 0; translate: 0 -120px; } to { opacity: 1; translate: 0 0; } }
+.slam { animation: stSlam 0.6s cubic-bezier(.5, 0, .6, 1.4) both; }
+@keyframes stSlam { from { transform: translate(-50%, -160%) scale(1.4); opacity: 0; } to { transform: translate(-50%, 0) scale(1); opacity: 1; } }
+.rise { animation: stRise 0.6s ease-out both; }
+@keyframes stRise { from { opacity: 0; translate: 0 80px; } to { opacity: 1; translate: 0 0; } }
+.hero-in { animation: stHero 0.7s cubic-bezier(.3, 1.5, .5, 1) both; }
+@keyframes stHero { from { transform: translate(-50%, 0) translateX(120%) rotate(12deg); } to { transform: translate(-50%, 0) rotate(-3deg); } }
+.flip { scale: -1 1; }
+
+.st-girl { width: 52%; left: 24%; bottom: 25%; }
+.st-girl.big { width: 70%; left: 15%; bottom: 23%; }
+.st-face { width: 21%; aspect-ratio: 1; border-radius: 50%; border: 4px solid #fff; object-fit: cover; background: #fff; }
+.st-face.f1 { left: 5%; top: 14%; } .st-face.f2 { right: 6%; top: 10%; } .st-face.f3 { right: 10%; top: 34%; width: 18%; }
+.st-face.r1 { left: 6%; top: 18%; } .st-face.r2 { left: 39.5%; top: 12%; } .st-face.r3 { right: 6%; top: 18%; }
+.st-face.r4 { left: 20%; top: 40%; } .st-face.r5 { right: 20%; top: 40%; }
+.st-tag { left: 50%; top: 60%; transform: translateX(-50%); translate: -50% 0; text-align: center; background: linear-gradient(#ffcf5a, #ff9f43); border: 3px solid #fff; border-radius: 16px; padding: 6px 18px; color: #5a2c00; }
+.st-tag b { display: block; font-weight: normal; font-size: 26px; }
+.st-tag small { font-size: 13px; }
+.st-bg.black { background: #0d0710; }
+.st-wall { left: 0; top: 0; width: 100%; transform-origin: 50% 0; animation: stWallZoom 6s ease-out both; filter: none; }
+.st-wall img { display: block; width: 100%; filter: brightness(0.38) saturate(0.6) hue-rotate(200deg); }
+@keyframes stWallZoom { from { transform: scale(1.05); } to { transform: scale(1.3); } }
+.st-eyes { position: absolute; top: 9%; display: flex; gap: 7px; translate: -50% -50%; animation: stBlink 2.2s both infinite; }
+.st-eyes i { width: 8px !important; height: 8px !important; }
+.st-eyes i { width: 13px; height: 13px; border-radius: 50%; background: #ffe14d; box-shadow: 0 0 12px 4px #ffd84d99; }
+@keyframes stBlink { 0% { opacity: 0; } 15%, 85% { opacity: 1; } 90% { transform: scaleY(0.1); } 95% { transform: none; } }
+.st-en { width: 22%; }
+.st-en.e1 { left: 4%; top: 30%; width: 14%; } .st-en.e2 { right: 6%; top: 26%; width: 18%; }
+.st-en.e3 { left: 10%; top: 45%; } .st-en.e4 { right: 8%; top: 46%; }
+.st-boss { width: 62%; left: 50%; top: 18%; transform: translateX(-50%); }
+.st-hero { width: 62%; left: 50%; top: 9%; border: 6px solid #fff; border-radius: 18px; box-shadow: 0 10px 30px #0009; }
+.st-spark { color: #fff; font-size: 44px; text-shadow: 0 0 12px #fff; animation: stPop 0.4s both, stTwinkle 1.2s ease-in-out infinite; }
+.st-spark.s1 { left: 10%; top: 12%; } .st-spark.s2 { right: 9%; top: 26%; } .st-spark.s3 { left: 14%; top: 52%; }
+@keyframes stTwinkle { 50% { opacity: 0.3; scale: 0.7; } }
+.st-far { width: 13%; top: 16%; }
+.st-far.m1 { left: 18%; } .st-far.m2 { left: 46%; top: 20%; width: 9%; } .st-far.m3 { right: 16%; top: 14%; }
+.st-barricade { width: 104%; left: -2%; bottom: 33%; }
+.st-back { width: 40%; left: 30%; bottom: 20%; }
+
+.st-skip { position: absolute; top: max(12px, env(safe-area-inset-top)); right: 12px; z-index: 3; border: 2px solid #ffffff88; background: #0008; color: #fff; border-radius: 99px; padding: 6px 14px; font: inherit; font-size: 13px; }
+.st-dots { position: absolute; top: max(18px, env(safe-area-inset-top)); left: 14px; z-index: 3; display: flex; gap: 6px; }
+.st-dots i { width: 8px; height: 8px; border-radius: 50%; background: #ffffff55; }
+.st-dots i.on { background: #ffcf5a; }
+.st-box { position: absolute; left: 12px; right: 12px; bottom: max(18px, env(safe-area-inset-bottom)); z-index: 3; min-height: 120px; background: rgba(255, 250, 240, 0.96); color: #3b2228; border: 4px solid #3b2228; border-radius: 20px; padding: 26px 18px 18px; box-shadow: 0 8px 0 #0006; animation: stRise 0.35s both; }
+.st-box.narr { background: rgba(30, 18, 34, 0.92); color: #fff; border-color: #ffcf5a; padding-top: 18px; }
+.st-name { position: absolute; top: -18px; left: 16px; background: linear-gradient(#ff8fab, #ff5f8a); color: #fff; border: 3px solid #3b2228; border-radius: 12px; padding: 2px 14px; font-size: 18px; }
+.st-text { margin: 0; font-size: 19px; line-height: 1.5; min-height: 2.9em; word-break: keep-all; }
+.st-next { position: absolute; right: 16px; bottom: 8px; font-size: 13px; color: #ff5f8a; animation: stBob 0.8s ease-in-out infinite; }
+.st-box.narr .st-next { color: #ffcf5a; }
+@keyframes stBob { 50% { translate: 0 4px; } }

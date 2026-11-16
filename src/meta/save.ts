@@ -28,6 +28,7 @@ export interface SaveData {
   freeDay: string;     // 무료 상자를 받은 날짜 (YYYY-MM-DD)
   selectedStage: string;
   seen: string[];      // 발견한 적 종류
+  introSeen?: boolean; // 시작 스토리를 봤는지
 }
 
 const KEY = 'catwar.save.v1';
