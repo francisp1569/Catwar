@@ -32,6 +32,10 @@ export interface Enemy {
   dead: boolean;
   deathT: number;
   summonT?: number;
+  meteorT?: number;
+  fleeT?: number;
+  /** 땅속 (공격 불가) */
+  burrowed?: boolean;
 }
 
 export interface Member {
@@ -71,11 +75,13 @@ export interface Shot {
   done: boolean;
   spin: number;
   style?: WeaponFx;
+  /** 적 탄 모양 */
+  eshot?: 'web' | 'tongue' | 'meteor';
   src: number;
   trail?: { x: number; y: number }[];
 }
 
-export type FxKind = 'beam' | 'slam' | 'quake' | 'snipe' | 'dash' | 'heal' | 'thorns' | 'spark' | 'boom' | 'poof' | 'zap' | 'pounce' | 'spray' | 'shield';
+export type FxKind = 'beam' | 'slam' | 'quake' | 'snipe' | 'dash' | 'heal' | 'thorns' | 'spark' | 'boom' | 'poof' | 'zap' | 'pounce' | 'spray' | 'shield' | 'feather' | 'dirt' | 'coins' | 'ring' | 'slime';
 export interface ZapPoint { x: number; y: number; }
 export interface Fx { kind: FxKind; x: number; y: number; x2?: number; y2?: number; r: number; t: number; life: number; color: string; style?: WeaponFx; pts?: ZapPoint[]; ang?: number; }
 export interface Mine { x: number; y: number; r: number; dmg: number; src: number; t: number; seed: number; }
@@ -95,7 +101,7 @@ export type Card =
   | { type: 'generic'; id: GenericCard };
 
 export type Phase = 'playing' | 'victory' | 'defeat';
-export interface BattleResult { victory: boolean; stars: number; kills: number; time: number; progress: number; discovered: string[]; }
+export interface BattleResult { victory: boolean; stars: number; kills: number; time: number; progress: number; discovered: string[]; bonusCoins?: number; }
 
 export function fmtDmg(v: number): string {
   return v >= 10000 ? `${(v / 1000).toFixed(0)}K` : v >= 1000 ? `${(v / 1000).toFixed(1)}K` : `${Math.round(v)}`;
@@ -146,6 +152,8 @@ export class Game {
 
   kills = 0;
   banner: { text: string; t: number } | null = null;
+  /** 황금쥐로 번 코인 */
+  bonusCoins = 0;
   /** 결과 화면 '다음' 버튼으로 이어 할 스테이지 */
   nextId: string | null = null;
   /** 첫 판 튜토리얼 (0: 카드 고르기 안내, 1: 응원 버튼 안내, 2: 끝) */
@@ -394,7 +402,7 @@ export class Game {
     this.choice = null;
     const ratio = this.hp / this.maxHp;
     const stars = !victory ? 0 : ratio >= 0.7 ? 3 : ratio >= 0.35 ? 2 : 1;
-    this.result = { victory, stars, kills: this.kills, time: this.time, progress: this.progress, discovered: [...this.discovered] };
+    this.result = { victory, stars, kills: this.kills, time: this.time, progress: this.progress, discovered: [...this.discovered], bonusCoins: this.bonusCoins };
   }
 
   // ───────────── 출현 ─────────────
@@ -476,14 +484,38 @@ export class Game {
       if (e.stunT > 0) { e.stunT -= dt; continue; }
       const slow = e.slowT > 0 ? 1 - e.slowAmt : 1;
       const stopY = CONFIG.barricadeY - e.def.size * 0.6 - (e.def.range ?? 0);
+      if (e.def.flee) {
+        // 황금쥐: 5초 내려왔다가 도망. 화면 밖으로 나가면 사라짐
+        e.fleeT = (e.fleeT ?? 0) + dt;
+        e.attacking = false;
+        if (e.fleeT < 5) e.y = Math.min(stopY - 120, e.y + e.def.speed * slow * dt);
+        else e.y -= e.def.speed * 1.5 * slow * dt;
+        e.x = Math.max(20, Math.min(W - 20, e.baseX + Math.sin(e.animT * 3) * 40));
+        if (e.fleeT > 5 && e.y < CONFIG.fieldTop - 50) { e.dead = true; e.deathT = 1; }
+        continue;
+      }
+      if (e.def.burrow) {
+        const was = e.burrowed;
+        e.burrowed = e.y < stopY - 70;
+        if (was && !e.burrowed) { this.fx.push({ kind: 'dirt', x: e.x, y: e.y, r: 34, t: 0, life: 0.5, color: '#a07050' }); this.sfx('thud'); }
+      }
+      const hopK = e.def.hop ? Math.max(0, Math.sin(e.animT * 4)) * 2.4 : 1;
       if (e.y < stopY) {
         e.attacking = false;
-        e.y = Math.min(stopY, e.y + e.def.speed * slow * dt);
+        e.y = Math.min(stopY, e.y + e.def.speed * slow * hopK * dt);
         const wob = e.def.flying ? 26 : e.def.boss ? 4 : 8;
         e.x = Math.max(20, Math.min(W - 20, e.baseX + Math.sin(e.animT * (e.def.flying ? 2.2 : 1.3)) * wob));
       } else {
         e.attacking = true;
         e.atkTimer += dt * slow;
+      }
+      if (e.def.meteor) {
+        e.meteorT = (e.meteorT ?? 0) + dt;
+        if (e.meteorT >= e.def.meteor.every) {
+          e.meteorT = 0;
+          const mx = 40 + Math.random() * (W - 80);
+          this.shots.push({ kind: 'web', eshot: 'meteor', x: mx, y: CONFIG.fieldTop, vx: 0, vy: 420, dmg: e.atk * e.def.meteor.dmg, radius: 16, pierce: 0, color: '#ffb000', crit: false, hit: new Set(), tick: 0, done: false, spin: 0, src: -1 });
+        }
       }
       if (e.def.summon) {
         e.summonT = (e.summonT ?? 0) + dt;
@@ -491,14 +523,14 @@ export class Game {
           e.summonT = 0;
           const sm = e.def.summon;
           for (let j = 0; j < sm.count; j++) this.spawn(sm.kind, Math.max(30, Math.min(W - 30, e.x + (j - (sm.count - 1) / 2) * 36)), e.y + 10);
-          this.fx.push({ kind: 'poof', x: e.x, y: e.y + 20, r: 40, t: 0, life: 0.4, color: '#ffffff' });
+          this.fx.push({ kind: e.def.id === 'ratemperor' ? 'ring' : 'poof', x: e.x, y: e.y + 20, r: e.def.id === 'ratemperor' ? 80 : 40, t: 0, life: 0.5, color: '#ffffff' });
         }
       }
       if (e.attacking) {
         if (e.atkTimer >= e.def.atkInterval) {
           e.atkTimer = 0;
           if (e.def.range) {
-            this.shots.push({ kind: 'web', x: e.x, y: e.y + e.def.size, vx: 0, vy: 360, dmg: e.atk, radius: 5, pierce: 0, color: '#ffffff', crit: false, hit: new Set(), tick: 0, done: false, spin: 0, src: -1 });
+            this.shots.push({ kind: 'web', eshot: e.def.shot ?? 'web', x: e.x, y: e.y + e.def.size, vx: 0, vy: e.def.shot === 'tongue' ? 900 : 360, dmg: e.atk, radius: e.def.shot === 'tongue' ? 10 : 5, pierce: 0, color: '#ffffff', crit: false, hit: new Set(), tick: 0, done: false, spin: 0, src: -1 });
           } else {
             this.damageBarricade(e.atk, e.x);
             if (g.thorns > 0) {
@@ -565,7 +597,7 @@ export class Game {
   }
 
   damageEnemy(e: Enemy, dmg: number, o: { crit?: boolean; color?: string; slow?: number; slowDur?: number; stun?: number; knock?: number; quiet?: boolean; src?: number } = {}): void {
-    if (e.dead) return;
+    if (e.dead || e.burrowed) return;
     if (e.def.armor) dmg *= 1 - e.def.armor;
     if (o.src !== undefined && o.src >= 0) this.squad[o.src].dealt += Math.min(dmg, e.hp);
     e.hp -= dmg;
@@ -588,6 +620,15 @@ export class Game {
       this.fx.push({ kind: 'poof', x: e.x, y: e.y, r: e.def.size * 1.5, t: 0, life: 0.45, color: '#ffffff' });
       this.sfx(e.def.boss ? 'boom' : 'kill');
       if (e.def.boss) this.fx.push({ kind: 'boom', x: e.x, y: e.y, r: 90, t: 0, life: 0.6, color: '#ff8a3d' });
+      if (e.def.id === 'pigeon' || e.def.id === 'crowboss') this.fx.push({ kind: 'feather', x: e.x, y: e.y, r: e.def.size * 1.6, t: 0, life: 0.6, color: '#fff' });
+      if (e.def.id === 'slug') this.fx.push({ kind: 'slime', x: e.x, y: e.y, r: 26, t: 0, life: 3, color: '#8fd14f' });
+      if (e.def.flee) {
+        const bonus = Math.round(30 + this.stage.no * 12);
+        this.bonusCoins += bonus;
+        this.fx.push({ kind: 'coins', x: e.x, y: e.y, r: 40, t: 0, life: 0.8, color: '#ffd84d' });
+        this.addFloat(e.x, e.y - 30, `+${bonus} 코인!`, '#ffd84d', 20);
+        this.sfx('gacha');
+      }
       const goo = e.def.id === 'mouse' || e.def.id === 'ratking' ? 'rgba(200,195,210,0.55)' : e.def.id === 'spider' ? 'rgba(150,110,200,0.45)' : 'rgba(150,190,60,0.42)';
       this.decals.push({ x: e.x, y: e.y, r: e.def.size * (e.def.boss ? 2.2 : 1.4), color: goo, t: 0, seed: Math.random() * 10 });
       if (this.decals.length > 70) this.decals.shift();
@@ -609,7 +650,7 @@ export class Game {
 
   // ───────────── 고양이 스킬 ─────────────
 
-  private alive(): Enemy[] { return this.enemies.filter((e) => !e.dead && e.y > CONFIG.fieldTop - 30); }
+  private alive(): Enemy[] { return this.enemies.filter((e) => !e.dead && !e.burrowed && e.y > CONFIG.fieldTop - 30); }
 
   private frontmost(list: Enemy[]): Enemy | null {
     let best: Enemy | null = null;
@@ -936,16 +977,21 @@ export class Game {
         continue;
       }
       if (s.kind === 'boomer') {
+        s.age = (s.age ?? 0) + dt;
         if (!s.back && (Math.hypot(s.x - s.sx!, s.y - s.sy!) >= s.range! || s.y < CONFIG.fieldTop)) { s.back = true; s.hit.clear(); }
         if (s.back) {
+          // 돌아올 땐 던진 고양이에게 곧장 날아온다 (예전엔 빙빙 돌며 안 사라지는 경우가 있었음)
           const dx = s.sx! - s.x;
           const dy = s.sy! - s.y;
           const d = Math.hypot(dx, dy);
           const sp = Math.hypot(s.vx, s.vy);
-          s.vx += ((dx / d) * sp - s.vx) * Math.min(1, dt * 6);
-          s.vy += ((dy / d) * sp - s.vy) * Math.min(1, dt * 6);
-          if (d < 30) { s.done = true; continue; }
+          const turn = Math.min(1, dt * 14);
+          s.vx += ((dx / Math.max(1, d)) * sp - s.vx) * turn;
+          s.vy += ((dy / Math.max(1, d)) * sp - s.vy) * turn;
+          if (d < 30 + sp * dt) { s.done = true; continue; }
         }
+        // 안전장치: 오래 떠 있으면 사라짐
+        if (s.age > 3) { s.done = true; this.fx.push({ kind: 'poof', x: s.x, y: s.y, r: 20, t: 0, life: 0.3, color: '#fff' }); continue; }
         for (const e of list) {
           if (e.dead || s.hit.has(e.uid)) continue;
           if (Math.hypot(e.x - s.x, e.y - s.y) <= s.radius + e.def.size) {
@@ -956,7 +1002,12 @@ export class Game {
         continue;
       }
       if (s.kind === 'web') {
-        if (s.y >= CONFIG.barricadeY) { s.done = true; this.damageBarricade(s.dmg, s.x); this.burst(s.x, CONFIG.barricadeY, '#ffffff', 3); }
+        if (s.y >= CONFIG.barricadeY) {
+          s.done = true;
+          this.damageBarricade(s.dmg, s.x);
+          if (s.eshot === 'meteor') { this.fx.push({ kind: 'boom', x: s.x, y: CONFIG.barricadeY, r: 70, t: 0, life: 0.6, color: '#ffb000' }); this.sfx('boom'); this.shake = 0.3; }
+          else this.burst(s.x, CONFIG.barricadeY, '#ffffff', 3);
+        }
         continue;
       }
       if (s.y < CONFIG.fieldTop - 60 || s.x < -40 || s.x > W + 40) { s.done = true; continue; }

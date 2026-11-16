@@ -89,13 +89,15 @@ export function drawBustArt(ctx: CanvasRenderingContext2D, id: string, img: HTML
 // ───────────── 적·배경·아이콘 그림 (public/art/world) ─────────────
 // 파일이 없으면 기존처럼 코드로 그린 그림/이모지를 쓴다.
 export const WORLD_FILES: Record<string, string> = {};
-const ENEMY_ART = ['ant', 'mouse', 'roach', 'mosquito', 'spider', 'ratking', 'fly', 'shieldmouse', 'roachgen', 'spiderqueen'];
+const ENEMY_ART = ['ant', 'mouse', 'roach', 'mosquito', 'spider', 'ratking', 'fly', 'shieldmouse', 'roachgen', 'spiderqueen',
+  'slug', 'centipede', 'pigeon', 'wasp', 'mole', 'frog', 'goldmouse', 'beetle', 'toadking', 'crowboss', 'ratemperor'];
 for (const id of ENEMY_ART) WORLD_FILES[`enemy-${id}`] = `enemies/${id}.webp`;
 for (const id of ['vacuum', 'web', 'girl-happy', 'girl-worried', 'girl-cry', 'barricade', 'barricade-0', 'barricade-1', 'barricade-2',
-  'cheese-attack', 'cheese-win', 'cheese-lose', 'box', 'box-open', 'boss-ratking', 'boss-roachgen', 'boss-spiderqueen']) WORLD_FILES[id] = `props/${id}.webp`;
-for (const id of ['claw', 'spark', 'boom', 'poof', 'splash', 'zap', 'heal', 'notes']) WORLD_FILES[`fx-${id}`] = `fx/${id}.webp`;
-for (const id of ['lobby', 'map']) WORLD_FILES[`bg-${id}`] = `bg/${id}.jpg`;
-for (const id of ['1', '2', '3', '4', '5', '6', '7', 'title']) WORLD_FILES[`story-${id}`] = `story/${id}.jpg`;
+  'cheese-attack', 'cheese-win', 'cheese-lose', 'box', 'box-open', 'boss-ratking', 'boss-roachgen', 'boss-spiderqueen',
+  'boss-toadking', 'boss-crowboss', 'boss-ratemperor', 'badge-ch2']) WORLD_FILES[id] = `props/${id}.webp`;
+for (const id of ['claw', 'spark', 'boom', 'poof', 'splash', 'zap', 'heal', 'notes', 'slime', 'sting', 'tongue', 'feather', 'dirt', 'coins', 'ring', 'meteor']) WORLD_FILES[`fx-${id}`] = `fx/${id}.webp`;
+for (const id of ['lobby', 'map', 'bathroom', 'balcony', 'garden']) WORLD_FILES[`bg-${id}`] = `bg/${id}.jpg`;
+for (const id of ['1', '2', '3', '4', '5', '6', '7', 'title', 'c2-1', 'c2-2', 'c2-3', 'title-ch2']) WORLD_FILES[`story-${id}`] = `story/${id}.jpg`;
 for (const id of ['entrance', 'living', 'kitchen', 'attic']) WORLD_FILES[`bg-${id}`] = `bg/${id}.jpg`;
 export const ICON_IDS = [
   'coin', 'tuna', 'yarn', 'chest', 'chest-open', 'chest-royal',

@@ -166,12 +166,12 @@ const BG_FALLBACK: Partial<Record<Area, [Area, string]>> = {
   balcony: ['living', 'hue-rotate(-25deg) saturate(1.1) brightness(1.05)'],
   garden: ['entrance', 'hue-rotate(55deg) saturate(1.4)'],
 };
-function bgArtFor(area: Area): { img: HTMLImageElement; filter: string } | null {
+function bgArtFor(area: Area): { img: HTMLImageElement; filter: string; layout: BgLayout } | null {
   const own = getWorld(`bg-${area}`);
-  if (own) return { img: own, filter: 'none' };
+  if (own) return { img: own, filter: 'none', layout: layoutFor(area, true) };
   const fb = BG_FALLBACK[area];
   const img = fb ? getWorld(`bg-${fb[0]}`) : null;
-  return img && fb ? { img, filter: fb[1] } : null;
+  return img && fb ? { img, filter: fb[1], layout: BG_DEFAULT } : null;
 }
 
 // 바닥은 스테이지마다 한 번만 자세히 그려두고(오프스크린) 매 프레임 그 그림을 찍는다
@@ -244,28 +244,38 @@ function propFeather(ctx: Ctx, x: number, y: number, rot: number, col: string): 
   ctx.restore();
 }
 
-// 배경 그림 구성 비율 (public/art/world/bg/*.jpg): 위 벽 띠 / 방 / 집 안 바닥
-const BG_BAND = 0.12;
-const BG_SPLIT = 0.791;
-/** 쥐구멍 가운데 (가로 비율) */
-export const HOLE_X = [0.172, 0.5, 0.83];
+// 배경 그림 구성 비율: 위 벽 띠 / 방 / 집 안 바닥 (그림마다 다름)
+interface BgLayout { band: number; split: number; holes: number[]; eyeY: number; }
+const BG_DEFAULT: BgLayout = { band: 0.12, split: 0.791, holes: [0.172, 0.5, 0.83], eyeY: 0.085 };
+const BG_LAYOUT: Partial<Record<Area, BgLayout>> = {
+  bathroom: { band: 0.145, split: 0.831, holes: [0.137, 0.519, 0.883], eyeY: 0.088 },
+  balcony: { band: 0.145, split: 0.835, holes: [0.128, 0.5, 0.866], eyeY: 0.088 },
+  garden: { band: 0.145, split: 0.836, holes: [0.156, 0.487, 0.819], eyeY: 0.088 },
+};
+function layoutFor(area: Area, own: boolean): BgLayout {
+  return (own && BG_LAYOUT[area]) || BG_DEFAULT;
+}
 
-function drawBgArt(ctx: Ctx, img: HTMLImageElement, h: number): void {
+function drawBgArt(ctx: Ctx, img: HTMLImageElement, h: number, L: BgLayout): void {
   ctx.imageSmoothingQuality = 'high';
   const iw = img.naturalWidth;
   const ih = img.naturalHeight;
   const sc = W / iw;
-  const band = ih * BG_BAND;
-  const split = ih * BG_SPLIT;
+  const band = ih * L.band;
+  const split = ih * L.split;
   const roomBottom = CONFIG.barricadeY + 20;
   // 위 벽 띠 (쥐구멍): 비율 그대로
   ctx.drawImage(img, 0, 0, iw, band, 0, 0, W, band * sc);
   // 방 바닥: 화면 높이에 맞춰 위아래로 늘이거나 줄임
   ctx.drawImage(img, 0, band, iw, split - band, 0, band * sc - 0.5, W, roomBottom - band * sc + 1);
-  // 집 안 바닥: 위쪽부터 필요한 만큼
-  const need = (h - roomBottom) / sc;
+  // 집 안 바닥: 모자라면 나무 바닥을 이어 붙인다
   const avail = ih - split;
-  ctx.drawImage(img, 0, split, iw, Math.min(need, avail), 0, roomBottom, W, need <= avail ? h - roomBottom : avail * sc);
+  let y = roomBottom;
+  while (y < h) {
+    const take = Math.min(avail, (h - y) / sc);
+    ctx.drawImage(img, 0, split, iw, take, 0, y, W, take * sc);
+    y += take * sc;
+  }
   // 경계 그림자
   const g = ctx.createLinearGradient(0, roomBottom - 6, 0, roomBottom + 18);
   g.addColorStop(0, 'rgba(40,20,20,0)');
@@ -283,7 +293,7 @@ function buildFloor(area: Area, h: number, k: number): HTMLCanvasElement {
   const bgArt = bgArtFor(area);
   if (bgArt) {
     ctx.filter = bgArt.filter;
-    drawBgArt(ctx, bgArt.img, h);
+    drawBgArt(ctx, bgArt.img, h, bgArt.layout);
     ctx.filter = 'none';
     return c;
   }
@@ -470,14 +480,15 @@ function buildFloor(area: Area, h: number, k: number): HTMLCanvasElement {
 function drawField(ctx: Ctx, area: Area, t: number): void {
   const tr = ctx.getTransform();
   const k = Math.min(3, Math.max(1, Math.round(Math.hypot(tr.a, tr.b) * 2) / 2));
-  const art = bgArtFor(area)?.img ?? null;
+  const bga = bgArtFor(area);
+  const art = bga?.img ?? null;
   const key = `${area}:${CONFIG.height}:${CONFIG.barricadeY}:${k}:${art ? art.src.length : 0}`;
   let c = floorCache.get(key);
   if (!c) { c = buildFloor(area, CONFIG.height, k); floorCache.set(key, c); }
   ctx.drawImage(c, 0, 0, W, CONFIG.height);
   // 구멍 속 눈빛 (깜빡임)
-  const eyeY = art ? (art.naturalHeight * 0.085 * W) / art.naturalWidth : CONFIG.fieldTop - 20;
-  for (const hx of art ? HOLE_X.map((f) => f * W) : [90, 270, 450]) {
+  const eyeY = art && bga ? (art.naturalHeight * bga.layout.eyeY * W) / art.naturalWidth : CONFIG.fieldTop - 20;
+  for (const hx of art && bga ? bga.layout.holes.map((f) => f * W) : [90, 270, 450]) {
     const blink = Math.sin(t * 2 + hx) > 0.9 ? 0.2 : 1;
     ellipse(ctx, hx - 9, eyeY, 3.5, 3.5 * blink, '#ffdf5e');
     ellipse(ctx, hx + 9, eyeY, 3.5, 3.5 * blink, '#ffdf5e');
@@ -682,7 +693,10 @@ function drawEnemyBody(ctx: Ctx, d: EnemyDef, t: number, moving: boolean): void 
   const s = d.size;
   const leg = moving ? Math.sin(t * (d.speed / 4)) : 0;
   // 그림이 없을 때 새 적은 비슷한 적 모양으로
-  const shape = ({ fly: 'mosquito', shieldmouse: 'mouse', roachgen: 'roach', spiderqueen: 'spider' } as Record<string, string>)[d.id] ?? d.id;
+  const shape = ({
+    fly: 'mosquito', shieldmouse: 'mouse', roachgen: 'roach', spiderqueen: 'spider', slug: 'mouse', centipede: 'roach', pigeon: 'mosquito', wasp: 'mosquito',
+    mole: 'mouse', frog: 'spider', goldmouse: 'mouse', beetle: 'roach', toadking: 'spider', crowboss: 'mosquito', ratemperor: 'ratking',
+  } as Record<string, string>)[d.id] ?? d.id;
 
   switch (shape) {
     case 'mouse':
@@ -832,6 +846,17 @@ function drawEnemy(ctx: Ctx, e: Enemy): void {
   }
   if (e.attacking && !e.dead) ctx.translate(0, Math.sin(t * 18) * 2);
   const frame = moving ? Math.floor(((t * (d.speed / 4)) / (Math.PI * 2)) * 6) % 6 : 6;
+  if (e.burrowed) {
+    // 땅속: 흙더미만 움직인다
+    const dirt = getWorld('fx-dirt');
+    const wob = Math.sin(t * 10) * 0.08;
+    ctx.rotate(wob);
+    if (dirt) drawContain(ctx, dirt, 0, 0, s * 2.6);
+    else ellipse(ctx, 0, 0, s, s * 0.5, '#8a6040');
+    ctx.restore();
+    return;
+  }
+  if (d.hop && !e.dead) ctx.translate(0, -Math.max(0, Math.sin(t * 4)) * s * 1.2);
   const spr = enemySprite(ctx, d, frame, e.hitFlash > 0 && !e.dead);
   ctx.drawImage(spr.c, spr.box.x, spr.box.y, spr.box.w, spr.box.h);
   ctx.restore();
@@ -1106,6 +1131,23 @@ function drawShots(ctx: Ctx, game: Game): void {
       ctx.restore();
       continue;
     }
+    if (s.kind === 'web' && s.eshot === 'meteor') {
+      const img = getWorld('fx-meteor');
+      // 떨어질 자리 표시
+      ctx.save();
+      ctx.globalAlpha = 0.35 + 0.25 * Math.sin(s.y * 0.1);
+      ellipse(ctx, s.x, CONFIG.barricadeY + 10, 34, 12, '#ff4d4d');
+      ctx.restore();
+      if (img) { ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(0.5); drawContain(ctx, img, 0, 0, 70); ctx.restore(); }
+      else circle(ctx, s.x, s.y, s.radius, '#ffb000');
+      continue;
+    }
+    if (s.kind === 'web' && s.eshot === 'tongue') {
+      const img = getWorld('fx-tongue');
+      if (img) { ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(Math.PI / 2); drawContain(ctx, img, 0, 0, 56); ctx.restore(); }
+      else circle(ctx, s.x, s.y, s.radius, '#ff8fa0');
+      continue;
+    }
     if (s.kind === 'web' && getWorld('web')) {
       const img = getWorld('web')!;
       ctx.strokeStyle = '#ffffffaa';
@@ -1286,7 +1328,7 @@ function drawFields(ctx: Ctx, game: Game, t: number): void {
   }
 }
 
-const FX_ART: Partial<Record<string, string>> = { boom: 'fx-boom', poof: 'fx-poof', spark: 'fx-spark' };
+const FX_ART: Partial<Record<string, string>> = { boom: 'fx-boom', poof: 'fx-poof', spark: 'fx-spark', feather: 'fx-feather', dirt: 'fx-dirt', coins: 'fx-coins', ring: 'fx-ring', slime: 'fx-slime' };
 
 function drawFx(ctx: Ctx, game: Game): void {
   for (const f of game.fx) {
@@ -1296,7 +1338,7 @@ function drawFx(ctx: Ctx, game: Game): void {
     const fa = FX_ART[f.kind] ? getWorld(FX_ART[f.kind]!) : null;
     if (fa) {
       // 그림 이펙트: 톡 커졌다가 사라짐
-      const pop = f.kind === 'spark' ? 0.6 + k * 0.7 : 0.55 + Math.min(1, k * 3) * 0.6;
+      const pop = f.kind === 'spark' ? 0.6 + k * 0.7 : f.kind === 'slime' ? 1 : 0.55 + Math.min(1, k * 3) * 0.6;
       ctx.globalAlpha = k < 0.6 ? 1 : (1 - k) / 0.4;
       ctx.translate(f.x, f.y - (f.kind === 'poof' ? k * 10 : 0));
       ctx.rotate(f.kind === 'spark' ? f.x * 0.37 + k * 0.6 : 0);

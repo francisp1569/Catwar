@@ -43,8 +43,9 @@ export function applyResult(save: SaveData, stage: StageDef, res: BattleResult):
   save.tuna += newSeen.length * DISCOVER_TUNA;
   const extra = { discovered: newSeen.length, levelUp, levelTuna };
   const prevStars = save.stages[stage.id] ?? 0;
+  const bonus = res.bonusCoins ?? 0; // 황금쥐 코인 (아래 coins에 포함)
   if (!res.victory) {
-    const coins = Math.round(stage.reward.coins * 0.2 * res.progress * coinMul);
+    const coins = Math.round(stage.reward.coins * 0.2 * res.progress * coinMul) + bonus;
     const yarn = Math.round(res.progress * 3);
     save.coins += coins;
     save.yarn += yarn;
@@ -52,7 +53,7 @@ export function applyResult(save: SaveData, stage: StageDef, res: BattleResult):
   }
   const firstClear = prevStars === 0;
   const newStars = Math.max(0, res.stars - prevStars);
-  const coins = Math.round((firstClear ? stage.reward.coins : stage.reward.coins * 0.4) * coinMul);
+  const coins = Math.round((firstClear ? stage.reward.coins : stage.reward.coins * 0.4) * coinMul) + bonus;
   const tuna = (firstClear ? stage.reward.tuna : 0) + newStars * 20;
   const yarn = 3 + stage.no + res.stars;
   const heroShards = HERO_SHARDS_PER_CLEAR;

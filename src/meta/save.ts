@@ -31,6 +31,7 @@ export interface SaveData {
   introSeen?: boolean; // 시작 스토리를 봤는지
   tutorialDone?: boolean; // 첫 판 안내를 끝냈는지
   hardMode?: boolean;  // 로비에서 어려움 모드 선택
+  ch2Seen?: boolean;   // 2장 컷씬을 봤는지
 }
 
 const KEY = 'catwar.save.v1';

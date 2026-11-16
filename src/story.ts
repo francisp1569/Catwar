@@ -56,6 +56,34 @@ const CUTS: Cut[] = [
   { bg: `${S}7.jpg`, bgCls: 'kb-in panel', layers: [], speaker: '치즈', text: '바리케이드가 무너지기 전에 전부 물리치자! 냥냥 방위대, 출동이다냥!', sfx: ['win'] },
 ];
 
+/** 2장 시작 컷씬 */
+export const CH2_CUTS: Cut[] = [
+  {
+    bg: `${S}title-ch2.jpg`, bgCls: 'kb-in wide',
+    layers: [{ html: '<small>CHAPTER 2</small><b>찍찍 도적단의 역습</b>', cls: 'st-chapter pop', delay: 0.3 }],
+    text: '집 안에서 쫓겨난 찍찍 도적단은 그대로 물러나지 않았다…',
+    sfx: ['levelup'],
+  },
+  {
+    bg: `${S}c2-1.jpg`, bgCls: 'kb-in panel', layers: [],
+    speaker: '대왕쥐',
+    text: '찍찍… 집 안이 안 되면 바깥부터 포위한다! 황제 폐하께도 소식을 전해라!',
+    sfx: ['boss'],
+  },
+  {
+    bg: `${S}c2-2.jpg`, bgCls: 'kb-in panel', layers: [],
+    speaker: '찍찍 도적단',
+    text: '찍찍찍! 욕실 하수구, 베란다, 마당까지 전부 우리 차지다!',
+    sfx: ['hurt'], shake: true,
+  },
+  {
+    bg: `${S}c2-3.jpg`, bgCls: 'kb-out panel', layers: [],
+    speaker: '치즈',
+    text: '놈들이 밖에서 다시 모였다냥. 이번엔 우리가 먼저 나간다냥! 냥냥 방위대, 출동!',
+    sfx: ['meow', 'win'],
+  },
+];
+
 export class Story {
   private root: HTMLDivElement;
   private idx = 0;
@@ -76,7 +104,10 @@ export class Story {
     });
   }
 
-  play(onDone: () => void): void {
+  private cuts: Cut[] = CUTS;
+
+  play(onDone: () => void, cuts: Cut[] = CUTS): void {
+    this.cuts = cuts;
     this.done = onDone;
     this.idx = 0;
     this.root.hidden = false;
@@ -84,8 +115,8 @@ export class Story {
   }
 
   private show(): void {
-    const c = CUTS[this.idx];
-    const last = this.idx === CUTS.length - 1;
+    const c = this.cuts[this.idx];
+    const last = this.idx === this.cuts.length - 1;
     this.root.innerHTML = `
       <div class="st-stage ${c.shake ? 'shake' : ''}">
         <div class="st-bg ${c.bgCls ?? ''}" style="${c.bg ? `background-image:url(${c.bg})` : ''}"></div>
@@ -95,7 +126,7 @@ export class Story {
         }).join('')}
       </div>
       <button class="st-skip" data-skip>건너뛰기 ▶▶</button>
-      <div class="st-dots">${CUTS.map((_, i) => `<i class="${i === this.idx ? 'on' : ''}"></i>`).join('')}</div>
+      <div class="st-dots">${this.cuts.map((_, i) => `<i class="${i === this.idx ? 'on' : ''}"></i>`).join('')}</div>
       <div class="st-box ${c.speaker ? '' : 'narr'}">
         ${c.speaker ? `<div class="st-name">${c.speaker}</div>` : ''}
         <p class="st-text"></p>
@@ -122,7 +153,7 @@ export class Story {
       return;
     }
     sound.play('click');
-    if (this.idx >= CUTS.length - 1) { this.finish(); return; }
+    if (this.idx >= this.cuts.length - 1) { this.finish(); return; }
     this.idx++;
     this.show();
   }

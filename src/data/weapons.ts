@@ -73,7 +73,7 @@ const m = (id: string, name: string, desc: string, max: number, add?: Partial<We
 export const WEAPONS: Record<string, WeaponDef> = {
   cheese: {
     kind: 'bolt', fx: 'paw', icon: '🐾', color: '#ffb347',
-    base: { interval: 0.55, dmg: 1.0, count: 1, speed: 720 },
+    base: { interval: 0.55, dmg: 1.5, count: 1, speed: 720 },
     intro: '가장 가까운 적에게 말랑한 젤리 냥냥펀치를 날린다.',
     mods: [
       m('multi', '펀치 연타', '펀치 수 +1, 펀치 피해 -15%', 2, { count: 1 }, { dmg: 0.85 }),
@@ -93,7 +93,7 @@ export const WEAPONS: Record<string, WeaponDef> = {
   },
   huindungi: {
     kind: 'bolt', fx: 'yarn', icon: '🧶', color: '#ff7eb6',
-    base: { interval: 1.2, dmg: 1.3, count: 1, pierce: 2, speed: 520, radius: 9 },
+    base: { interval: 1.2, dmg: 1.1, count: 1, pierce: 2, speed: 520, radius: 9 },
     intro: '적을 줄줄이 꿰뚫는 털실뭉치를 던진다.',
     mods: [
       m('more', '털실 추가', '털실뭉치 +1개, 피해 -15%', 2, { count: 1 }, { dmg: 0.85 }),
@@ -104,7 +104,7 @@ export const WEAPONS: Record<string, WeaponDef> = {
   },
   chaos: {
     kind: 'dash', fx: 'scratch', icon: '⚡', color: '#c8742f',
-    base: { interval: 4, dmg: 2.0, width: 46, knock: 50, count: 1 },
+    base: { interval: 4, dmg: 1.7, width: 46, knock: 50, count: 1 },
     intro: '적이 가장 많은 줄로 우다다 달려가며 할퀴고 밀쳐낸다.',
     mods: [
       m('wide', '넓게 우다다', '할퀴는 폭 증가', 2, { width: 26 }),
@@ -126,7 +126,7 @@ export const WEAPONS: Record<string, WeaponDef> = {
   },
   tuxedo: {
     kind: 'snipe', fx: 'bell', icon: '🔔', color: '#e8d23a',
-    base: { interval: 1.6, dmg: 3.0, crit: 0.25, critMul: 2.5 },
+    base: { interval: 1.6, dmg: 7.2, crit: 0.25, critMul: 2.5 },
     intro: '체력이 가장 높은 적에게 방울공을 정확히 꽂는다. (치명타 25%)',
     mods: [
       m('luck', '행운의 방울', '치명타 확률 +15%', 2, { crit: 0.15 }),
@@ -146,7 +146,7 @@ export const WEAPONS: Record<string, WeaponDef> = {
   },
   russianblue: {
     kind: 'frost', fx: 'feather', icon: '🎣', color: '#9fe3ff',
-    base: { interval: 4, dmg: 0.35, radius: 70, slow: 0.4, range: 3 },
+    base: { interval: 4, dmg: 0.29, radius: 70, slow: 0.4, range: 3 },
     intro: '적이 몰린 곳에 깃털 낚싯대를 드리워 홀린다. (감속 + 지속 피해)',
     mods: [
       m('charm', '매혹의 깃털', '감속 +10%', 2, { slow: 0.1 }),
@@ -169,7 +169,7 @@ export const WEAPONS: Record<string, WeaponDef> = {
   },
   munchkin: {
     kind: 'bolt', fx: 'claws', icon: '✂️', color: '#d9d4cf',
-    base: { interval: 0.32, dmg: 0.5, count: 1, speed: 800, radius: 5 },
+    base: { interval: 0.32, dmg: 0.6, count: 1, speed: 800, radius: 5 },
     intro: '짧은 다리로 쉴 새 없이 할퀴기를 날린다.',
     mods: [
       m('rapid', '짧은 다리 폭주', '할퀴기 간격 -22%', 3, undefined, { interval: 0.78 }),
@@ -185,7 +185,7 @@ export const WEAPONS: Record<string, WeaponDef> = {
   },
   mainecoon: {
     kind: 'slam', fx: 'bigpaw', icon: '👊', color: '#9b7350',
-    base: { interval: 6, dmg: 4.0, radius: 80, knock: 40, count: 1 },
+    base: { interval: 6, dmg: 4.72, radius: 80, knock: 40, count: 1 },
     intro: '적이 가장 많이 몰린 곳을 거대한 앞발로 쾅 내리친다.',
     mods: [
       m('big', '왕발', '냥펀치 범위 증가', 2, { radius: 22 }),
@@ -208,7 +208,7 @@ export const WEAPONS: Record<string, WeaponDef> = {
   // ───────── 새 고양이 ─────────
   cow: {
     kind: 'lob', fx: 'churu', icon: '🍡', color: '#ffb36b',
-    base: { interval: 3.2, dmg: 2.2, radius: 60, count: 1 },
+    base: { interval: 3.2, dmg: 1.54, radius: 60, count: 1 },
     intro: '적이 몰린 곳에 츄르 폭탄을 포물선으로 던져 터뜨린다.',
     mods: [
       m('big', '대용량 츄르', '폭발 범위 증가', 2, { radius: 18 }),
@@ -218,7 +218,7 @@ export const WEAPONS: Record<string, WeaponDef> = {
   },
   norwegian: {
     kind: 'chain', fx: 'zap', icon: '⚡', color: '#9fd8ff',
-    base: { interval: 2.2, dmg: 1.6, jumps: 4 },
+    base: { interval: 2.2, dmg: 2.4, jumps: 4 },
     intro: '풍성한 털로 모은 정전기가 적들 사이를 튀어 다닌다.',
     mods: [
       m('more', '겨울 털', '연쇄 +2회', 3, { jumps: 2 }),
@@ -229,7 +229,7 @@ export const WEAPONS: Record<string, WeaponDef> = {
   },
   bengal: {
     kind: 'pounce', fx: 'pounce', icon: '🐆', color: '#e8a040',
-    base: { interval: 3.5, dmg: 3.5, radius: 55, execute: 0.15 },
+    base: { interval: 3.5, dmg: 4.3, radius: 55, execute: 0.15 },
     intro: '사냥 본능! 적에게 덮쳐 주변을 할퀴고, 체력 15% 이하 적은 즉시 처치.',
     mods: [
       m('hunter', '타고난 사냥꾼', '즉시 처치 기준 +8%', 2, { execute: 0.08 }),
@@ -240,10 +240,10 @@ export const WEAPONS: Record<string, WeaponDef> = {
   },
   americanshort: {
     kind: 'boomerang', fx: 'mousetoy', icon: '🐭', color: '#c9ccd2',
-    base: { interval: 2.4, dmg: 1.4, count: 1, range: 380, radius: 14, speed: 520 },
+    base: { interval: 2.4, dmg: 1.12, count: 1, range: 380, radius: 14, speed: 520 },
     intro: '쥐돌이 장난감을 던지면 적을 훑고 다시 돌아온다. (왕복으로 두 번 타격)',
     mods: [
-      m('more', '쥐돌이 추가', '쥐돌이 +1개', 2, { count: 1 }),
+      m('more', '쥐돌이 추가', '쥐돌이 +1개', 1, { count: 1 }),
       m('far', '멀리 던지기', '사거리 증가', 1, { range: 120 }),
       m('power', '딱딱한 쥐돌이', '피해 +35%', 2, undefined, { dmg: 1.35 }),
       m('big', '왕쥐돌이', '쥐돌이 크기 증가', 1, { radius: 6 }),
@@ -260,7 +260,7 @@ export const WEAPONS: Record<string, WeaponDef> = {
   },
   sphynx: {
     kind: 'spray', fx: 'water', icon: '💦', color: '#7ec8ff',
-    base: { interval: 2.6, dmg: 1.2, range: 260, cone: 0.45, knock: 60 },
+    base: { interval: 2.6, dmg: 2.27, range: 260, cone: 0.45, knock: 60 },
     intro: '물을 싫어하는 건 적도 마찬가지! 분무기로 부채꼴 물줄기를 뿌려 밀쳐낸다.',
     mods: [
       m('wide', '넓게 분사', '물줄기 각도 증가', 2, { cone: 0.15 }),
@@ -272,7 +272,7 @@ export const WEAPONS: Record<string, WeaponDef> = {
   },
   abyssinian: {
     kind: 'mine', fx: 'hairball', icon: '🧺', color: '#c8834e',
-    base: { interval: 2.5, dmg: 3.0, radius: 55, count: 3 },
+    base: { interval: 2.5, dmg: 4.35, radius: 55, count: 3 },
     intro: '바닥에 털뭉치 덫을 깔아 둔다. 적이 밟으면 펑! (최대 3개)',
     mods: [
       m('more', '털갈이 시즌', '덫 최대 +2개', 2, { count: 2 }),

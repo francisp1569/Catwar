@@ -9,7 +9,7 @@ import { bonuses } from './meta/items';
 import { applyResult, isUnlocked } from './meta/rewards';
 import { loadSave, writeSave, type SaveData } from './meta/save';
 import { render, type RewardView } from './render';
-import { story } from './story';
+import { CH2_CUTS, story } from './story';
 import { CHOICE_BUTTONS, HUD_BUTTONS, PAUSE_BUTTONS, RESULT_BUTTONS, buttonKey, hit, layoutButtons, type Button } from './ui';
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
@@ -24,6 +24,13 @@ const menu = new Menu(save, startBattle);
 function startBattle(stageId: string): void {
   const stage = getStage(stageId);
   if (!stage) return;
+  // 2장에 처음 들어가면 짧은 컷씬
+  if (stage.no >= 11 && !save.ch2Seen) {
+    canvas.hidden = true;
+    game = null;
+    story.play(() => { save.ch2Seen = true; writeSave(save); startBattle(stageId); }, CH2_CUTS);
+    return;
+  }
   applyLayout(window.innerWidth, window.innerHeight);
   layoutButtons(CONFIG.height);
   save.selectedStage = stage.id.replace(/h$/, '');

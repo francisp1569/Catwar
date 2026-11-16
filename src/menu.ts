@@ -684,7 +684,8 @@ export class Menu {
       const unlocked = isUnlocked(s, st);
       const best = s.stages[st.id] ?? 0;
       const ch = CHAPTERS.find((c) => c.from === st.no);
-      const header = (ch ? `<h2 class="chapter">${ch.name}</h2>` : '') + (st.area !== lastArea ? `<h3 class="area">${AREA_NAME[st.area]}</h3>` : '');
+      const chDone = ch ? STAGES.filter((x) => x.no >= ch.from && x.no < ch.from + 10).every((x) => (s.stages[x.id] ?? 0) > 0) : false;
+      const header = (ch ? `<h2 class="chapter">${ch.name}${chDone ? iconHtml(ch.from === 11 ? 'badge-ch2' : 'chest-royal', '🏅', 'badge') : ''}</h2>` : '') + (st.area !== lastArea ? `<h3 class="area">${AREA_NAME[st.area]}</h3>` : '');
       lastArea = st.area;
       const hardBest = s.stages[`${st.id}h`] ?? 0;
       return `${header}
