@@ -27,6 +27,61 @@ Thick clean black line art, cel shading with soft highlights, vivid colors, cute
 
 ---
 
+## 🌿 2장 원샷 (욕실·베란다·마당 배경 + 새 적·보스 + 2장 스토리)
+
+2장 「찍찍 도적단의 역습」에 쓸 그림을 **그림 1장**에 뽑는 프롬프트입니다.
+- 치즈 그림과 **1차 적 시트(찍찍 도적단)** 를 참고 이미지로 함께 넣으세요.
+- 비율 **1:1**, 가능한 **가장 높은 해상도**. 칸 배치: 가로 8칸 × 세로 8칸.
+  - 1~4줄: 욕실·베란다·마당 배경 (각 2×4) · 2장 스토리 2컷 (각 1×2) · 2장 타이틀 (2×2)
+  - 5줄: 새 적 8종
+  - 6~7줄: 새 보스 3마리 전신 (각 2×2) · 보스 얼굴 3개 + 2장 클리어 배지
+  - 8줄: 새 이펙트·투사체 8종
+
+```
+ONE single image, square 1:1, highest resolution: a complete chapter-2 asset sheet for a cute mobile tower-defense game where anthropomorphic school-uniform cats defend a girl's house from a gang of bugs and mice called the "Squeak Bandits". In chapter 2 the fight moves to the bathroom, the balcony and the backyard garden.
+Match the art style of the attached illustrations exactly: thick clean black line art, cel shading with soft highlights, vivid colors, cute but mischievous game-character design.
+
+LAYOUT (very important): the whole image is a precise, perfectly even grid of 8 columns x 8 rows of equal square cells, separated by straight pure white gutters. Every cell and multi-cell block has a plain flat light grey background (#DEDEDE) unless it is a background scene or story panel. Each item sits fully inside its own cell or block, centered, never crossing the gutters, nothing cut off. No text, no letters, no numbers, no watermark anywhere.
+
+ROWS 1-4:
+Block A (columns 1-2, rows 1-4, tall): battle background, top-down floor view seen from above at a slight angle, no characters: a bathroom. The top strip is a white tiled wall with exactly three dark arched holes evenly spaced left, center and right (a drain-pipe hole look); the large middle is wet light-blue tile floor with the center left EMPTY, a bathtub corner, a sink, a toilet paper roll, rubber duck, soap bubbles only along the left and right edges; the bottom strip is plain warm wooden floor.
+Block B (columns 3-4, rows 1-4, tall): same layout, a sunny balcony: top strip is a beige wall with three dark arched holes evenly spaced; middle is terracotta tile floor with the center EMPTY, potted plants, a laundry drying rack with socks, a watering can, a cat tower, along the edges only; bottom strip plain warm wooden floor.
+Block C (columns 5-6, rows 1-4, tall): same layout, a backyard garden at dusk: top strip is a wooden fence with three dark arched holes dug under it evenly spaced; middle is green grass with a stone path, center EMPTY, flower beds, a small shed corner, a garden hose, ant hills along the edges only; bottom strip plain wooden deck.
+Block D (column 7, rows 1-2, tall story panel): night, the rat king and the bandits regrouping outside the house by a drain pipe under the moon, plotting with a map, sneaky.
+Block E (column 8, rows 1-2, tall story panel): morning, the orange tabby cat girl in school uniform opening the back door with her cat friends behind her, ready to go outside, sunlight, determined.
+Block F (columns 7-8, rows 3-4): chapter title key art without text: the orange tabby cat girl leaping over the garden fence with twin toy pistols, cat friends following, bandits scattering, big empty sky at the top.
+
+ROW 5 (new enemies, cute but mischievous, seen from slightly above in front 3/4 view, moving toward the viewer):
+1 a fat glossy green slug with a tiny pirate hat leaving a slime trail; 2 a long red centipede sprinter with a headband and many tiny sneakers; 3 a chubby grey city pigeon bandit with a black eye mask, flapping; 4 a striped wasp with a sharp stinger and aviator goggles, flying; 5 a brown mole with a miner helmet and lamp, popping out of a dirt hole; 6 a green frog thug with a red scarf mid-jump; 7 a shiny golden mouse carrying a huge sack of coins, running away (treasure enemy); 8 a big armored stag beetle with a helmet (tank enemy).
+
+ROWS 6-7 (bosses, full body, drawn large to fill each block):
+Block G (columns 1-2): BOSS a giant warty toad king sitting in a bathtub of bubbles, gold crown, long sticky tongue out, smug.
+Block H (columns 3-4): BOSS a huge black crow captain with a pirate captain hat and an eye patch, wings spread, holding a shiny stolen spoon.
+Block I (columns 5-6): FINAL BOSS the rat emperor, an even bigger elder rat with a long white beard, purple imperial robe, tall jeweled crown, a golden cheese scepter, sitting on a throne made of stolen snacks.
+Block J (columns 7-8, rows 6-7, four small cells in a 2x2 grid): face close-up of the toad king; face close-up of the crow captain; face close-up of the rat emperor; a golden chapter-clear badge with a cat paw and laurel.
+
+ROW 8 (effects and projectiles, bright): 1 a green slime puddle seen from above; 2 a wasp stinger dart with a speed trail; 3 a pink toad tongue lash; 4 a burst of grey pigeon feathers; 5 a dirt burst popping up from the ground; 6 a shower of gold coins; 7 a purple royal shockwave ring; 8 a falling cheese meteor with flames.
+```
+
+**받은 다음 게임에 들어갈 내용** (그림이 오면 바로 구현)
+| 그림 | 게임 내용 |
+| --- | --- |
+| 욕실·베란다·마당 배경 | 지금 임시(색만 바꾼 기존 배경) → 진짜 2장 배경으로 교체 |
+| 민달팽이 | 느리고 단단함, 지나간 자리 점액 |
+| 지네 | 아주 빠른 돌격형 |
+| 비둘기 | 튼튼한 비행형 |
+| 말벌 | 빠르고 약한 비행형, 무리로 등장 |
+| 두더지 | 땅속으로 다가오다 바리케이드 앞에서 튀어나옴 (그 전엔 공격 불가) |
+| 개구리 | 폴짝폴짝 점프로 다가옴 |
+| 황금쥐 | 공격 안 하고 도망가는 보물 적, 잡으면 코인 왕창 |
+| 사슴벌레 | 방패쥐보다 단단한 탱커 |
+| 대왕 두꺼비 (St.13) | 혀로 바리케이드를 크게 때림 |
+| 까마귀 선장 (St.16) | 날아다니며 급강하 공격 |
+| 쥐 황제 (St.20) | 최종 보스, 대왕쥐를 소환하고 치즈 운석 공격 |
+| 2장 스토리 2컷 + 타이틀 | 2장 처음 들어갈 때 나오는 짧은 컷씬 |
+
+---
+
 ## 🎬 스토리 7컷 원샷 (시작 컷씬 + 타이틀)
 
 시작 스토리 7컷과 타이틀 그림을 **그림 1장**(세로 패널 8칸)에 뽑는 프롬프트입니다.
