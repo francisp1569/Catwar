@@ -1325,15 +1325,44 @@ function drawFx(ctx: Ctx, game: Game): void {
         break;
       }
       case 'dash': {
-        // 우다다 할퀴기: 줄을 따라 큰 발톱 자국
-        ctx.globalAlpha = (1 - k) * 0.25;
-        ctx.fillStyle = '#3a2e2a';
-        ctx.fillRect(f.x - f.r / 2, f.y2!, f.r, f.y - f.y2!);
-        ctx.globalAlpha = 1 - k;
+        // 우다다 할퀴기: 빛나는 돌진 궤적 + 지나간 자리에 발톱 자국이 연달아 찍힘
         ctx.lineCap = 'round';
         const reach = (f.y - f.y2!) * Math.min(1, k * 2.5);
+        const headY = f.y - reach;
         const cl = getWorld('fx-claw');
-        if (cl) { drawContain(ctx, cl, f.x, f.y - reach, f.r * 1.6); break; }
+        if (cl) {
+          // 궤적 (아래로 갈수록 흐려지는 가는 빛줄기)
+          ctx.save();
+          ctx.globalCompositeOperation = 'lighter';
+          const tr = ctx.createLinearGradient(0, headY, 0, f.y);
+          tr.addColorStop(0, 'rgba(255,230,200,0.75)');
+          tr.addColorStop(1, 'rgba(255,160,90,0)');
+          ctx.fillStyle = tr;
+          ctx.globalAlpha = 1 - k;
+          ctx.beginPath();
+          ctx.moveTo(f.x - f.r * 0.22, headY);
+          ctx.quadraticCurveTo(f.x, headY - f.r * 0.25, f.x + f.r * 0.22, headY);
+          ctx.lineTo(f.x + 3, f.y);
+          ctx.lineTo(f.x - 3, f.y);
+          ctx.closePath();
+          ctx.fill();
+          ctx.restore();
+          // 지나간 자리의 발톱 자국
+          const step = 64;
+          for (let d = step * 0.6, i = 0; d < reach - step * 0.4; d += step, i++) {
+            ctx.save();
+            ctx.globalAlpha = Math.min(1, (1 - k) * 1.4) * (0.55 + 0.45 * (d / Math.max(1, reach)));
+            ctx.translate(f.x + (i % 2 ? 10 : -10), f.y - d);
+            ctx.rotate(i % 2 ? 0.35 : -0.35);
+            drawContain(ctx, cl, 0, 0, f.r * 1.05);
+            ctx.restore();
+          }
+          // 선두의 큰 발톱
+          ctx.globalAlpha = 1 - k * 0.6;
+          drawContain(ctx, cl, f.x, headY, f.r * 1.5);
+          break;
+        }
+        ctx.globalAlpha = 1 - k;
         for (const dx of [-0.32, 0, 0.32]) {
           ctx.strokeStyle = '#3b2228';
           ctx.lineWidth = 9;
