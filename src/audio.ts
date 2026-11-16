@@ -3,6 +3,21 @@ type Wave = OscillatorType;
 
 const PREF_KEY = 'catwar.sound.v1';
 
+/** 0.1초짜리 무음 WAV (아이폰 오디오 세션 유지용) */
+const SILENT_WAV = (() => {
+  const n = 800;
+  const b = new Uint8Array(44 + n);
+  const v = new DataView(b.buffer);
+  const w = (o: number, t: string) => { for (let i = 0; i < t.length; i++) b[o + i] = t.charCodeAt(i); };
+  w(0, 'RIFF'); v.setUint32(4, 36 + n, true); w(8, 'WAVE'); w(12, 'fmt ');
+  v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, 8000, true); v.setUint32(28, 8000, true); v.setUint16(32, 1, true); v.setUint16(34, 8, true);
+  w(36, 'data'); v.setUint32(40, n, true); b.fill(128, 44);
+  let bin = '';
+  for (let i = 0; i < b.length; i++) bin += String.fromCharCode(b[i]);
+  return `data:audio/wav;base64,${btoa(bin)}`;
+})();
+
 class Sound {
   ctx: AudioContext | null = null;
   private master!: GainNode;
@@ -32,8 +47,10 @@ class Sound {
 
   /** 브라우저 정책상 첫 터치 때 오디오를 켠다 */
   unlock(): void {
+    this.keepSessionAlive();
     if (this.ctx) {
-      if (this.ctx.state === 'suspended') void this.ctx.resume();
+      // iOS는 전화·잠금·앱 전환 뒤 'interrupted' 상태가 되므로 running이 아니면 항상 다시 깨운다
+      if (this.ctx.state !== 'running') void this.ctx.resume().catch(() => {});
       return;
     }
     const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
@@ -54,7 +71,40 @@ class Sound {
     this.noiseBuf = ctx.createBuffer(1, len, ctx.sampleRate);
     const d = this.noiseBuf.getChannelData(0);
     for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    if (ctx.state !== 'running') void ctx.resume().catch(() => {});
     if (this.wanted) this.music(this.wanted);
+  }
+
+  /** 백그라운드에서 돌아왔을 때 */
+  wake(): void {
+    if (this.ctx && this.ctx.state !== 'running') void this.ctx.resume().catch(() => {});
+  }
+
+  private silentEl: HTMLAudioElement | null = null;
+
+  /**
+   * 아이폰 무음(진동) 모드에서는 Web Audio 소리가 꺼진다.
+   * 오디오 세션을 '재생' 종류로 바꾸고(iOS 17+), 구형 기기는 무음 오디오를 함께 틀어 같은 효과를 낸다.
+   */
+  private keepSessionAlive(): void {
+    try {
+      const nav = navigator as unknown as { audioSession?: { type: string } };
+      if (nav.audioSession && nav.audioSession.type !== 'playback') nav.audioSession.type = 'playback';
+    } catch { /* noop */ }
+    if (this.silentEl) {
+      if (this.silentEl.paused) void this.silentEl.play().catch(() => {});
+      return;
+    }
+    try {
+      const el = document.createElement('audio');
+      el.setAttribute('x-webkit-airplay', 'deny');
+      el.loop = true;
+      el.preload = 'auto';
+      el.src = SILENT_WAV;
+      el.volume = 0.01;
+      this.silentEl = el;
+      void el.play().catch(() => {});
+    } catch { /* noop */ }
   }
 
   setSfx(on: boolean): void {
@@ -71,8 +121,18 @@ class Sound {
 
   // ───────────── 합성 도구 ─────────────
 
+  /** 휴대폰 성능 보호: 동시에 울리는 소리 수 제한 */
+  private voices = 0;
+  private voice(dur: number, music = false): boolean {
+    if (!music && this.voices > 22) return false;
+    this.voices++;
+    setTimeout(() => { this.voices--; }, (dur + 0.05) * 1000);
+    return true;
+  }
+
   private tone(freq: number, dur: number, opt: { type?: Wave; vol?: number; to?: number; at?: number; bus?: GainNode; attack?: number } = {}): void {
     const ctx = this.ctx!;
+    if (!this.voice(dur, opt.bus === this.musicBus)) return;
     const t0 = opt.at ?? ctx.currentTime;
     const o = ctx.createOscillator();
     const g = ctx.createGain();
@@ -91,6 +151,7 @@ class Sound {
 
   private noise(dur: number, opt: { vol?: number; freq?: number; to?: number; q?: number; type?: BiquadFilterType; at?: number; bus?: GainNode } = {}): void {
     const ctx = this.ctx!;
+    if (!this.voice(dur, opt.bus === this.musicBus)) return;
     const t0 = opt.at ?? ctx.currentTime;
     const src = ctx.createBufferSource();
     src.buffer = this.noiseBuf;
@@ -142,6 +203,7 @@ class Sound {
 
   play(name: string): void {
     if (!this.ctx || !this.sfxOn) return;
+    if (this.ctx.state !== 'running') { void this.ctx.resume().catch(() => {}); return; }
     const now = this.ctx.currentTime;
     const gap: Record<string, number> = { throw: 0.1, zap: 0.1, splash: 0.15, pop: 0.07, yarn: 0.1, scratch: 0.06, hit: 0.045, kill: 0.06, hurt: 0.18, boom: 0.12, laser: 0.15, crit: 0.08 };
     const g = gap[name] ?? 0.03;
@@ -206,6 +268,9 @@ class Sound {
     const tr = this.track;
     if (!ctx || !tr) return;
     const stepDur = 60 / tr.bpm / 4; // 16분음표
+    if (ctx.state !== 'running') return;
+    // 멈췄다 돌아오면 밀린 음을 한꺼번에 틀지 않고 지금부터 다시
+    if (this.nextTime < ctx.currentTime - 0.1) this.nextTime = ctx.currentTime + 0.05;
     while (this.nextTime < ctx.currentTime + 0.12) {
       const i = this.step % tr.lead.length;
       const t = this.nextTime;

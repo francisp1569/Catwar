@@ -175,7 +175,11 @@ canvas.hidden = true;
 menu.show(save);
 sound.music('lobby');
 // 브라우저 정책: 첫 터치/키 입력 때 소리를 켠다
-for (const ev of ['pointerdown', 'keydown'] as const) document.addEventListener(ev, () => sound.unlock(), { capture: true });
+// 브라우저마다 '사용자 동작'으로 인정하는 이벤트가 달라서 여러 개에 건다 (구형 iOS는 touchend/click만 인정)
+for (const ev of ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown'] as const) document.addEventListener(ev, () => sound.unlock(), { capture: true });
+document.addEventListener('visibilitychange', () => { if (!document.hidden) sound.wake(); });
+window.addEventListener('pageshow', () => sound.wake());
+window.addEventListener('focus', () => sound.wake());
 void loadArt().then(() => setTimeout(() => menu.refresh(), 300));
 
 // 디버그/테스트용 훅
@@ -185,5 +189,6 @@ Object.assign(window as object, {
     get save() { return save; },
     setSave(s: SaveData) { save = s; writeSave(save); menu.show(save); },
     start: startBattle,
+    sound,
   },
 });
