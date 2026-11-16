@@ -91,13 +91,15 @@ export function drawBustArt(ctx: CanvasRenderingContext2D, id: string, img: HTML
 export const WORLD_FILES: Record<string, string> = {};
 const ENEMY_ART = ['ant', 'mouse', 'roach', 'mosquito', 'spider', 'ratking', 'fly', 'shieldmouse', 'roachgen', 'spiderqueen',
   'slug', 'centipede', 'pigeon', 'wasp', 'mole', 'frog', 'goldmouse', 'beetle', 'toadking', 'crowboss', 'ratemperor'];
+/** 걷기 2번째 동작 그림이 있는 적 (보스 몇몇은 디자인이 달라 제외) */
+const WALK_B = ['ant', 'mouse', 'roach', 'mosquito', 'spider', 'fly', 'shieldmouse', 'slug', 'centipede', 'pigeon', 'wasp', 'frog', 'goldmouse', 'beetle', 'crowboss'];
 for (const id of ENEMY_ART) {
   WORLD_FILES[`enemy-${id}`] = `enemies/${id}.webp`;
-  WORLD_FILES[`enemy-${id}-b`] = `enemies/${id}-b.webp`;   // 걷기 2번째 동작 (있는 적만)
+  if (WALK_B.includes(id)) WORLD_FILES[`enemy-${id}-b`] = `enemies/${id}-b.webp`; // 걷기 2번째 동작
   WORLD_FILES[`enemy-${id}-ko`] = `enemies/${id}-ko.webp`; // 쓰러진 모습
 }
 for (const id of ['cheese', 'godeungeo', 'huindungi', 'chaos', 'cheesetabby', 'tuxedo', 'samsaek', 'russianblue', 'scottish', 'munchkin',
-  'persian', 'mainecoon', 'siamese', 'cow', 'americanshort', 'abyssinian', 'norwegian', 'ragdoll', 'bengal', 'sphynx']) WORLD_FILES[`atk-${id}`] = `attack/${id}.webp`;
+  'persian', 'mainecoon', 'siamese', 'cow', 'americanshort', 'abyssinian', 'norwegian', 'ragdoll', 'sphynx']) WORLD_FILES[`atk-${id}`] = `attack/${id}.webp`;
 for (const id of ['vacuum', 'web', 'girl-happy', 'girl-worried', 'girl-cry', 'barricade', 'barricade-0', 'barricade-1', 'barricade-2',
   'cheese-attack', 'cheese-win', 'cheese-lose', 'box', 'box-open', 'boss-ratking', 'boss-roachgen', 'boss-spiderqueen',
   'boss-toadking', 'boss-crowboss', 'boss-ratemperor', 'badge-ch2']) WORLD_FILES[id] = `props/${id}.webp`;

@@ -958,7 +958,7 @@ function drawSquad(ctx: Ctx, game: Game, t: number): void {
     if (atkArt) {
       // 공격하는 순간엔 공격 포즈 (발 위치를 맞추고, 높이는 평소 뒷모습과 비슷하게)
       const baseH = art ? (art.naturalHeight / art.naturalWidth) * s * 2.35 : s * 3.3;
-      const h = Math.min(baseH * 0.98, s * 3.6);
+      const h = baseH * 1.04;
       const w = (atkArt.naturalWidth / atkArt.naturalHeight) * h;
       ctx.drawImage(atkArt, -w / 2, -h + s * 0.25, w, h);
     } else if (art) {
