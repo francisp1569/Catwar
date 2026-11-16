@@ -423,3 +423,10 @@ canvas#game { display: block; position: fixed; inset: 0; width: 100vw; height: 1
 .sc-ico .ico-img { width: 1.6em; height: 1.6em; }
 .gear-ico .ico-img { width: 1.4em; height: 1.4em; }
 .skill-badge .ic .ico-img { width: 1.6em; height: 1.6em; }
+
+/* 출전 안내 (치즈 고정 + 랜덤 합류) */
+.team-strip .team-note { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15; margin: 0 6px; text-align: left; }
+.team-strip .team-note b { font-weight: normal; font-size: 14px; color: var(--gold); }
+.team-strip .team-note small { font-size: 11px; color: #fff; opacity: 0.85; }
+.team-strip .mini-face.small { width: 30px; height: 30px; opacity: 0.85; }
+.team-strip .mini-more { font-size: 12px; color: #fff; opacity: 0.8; margin-left: 2px; }

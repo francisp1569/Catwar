@@ -17,7 +17,7 @@ import {
   MAX_STARS, STAR_COST, canLevelUp, canStarUp, catStats, levelCap, levelUp, levelUpCost, starUp,
 } from './meta/progression';
 import { isUnlocked } from './meta/rewards';
-import { DECK_SIZE, resetSave, writeSave, type Item, type SaveData } from './meta/save';
+import { resetSave, writeSave, type Item, type SaveData } from './meta/save';
 import { drawStagePreview } from './render';
 
 // 그림 아이콘 (없으면 이모지)
@@ -51,7 +51,9 @@ function power(def: CatDef, save: SaveData): number {
 
 function teamPower(save: SaveData): number {
   const b = bonuses(save);
-  const base = [HERO_ID, ...save.deck].reduce((sum, id) => sum + power(CAT_BY_ID[id], save), 0);
+  // 치즈 + 가장 강한 고양이 5마리 (전투에서 최대 6마리까지 합류)
+  const others = Object.keys(save.cats).filter((id) => id !== HERO_ID && CAT_BY_ID[id]).map((id) => power(CAT_BY_ID[id], save)).sort((a, b) => b - a).slice(0, 5);
+  const base = power(CAT_BY_ID[HERO_ID], save) + others.reduce((a, b) => a + b, 0);
   return Math.round(base * (1 + b.atk + b.collection + b.hp * 0.5 + b.speed));
 }
 
@@ -185,9 +187,6 @@ export class Menu {
         this.toast(`${CAT_BY_ID[arg].name} 성급 상승! ✨`);
         break;
       }
-      case 'deck-toggle': this.toggleDeck(arg); if (!this.modal.hidden) this.openDeck(); break;
-      case 'deck-auto': this.autoDeck(); this.openDeck(); break;
-      case 'deck': this.openDeck(); break;
       case 'skills': this.openSkills(arg); break;
       case 'album': this.openAlbum(arg); break;
       case 'pull': this.doPull(arg === '10' ? 10 : 1); break;
@@ -195,7 +194,6 @@ export class Menu {
       case 'free': {
         const r = claimFree(s);
         if (!r) { this.toast('오늘은 이미 받았어요. 내일 또 와요!'); break; }
-        if (r.cat.isNew && s.deck.length < DECK_SIZE) s.deck.push(r.cat.def.id);
         this.commit();
         this.openPullResult([r.cat], [r.item]);
         break;
@@ -266,30 +264,9 @@ export class Menu {
     }
   }
 
-  private toggleDeck(id: string): void {
-    const deck = this.save.deck;
-    if (id === HERO_ID) { this.toast('치즈는 언제나 출전해요'); return; }
-    const i = deck.indexOf(id);
-    if (i >= 0) deck.splice(i, 1);
-    else if (deck.length >= DECK_SIZE) { this.toast(`편성은 최대 ${DECK_SIZE}마리까지!`); return; }
-    else deck.push(id);
-    this.commit();
-  }
-
-  private autoDeck(): void {
-    const owned = CATS.filter((c) => !c.hero && this.save.cats[c.id]);
-    owned.sort((a, b) => power(b, this.save) - power(a, this.save));
-    this.save.deck = owned.slice(0, DECK_SIZE).map((c) => c.id);
-    this.commit();
-    this.toast('전투력 순으로 자동 편성했어요');
-  }
-
   private doPull(n: 1 | 10): void {
     const res = pull(this.save, n);
     if (!res) { this.toast('참치캔이 부족해요 🥫'); return; }
-    for (const r of res) {
-      if (r.isNew && this.save.deck.length < DECK_SIZE && !this.save.deck.includes(r.def.id)) this.save.deck.push(r.def.id);
-    }
     this.commit();
     this.openPullResult(res, []);
   }
@@ -465,7 +442,7 @@ export class Menu {
         <small>${stars(n, n)}</small>
         <small class="muted">${label}</small>
       </div>`;
-    const team = [HERO_ID, ...s.deck];
+    const team = [HERO_ID, ...CATS.filter((c) => !c.hero && s.cats[c.id]).map((c) => c.id)];
     return `
       <section class="stage-head">
         <div class="area">${AREA_NAME[st.area]} · ${best ? stars(best, 3) : '미클리어'}</div>
@@ -484,7 +461,7 @@ export class Menu {
           <button class="side-btn" data-act="tab" data-arg="shop"><span>${CHEST()}</span><small>무료 상자</small>${freeReady ? '<i class="dot"></i>' : ''}</button>
         </div>
         <div class="side right">
-          <button class="side-btn" data-act="deck"><span>🧩</span><small>편성</small></button>
+          <button class="side-btn" data-act="tab" data-arg="cats"><span>🐱</span><small>고양이</small></button>
           <button class="side-btn" data-act="tab" data-arg="map"><span>🗺️</span><small>지도</small></button>
           <button class="side-btn" data-act="settings"><span>⚙️</span><small>설정</small></button>
         </div>
@@ -499,9 +476,10 @@ export class Menu {
       <button class="start-btn" data-act="start" data-arg="${st.id}" ${unlocked ? '' : 'disabled'}>
         <span>START</span><small>팀 전투력 ${fmt(teamPower(s))}</small>
       </button>
-      <button class="team-strip" data-act="deck">
-        ${team.map((id) => `<canvas class="mini-face" data-face="${id}"></canvas>`).join('')}
-        ${Array.from({ length: DECK_SIZE - s.deck.length }, () => '<span class="mini-empty">+</span>').join('')}
+      <button class="team-strip" data-act="tab" data-arg="cats">
+        <canvas class="mini-face" data-face="${HERO_ID}"></canvas>
+        <span class="team-note"><b>치즈 출전</b><small>보유 고양이 ${team.length - 1}마리가 전투 중 랜덤 합류</small></span>
+        ${team.slice(1, 5).map((id) => `<canvas class="mini-face small" data-face="${id}"></canvas>`).join('')}${team.length > 5 ? `<span class="mini-more">+${team.length - 5}</span>` : ''}
       </button>`;
   }
 
@@ -516,7 +494,7 @@ export class Menu {
       const oc = s.cats[c.id];
       return `<button class="pchip ${i === this.catIdx ? 'sel' : ''} ${oc ? '' : 'locked'}" data-act="cat-pick" data-arg="${c.id}" style="--rc:${RARITY_COLOR[c.rarity]}">
         ${oc ? `<canvas data-face="${c.id}"></canvas>` : '<span class="q">?</span>'}
-        ${oc ? `<em>${oc.level}</em>` : ''}${oc && (s.deck.includes(c.id) || c.hero) ? '<b class="in">출전</b>' : ''}
+        ${oc ? `<em>${oc.level}</em>` : ''}${oc && c.hero ? '<b class="in">리더</b>' : ''}
         ${oc && canStarUp(s, c.id).ok ? '<i class="dot"></i>' : ''}
       </button>`;
     }).join('');
@@ -531,7 +509,6 @@ export class Menu {
       const cap = levelCap(o.stars);
       const lvCost = levelUpCost(def, o.level);
       const need = o.stars < MAX_STARS ? STAR_COST[o.stars] : 0;
-      const inDeck = def.hero || s.deck.includes(def.id);
       main = `
         <div class="cat-title">
           <div>${rarityBadge(def.rarity)} <span class="breed">${esc(def.breed)}</span></div>
@@ -544,7 +521,6 @@ export class Menu {
         </div>
         <div class="side right">
           <button class="side-btn" data-act="skills" data-arg="${def.id}"><span>${wIcon(def)}</span><small>스킬</small></button>
-          <button class="side-btn ${inDeck ? 'on' : ''}" data-act="deck-toggle" data-arg="${def.id}"><span>${inDeck ? '⚔️' : '💤'}</span><small>${inDeck ? '출전 중' : '대기'}</small></button>
         </div>
         <div class="skill-badge"><span class="ic">${wIcon(def)}</span>${esc(def.skillName)}<small>⚔️ ${st.atk} · 🛡 +${st.hp}</small></div>
         <div class="cat-actions">
@@ -689,32 +665,6 @@ export class Menu {
   private closeModal(): void {
     this.modal.hidden = true;
     this.modal.innerHTML = '';
-  }
-
-  private openDeck(): void {
-    const s = this.save;
-    const slots = Array.from({ length: DECK_SIZE }, (_, i) => {
-      const id = s.deck[i];
-      if (!id) return `<div class="slot empty">빈 자리</div>`;
-      const d = CAT_BY_ID[id];
-      return `<button class="slot" data-act="deck-toggle" data-arg="${id}"><canvas class="portrait" data-look="${id}"></canvas><b>${d.name}</b><small>${wIcon(d)} ${esc(d.skillName)}</small></button>`;
-    }).join('');
-    const owned = CATS.filter((c) => !c.hero && s.cats[c.id]);
-    this.openModal(`
-      <button class="x" data-act="close">✕</button>
-      <h2>편성 <small>팀 전투력 ${fmt(teamPower(s))}</small></h2>
-      <div class="deck">
-        <div class="slot hero"><canvas class="portrait" data-look="${HERO_ID}"></canvas><b>치즈</b><small>리더 · 처음부터 전투</small></div>
-        ${slots}
-      </div>
-      <div class="row"><p class="muted">편성한 고양이는 전투 중 레벨업 때 NEW 카드로 합류해요.</p><button class="btn small" data-act="deck-auto">자동 편성</button></div>
-      <div class="grid">${owned.map((d) => {
-        const o = s.cats[d.id];
-        return `<button class="card ${s.deck.includes(d.id) ? 'in-deck' : ''}" data-act="deck-toggle" data-arg="${d.id}" style="--rc:${RARITY_COLOR[d.rarity]}">
-          ${rarityBadge(d.rarity)}${s.deck.includes(d.id) ? '<span class="check">✔</span>' : ''}
-          <canvas class="portrait" data-look="${d.id}"></canvas><b>${d.name}</b><small>Lv.${o.level} ${stars(o.stars)}</small>
-          <small class="muted">${wIcon(d)} ${esc(d.skillName)}</small></button>`;
-      }).join('')}</div>`);
   }
 
   private openSkills(id: string): void {

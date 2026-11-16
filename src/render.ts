@@ -1807,7 +1807,7 @@ function drawResult(ctx: Ctx, game: Game, t: number, reward: RewardView | null):
     }
   } else {
     text(ctx, '패배...', W / 2, 280, 56, '#ff8a8a');
-    text(ctx, '고양이를 키우거나 편성을 바꿔서 다시 도전!', W / 2, 345, 17, '#fff');
+    text(ctx, '고양이를 키우고 새 고양이를 모아서 다시 도전!', W / 2, 345, 17, '#fff');
   }
   text(ctx, `처치 ${res.kills} · 레벨 ${game.level} · ${Math.round(res.progress * 100)}% 진행`, W / 2, 400, 16, '#ffd6e4');
   if (reward) {

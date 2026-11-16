@@ -100,8 +100,13 @@ export function fmtDmg(v: number): string {
 
 export interface SquadEntry { def: CatDef; owned: OwnedCat; }
 
-export function buildSquad(cats: Record<string, OwnedCat>, deckIds: string[]): SquadEntry[] {
-  return [HERO_ID, ...deckIds.filter((id) => cats[id] && id !== HERO_ID)].map((id) => ({ def: CAT_BY_ID[id], owned: cats[id] }));
+/** 전투에 한 번에 설 수 있는 고양이 수 (치즈 포함) */
+export const MAX_JOIN = 6;
+
+/** 치즈 + 보유한 모든 고양이. 치즈 말고는 전투 중 NEW 카드로 랜덤하게 합류한다 */
+export function buildSquad(cats: Record<string, OwnedCat>): SquadEntry[] {
+  const others = Object.keys(cats).filter((id) => id !== HERO_ID && CAT_BY_ID[id]);
+  return [HERO_ID, ...others].map((id) => ({ def: CAT_BY_ID[id], owned: cats[id] }));
 }
 
 export class Game {
@@ -122,7 +127,7 @@ export class Game {
   /** 카드를 고른 직후 확대 연출 */
   pickAnim: { card: Card; index: number; t: number } | null = null;
 
-  readonly maxHp: number;
+  maxHp: number;
   hp: number;
   hitFlash = 0;
 
@@ -164,7 +169,7 @@ export class Game {
     let hp = stage.baseHp;
     this.squad = entries.map((e, i) => {
       const s = catStats(e.def, e.owned);
-      hp += s.hp;
+      if (i === 0) hp += s.hp; // 다른 고양이는 합류할 때 바리케이드 체력에 더해진다
       return {
         slot: i, def: e.def, owned: e.owned, weapon: e.def.weapon,
         level: i === 0 ? 1 : 0, picks: {}, joinOrder: i === 0 ? 0 : -1, targetX: W / 2, enterT: 0, power: s.atk, timer: 0,
@@ -250,6 +255,9 @@ export class Game {
       const m = this.squad[c.slot];
       m.level = 1;
       m.joinOrder = ++this.joinCount;
+      const add = Math.round(catStats(m.def, m.owned).hp * (1 + this.bonus.hp));
+      this.maxHp += add;
+      this.hp += add;
       m.enterT = 0.8;
       m.wakeFx = 1;
       m.timer = this.params(m).interval * 0.5;
@@ -285,8 +293,12 @@ export class Game {
 
   private rollCards(): Card[] {
     const pool: { card: Card; w: number }[] = [];
+    const joined = this.squad.filter((m) => m.level > 0).length;
+    const waiting = this.squad.filter((m) => m.level === 0);
+    // 새 고양이 카드: 보유 수와 상관없이 전체 확률은 비슷하게 (한 마리당 최대 3)
+    const newW = Math.min(3, 6 / Math.max(1, waiting.length));
     for (const m of this.squad) {
-      if (m.level === 0) { pool.push({ card: { type: 'new', slot: m.slot }, w: 3 }); continue; }
+      if (m.level === 0) { if (joined < MAX_JOIN) pool.push({ card: { type: 'new', slot: m.slot }, w: newW }); continue; }
       const open = m.weapon.mods.filter((x) => (m.picks[x.id] ?? 0) < x.max);
       for (const mod of open) pool.push({ card: { type: 'mod', slot: m.slot, mod: mod.id, next: (m.picks[mod.id] ?? 0) + 1 }, w: 2.4 / Math.max(1.5, open.length) + 0.3 });
     }

@@ -26,7 +26,7 @@ function startBattle(stageId: string): void {
   applyLayout(window.innerWidth, window.innerHeight);
   layoutButtons(CONFIG.height);
   save.selectedStage = stage.id;
-  game = new Game(stage, buildSquad(save.cats, save.deck), bonuses(save), save.seen);
+  game = new Game(stage, buildSquad(save.cats), bonuses(save), save.seen);
   reward = null;
   menu.hide();
   canvas.hidden = false;
