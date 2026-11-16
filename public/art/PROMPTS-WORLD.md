@@ -27,6 +27,33 @@ Thick clean black line art, cel shading with soft highlights, vivid colors, cute
 
 ---
 
+## 🎬 스토리 7컷 원샷 (시작 컷씬 + 타이틀)
+
+시작 스토리 7컷과 타이틀 그림을 **그림 1장**(세로 패널 8칸)에 뽑는 프롬프트입니다.
+- 참고 이미지로 **치즈 앞모습·뒷모습, 집사 누나(소녀) 표정 그림, 대왕쥐 그림**을 함께 넣으세요.
+- 비율 **9:8 (가로가 살짝 긴 정사각형)**, 가능한 **가장 높은 해상도**.
+- 칸 배치: 세로 9:16 패널 **가로 4칸 × 세로 2줄**. 위 줄 1~4컷, 아래 줄 5~7컷 + 타이틀.
+- 게임에서 아래 25%는 대사창이 덮으니, 중요한 장면은 **패널 위쪽 70%** 에 둡니다.
+
+```
+ONE single image, aspect ratio 9:8, highest resolution: a storyboard sheet of 8 separate tall portrait panels for the opening cutscene of a cute mobile tower-defense game.
+Match the attached reference characters exactly: the orange-and-white tabby cat girl "Cheese" in a white sailor school uniform with orange neckerchief, navy skirt, utility belt, combat boots and twin toy pistols; the 10-year-old Korean girl owner with brown low pigtails, pink ribbons and a yellow cat-ear hoodie; the fat grey rat king with crooked gold crown and red royal cape.
+Art style: thick clean black line art, cel shading with soft highlights, vivid colors, cute anime game style, cinematic comic panel compositions.
+
+LAYOUT (very important): exactly 8 equal tall portrait panels, each 9:16, arranged as 4 columns x 2 rows, separated by straight pure white gutters. Each panel is a full-bleed illustration. Keep every important subject in the upper 70% of each panel; the bottom 25% of each panel is calm, simple background (a dialogue box will cover it). No text, no speech bubbles, no letters, no sound effects lettering, no numbers, no watermark anywhere.
+
+Panel 1 (top row, 1st): a peaceful cozy home at sunset, the smiling girl owner sits on the living room floor hugging a cushion while Cheese and three other uniformed cats (a grey mackerel tabby, a fluffy white cat, a calico cat) nap and play around her, warm golden light.
+Panel 2 (top row, 2nd): the same house entrance hall at night, dark and blue, a cream wall with three arched mouse holes along the baseboard, glowing yellow eyes peeking out of every hole, moonlight through a window, suspenseful mood.
+Panel 3 (top row, 3rd): the "Squeak Bandits" bursting out of the mouse holes at night: the fat grey rat king in front pointing a giant fork forward with an evil grin, behind him bandit mice with black eye masks and loot sacks, cockroaches with goggles and red scarves, ants with red bandanas, dramatic low angle, dust clouds.
+Panel 4 (top row, 4th): close-up of the girl owner crying in fear, big tears, hugging her cushion, shadows of mice and bugs on the wall behind her, dim bedroom.
+Panel 5 (bottom row, 1st): heroic entrance of Cheese, jumping down from a high shelf in front of a bright radiating burst, both toy pistols drawn, determined confident face, scarf and tail flowing, sparkles.
+Panel 6 (bottom row, 2nd): Cheese standing in front with a thumbs up, and four more uniformed cat friends rushing in from both sides to join her (a tuxedo cat, a Russian blue, a calico, a white cat), each holding a cat-toy weapon (yarn ball, scratching-post shield, feather wand, jingle bell), energetic team pose.
+Panel 7 (bottom row, 3rd): view from behind: Cheese and the cat team standing on top of a homemade barricade of colorful cushions, cardboard boxes with paw prints and stacked books, facing a horde of mice and bugs pouring from the mouse holes far ahead, epic battle-ready composition.
+Panel 8 (bottom row, 4th): game title key art without any text: Cheese in the center winking and posing with twin toy pistols, the cat team around her, the girl owner cheering behind, the rat king scowling small in the background, sparkles, a large empty space at the top for a logo.
+```
+
+---
+
 ## ⚡⚡ 2차 한 장 원샷 (바리케이드·이펙트·UI 아이콘·장비 나머지·치즈 연출·로비 배경)
 
 1차 시트로 못 채운 나머지 그림을 **그림 1장**에 넣는 프롬프트입니다. Claude가 칸별로 잘라 씁니다.
