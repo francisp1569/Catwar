@@ -1,6 +1,6 @@
 // 세로형 전투 화면 렌더링 — 모든 그래픽은 코드로 그린다 (외부 에셋 없음)
 import { drawCatBackToon, drawCatFaceToon, drawCatLookToon, drawToon, ellipse as vellipse, heart, IDLE_POSE, shadeHex } from './catdraw';
-import { drawBustArt, drawFaceArtCircle, getArt } from './art';
+import { drawBustArt, drawFaceArtCircle, getArt, getWorld } from './art';
 import { sound } from './audio';
 import { RARITY_COLOR, type CatLook } from './data/cats';
 import { CONFIG } from './data/config';
@@ -227,12 +227,47 @@ function propFeather(ctx: Ctx, x: number, y: number, rot: number, col: string): 
   ctx.restore();
 }
 
+// 배경 그림 구성 비율 (public/art/world/bg/*.jpg): 위 벽 띠 / 방 / 집 안 바닥
+const BG_BAND = 0.12;
+const BG_SPLIT = 0.791;
+/** 쥐구멍 가운데 (가로 비율) */
+export const HOLE_X = [0.172, 0.5, 0.83];
+
+function drawBgArt(ctx: Ctx, img: HTMLImageElement, h: number): void {
+  ctx.imageSmoothingQuality = 'high';
+  const iw = img.naturalWidth;
+  const ih = img.naturalHeight;
+  const sc = W / iw;
+  const band = ih * BG_BAND;
+  const split = ih * BG_SPLIT;
+  const roomBottom = CONFIG.barricadeY + 20;
+  // 위 벽 띠 (쥐구멍): 비율 그대로
+  ctx.drawImage(img, 0, 0, iw, band, 0, 0, W, band * sc);
+  // 방 바닥: 화면 높이에 맞춰 위아래로 늘이거나 줄임
+  ctx.drawImage(img, 0, band, iw, split - band, 0, band * sc - 0.5, W, roomBottom - band * sc + 1);
+  // 집 안 바닥: 위쪽부터 필요한 만큼
+  const need = (h - roomBottom) / sc;
+  const avail = ih - split;
+  ctx.drawImage(img, 0, split, iw, Math.min(need, avail), 0, roomBottom, W, need <= avail ? h - roomBottom : avail * sc);
+  // 경계 그림자
+  const g = ctx.createLinearGradient(0, roomBottom - 6, 0, roomBottom + 18);
+  g.addColorStop(0, 'rgba(40,20,20,0)');
+  g.addColorStop(1, 'rgba(40,20,20,0.25)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, roomBottom - 6, W, 24);
+}
+
 function buildFloor(area: Area, h: number, k: number): HTMLCanvasElement {
   const c = document.createElement('canvas');
   c.width = Math.ceil(W * k);
   c.height = Math.ceil(h * k);
   const ctx = c.getContext('2d')!;
   ctx.setTransform(k, 0, 0, k, 0, 0);
+  const bgArt = getWorld(`bg-${area}`);
+  if (bgArt) {
+    drawBgArt(ctx, bgArt, h);
+    return c;
+  }
   const f = FLOORS[area];
   const rnd = rng(area.length * 977 + 13);
   ctx.fillStyle = f.a;
@@ -416,15 +451,17 @@ function buildFloor(area: Area, h: number, k: number): HTMLCanvasElement {
 function drawField(ctx: Ctx, area: Area, t: number): void {
   const tr = ctx.getTransform();
   const k = Math.min(3, Math.max(1, Math.round(Math.hypot(tr.a, tr.b) * 2) / 2));
-  const key = `${area}:${CONFIG.height}:${CONFIG.barricadeY}:${k}`;
+  const art = getWorld(`bg-${area}`);
+  const key = `${area}:${CONFIG.height}:${CONFIG.barricadeY}:${k}:${art ? 1 : 0}`;
   let c = floorCache.get(key);
   if (!c) { c = buildFloor(area, CONFIG.height, k); floorCache.set(key, c); }
   ctx.drawImage(c, 0, 0, W, CONFIG.height);
   // 구멍 속 눈빛 (깜빡임)
-  for (const hx of [90, 270, 450]) {
+  const eyeY = art ? (art.naturalHeight * 0.085 * W) / art.naturalWidth : CONFIG.fieldTop - 20;
+  for (const hx of art ? HOLE_X.map((f) => f * W) : [90, 270, 450]) {
     const blink = Math.sin(t * 2 + hx) > 0.9 ? 0.2 : 1;
-    ellipse(ctx, hx - 9, CONFIG.fieldTop - 20, 3.5, 3.5 * blink, '#ffdf5e');
-    ellipse(ctx, hx + 9, CONFIG.fieldTop - 20, 3.5, 3.5 * blink, '#ffdf5e');
+    ellipse(ctx, hx - 9, eyeY, 3.5, 3.5 * blink, '#ffdf5e');
+    ellipse(ctx, hx + 9, eyeY, 3.5, 3.5 * blink, '#ffdf5e');
   }
 }
 
@@ -547,10 +584,45 @@ const enemySprites = new Map<string, { c: HTMLCanvasElement; box: { x: number; y
 function enemySprite(ctx: Ctx, d: EnemyDef, frame: number, tint = false) {
   const tr = ctx.getTransform();
   const k = Math.min(4, Math.max(1, Math.round(Math.hypot(tr.a, tr.b) * 2) / 2));
-  const key = `${d.id}:${frame}:${k}:${tint ? 1 : 0}`;
+  const art = getWorld(`enemy-${d.id}`);
+  const key = `${d.id}:${frame}:${k}:${tint ? 1 : 0}:${art ? 1 : 0}`;
   let sp = enemySprites.get(key);
   if (sp) return sp;
   const s = d.size;
+  if (art) {
+    // 일러스트 적: 프레임마다 뒤뚱뒤뚱(기울기+통통 튐)을 구워 둔다
+    const h = s * (d.boss ? 3.6 : d.flying ? 3.4 : 3.3);
+    const w = (h * art.naturalWidth) / art.naturalHeight;
+    const pad = s * 0.6;
+    const foot = s * 1.15;
+    const box = { x: -w / 2 - pad, y: foot - h - pad, w: w + pad * 2, h: h + pad * 2 };
+    const c = document.createElement('canvas');
+    c.width = Math.ceil(box.w * k);
+    c.height = Math.ceil(box.h * k);
+    const cc = c.getContext('2d')!;
+    cc.imageSmoothingQuality = 'high';
+    cc.setTransform(k, 0, 0, k, -box.x * k, -box.y * k);
+    const ph = frame >= 6 ? 0 : (frame / 6) * Math.PI * 2;
+    if (d.flying) {
+      cc.translate(0, Math.sin(ph) * s * 0.18);
+    } else {
+      cc.translate(0, foot);
+      cc.rotate(Math.sin(ph) * 0.09);
+      cc.scale(1 + Math.abs(Math.cos(ph)) * 0.03, 1 - Math.abs(Math.cos(ph)) * 0.04 + Math.abs(Math.sin(ph)) * 0.03);
+      cc.translate(0, -foot);
+    }
+    cc.drawImage(art, -w / 2, foot - h, w, h);
+    if (tint) {
+      cc.setTransform(1, 0, 0, 1, 0, 0);
+      cc.globalCompositeOperation = 'source-atop';
+      cc.fillStyle = 'rgba(255,70,60,0.55)';
+      cc.fillRect(0, 0, c.width, c.height);
+      cc.globalCompositeOperation = 'source-over';
+    }
+    sp = { c, box };
+    enemySprites.set(key, sp);
+    return sp;
+  }
   const box = { x: -s * 2.4, y: -s * 2.5, w: s * 4.8, h: s * 5.1 };
   const c = document.createElement('canvas');
   c.width = Math.ceil(box.w * k + 8);
@@ -579,8 +651,10 @@ function enemySprite(ctx: Ctx, d: EnemyDef, frame: number, tint = false) {
 function drawEnemyBody(ctx: Ctx, d: EnemyDef, t: number, moving: boolean): void {
   const s = d.size;
   const leg = moving ? Math.sin(t * (d.speed / 4)) : 0;
+  // 그림이 없을 때 새 적은 비슷한 적 모양으로
+  const shape = ({ fly: 'mosquito', shieldmouse: 'mouse', roachgen: 'roach', spiderqueen: 'spider' } as Record<string, string>)[d.id] ?? d.id;
 
-  switch (d.id) {
+  switch (shape) {
     case 'mouse':
     case 'ratking': {
       ctx.strokeStyle = d.accent;
@@ -899,6 +973,23 @@ function drawShots(ctx: Ctx, game: Game): void {
       ctx.restore();
       continue;
     }
+    if (s.kind === 'vacuum' && getWorld('vacuum')) {
+      const R = s.radius;
+      const img = getWorld('vacuum')!;
+      ellipse(ctx, s.x + 4, s.y + 10, R * 1.1, R * 0.5, 'rgba(30,20,30,0.3)');
+      ctx.save();
+      ctx.globalAlpha = 0.6;
+      for (let i = 0; i < 4; i++) circle(ctx, s.x - Math.sign(s.vx) * (R + 14 + i * 12), s.y + Math.sin(s.spin * 3 + i) * 10, 5 - i, '#e8e0f0');
+      ctx.restore();
+      ctx.save();
+      ctx.translate(s.x, s.y + Math.sin(s.spin * 4) * 1.5);
+      ctx.rotate(Math.sin(s.spin * 2) * 0.06);
+      const vw = R * 2.5;
+      const vh = (vw * img.naturalHeight) / img.naturalWidth;
+      ctx.drawImage(img, -vw / 2, -vh / 2, vw, vh);
+      ctx.restore();
+      continue;
+    }
     if (s.kind === 'vacuum') {
       // 집사의 로봇청소기
       const R = s.radius;
@@ -953,6 +1044,19 @@ function drawShots(ctx: Ctx, game: Game): void {
       for (let i = 0; i < 12; i++) { const a2 = (i / 12) * Math.PI * 2; ctx.beginPath(); ctx.arc(0, 0, R, a2, a2 + 0.15); ctx.stroke(); }
       circle(ctx, 0, 0, R * 0.22, '#3b2228');
       circle(ctx, 0, 0, R * 0.17, '#ffcf5a');
+      ctx.restore();
+      continue;
+    }
+    if (s.kind === 'web' && getWorld('web')) {
+      const img = getWorld('web')!;
+      ctx.strokeStyle = '#ffffffaa';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(s.x, s.y - 30); ctx.lineTo(s.x, s.y); ctx.stroke();
+      ctx.save();
+      ctx.translate(s.x, s.y);
+      ctx.rotate(s.y * 0.03);
+      const r = s.radius * 3.2;
+      ctx.drawImage(img, -r, -r, r * 2, r * 2);
       ctx.restore();
       continue;
     }
@@ -1440,9 +1544,17 @@ function drawHud(ctx: Ctx, game: Game, t: number, pressed: string | null): void 
   ctx.beginPath(); ctx.arc(34, CONFIG.height - 28, 24, 0, Math.PI * 2);
   ctx.fillStyle = '#bfe6ff'; ctx.fill();
   ctx.clip();
-  ctx.translate(34, CONFIG.height - 24);
-  ctx.scale(0.7, 0.7);
-  drawGirl(ctx, 0, 0, ratio, t);
+  const girl = getWorld(ratio > 0.6 ? 'girl-happy' : ratio > 0.3 ? 'girl-worried' : 'girl-cry');
+  if (girl) {
+    const gw = 62;
+    const gh = (gw * girl.naturalHeight) / girl.naturalWidth;
+    const bob = Math.sin(t * 2) * 1;
+    ctx.drawImage(girl, 34 - gw / 2, CONFIG.height - 28 - 26 + bob, gw, gh);
+  } else {
+    ctx.translate(34, CONFIG.height - 24);
+    ctx.scale(0.7, 0.7);
+    drawGirl(ctx, 0, 0, ratio, t);
+  }
   ctx.restore();
   ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
   ctx.beginPath(); ctx.arc(34, CONFIG.height - 28, 24, 0, Math.PI * 2); ctx.stroke();
@@ -1457,6 +1569,14 @@ function drawHud(ctx: Ctx, game: Game, t: number, pressed: string | null): void 
     text(ctx, game.banner.text, W / 2, 204, 19, '#fff');
     ctx.restore();
   }
+}
+
+/** 그림을 (cx, cy) 중심, 긴 변 size 크기로 비율 유지해서 그린다 */
+function drawContain(ctx: Ctx, img: HTMLImageElement, cx: number, cy: number, size: number): void {
+  const k = size / Math.max(img.naturalWidth, img.naturalHeight);
+  const w = img.naturalWidth * k;
+  const h = img.naturalHeight * k;
+  ctx.drawImage(img, cx - w / 2, cy - h / 2, w, h);
 }
 
 function drawSkillChip(ctx: Ctx, m: Member, x: number, y: number, t: number): void {
@@ -1476,15 +1596,15 @@ function drawSkillChip(ctx: Ctx, m: Member, x: number, y: number, t: number): vo
 function cardInfo(game: Game, c: Card) {
   if (c.type === 'new') {
     const m = game.squad[c.slot];
-    return { title: m.def.name, sub: m.def.skillName, desc: m.weapon.intro, badge: 'NEW', color: RARITY_COLOR[m.def.rarity], look: m.def.look as CatLook | null, icon: m.weapon.icon };
+    return { title: m.def.name, sub: m.def.skillName, desc: m.weapon.intro, badge: 'NEW', color: RARITY_COLOR[m.def.rarity], look: m.def.look as CatLook | null, icon: m.weapon.icon, iconId: `w-${m.def.id}` };
   }
   if (c.type === 'mod') {
     const m = game.squad[c.slot];
     const mod = m.weapon.mods.find((x) => x.id === c.mod)!;
-    return { title: mod.name, sub: `${m.def.name} · ${m.def.skillName}`, desc: mod.desc, badge: '', color: RARITY_COLOR[m.def.rarity], look: m.def.look as CatLook | null, icon: m.weapon.icon };
+    return { title: mod.name, sub: `${m.def.name} · ${m.def.skillName}`, desc: mod.desc, badge: '', color: RARITY_COLOR[m.def.rarity], look: m.def.look as CatLook | null, icon: m.weapon.icon, iconId: `w-${m.def.id}` };
   }
   const g = GENERIC[c.id];
-  return { title: g.name, sub: c.id === 'snack' ? '회복' : `${game.generic[c.id] + 1}단계`, desc: g.desc, badge: '강화', color: '#7ad99a', look: null as CatLook | null, icon: g.icon };
+  return { title: g.name, sub: c.id === 'snack' ? '회복' : `${game.generic[c.id] + 1}단계`, desc: g.desc, badge: '강화', color: '#7ad99a', look: null as CatLook | null, icon: g.icon, iconId: '' };
 }
 
 function drawChoice(ctx: Ctx, game: Game, t: number, pressed: string | null): void {
@@ -1625,7 +1745,13 @@ function drawCard(ctx: Ctx, game: Game, c: Card, r: Rect, t: number, _glow: numb
   circle(ctx, ix, iy, 30, '#000');
   ctx.fillStyle = ig;
   ctx.beginPath(); ctx.arc(ix, iy, 30, 0, Math.PI * 2); ctx.fill();
-  text(ctx, info.icon, ix, iy + 1, 30, '#fff', 'center', false);
+  const wimg = info.iconId ? getWorld(info.iconId) : null;
+  if (wimg) {
+    ctx.save();
+    ctx.beginPath(); ctx.arc(ix, iy, 30, 0, Math.PI * 2); ctx.clip();
+    drawContain(ctx, wimg, ix, iy, 50);
+    ctx.restore();
+  } else text(ctx, info.icon, ix, iy + 1, 30, '#fff', 'center', false);
   if (c.type === 'mod') {
     circle(ctx, ix + 24, iy + 24, 12, '#1d3b22');
     text(ctx, `${c.next}`, ix + 24, iy + 24, 14, '#ffffff', 'center', false);
@@ -1689,10 +1815,17 @@ function drawResult(ctx: Ctx, game: Game, t: number, reward: RewardView | null):
     ctx.fillStyle = 'rgba(255,255,255,0.12)';
     ctx.fill();
     text(ctx, reward.firstClear ? '첫 클리어 보상' : '보상', W / 2, 452, 15, '#ffe98a');
-    const parts = [`🪙 ${reward.coins}`];
-    if (reward.tuna > 0) parts.push(`🥫 ${reward.tuna}`);
-    if (reward.yarn > 0) parts.push(`🧶 ${reward.yarn}`);
-    text(ctx, parts.join('   '), W / 2, 497, 22, '#fff');
+    const parts: [string, string, number][] = [['coin', '🪙', reward.coins]];
+    if (reward.tuna > 0) parts.push(['tuna', '🥫', reward.tuna]);
+    if (reward.yarn > 0) parts.push(['yarn', '🧶', reward.yarn]);
+    const pw = 120;
+    parts.forEach(([id, emo, n], i) => {
+      const px = W / 2 + (i - (parts.length - 1) / 2) * pw;
+      const img = getWorld(id);
+      if (img) drawContain(ctx, img, px - 26, 495, 34);
+      else text(ctx, emo, px - 26, 497, 22, '#fff');
+      text(ctx, `${n}`, px - 6, 497, 22, '#fff', 'left');
+    });
     const extra = [`집사 경험치 +${reward.exp}`];
     if (reward.heroShards > 0) extra.push(`치즈 조각 +${reward.heroShards}`);
     if (reward.items.length) extra.push(`장비 ${reward.items.length}개 획득!`);
@@ -1714,7 +1847,10 @@ function drawResult(ctx: Ctx, game: Game, t: number, reward: RewardView | null):
       const y = top + 44 + i * 30;
       ctx.fillStyle = 'rgba(255,207,90,0.18)';
       ctx.fillRect(64, y - 11, (W - 128) * (m.dealt / maxD), 22);
-      text(ctx, `${m.weapon.icon} ${m.def.name} · ${m.def.skillName}`, 70, y, 13, '#fff', 'left', false);
+      const wi = getWorld(`w-${m.def.id}`);
+      if (wi) drawContain(ctx, wi, 80, y, 22);
+      else text(ctx, m.weapon.icon, 80, y, 13, '#fff', 'center', false);
+      text(ctx, `${m.def.name} · ${m.def.skillName}`, 96, y, 13, '#fff', 'left', false);
       text(ctx, fmtDmg(m.dealt), 360, y, 14, '#fff', 'right', false);
       text(ctx, `${Math.round(m.dealt / Math.max(1, res.time))}`, W - 60, y, 14, '#fff', 'right', false);
     });

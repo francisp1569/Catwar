@@ -78,3 +78,38 @@ export function drawBustArt(ctx: CanvasRenderingContext2D, id: string, img: HTML
   const sy = Math.max(0, Math.min(H - sh, fy * H - fr * W * 1.25));
   ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
 }
+
+// ───────────── 적·배경·아이콘 그림 (public/art/world) ─────────────
+// 파일이 없으면 기존처럼 코드로 그린 그림/이모지를 쓴다.
+export const WORLD_FILES: Record<string, string> = {};
+const ENEMY_ART = ['ant', 'mouse', 'roach', 'mosquito', 'spider', 'ratking', 'fly', 'shieldmouse', 'roachgen', 'spiderqueen'];
+for (const id of ENEMY_ART) WORLD_FILES[`enemy-${id}`] = `enemies/${id}.webp`;
+for (const id of ['vacuum', 'web', 'girl-happy', 'girl-worried', 'girl-cry', 'barricade']) WORLD_FILES[id] = `props/${id}.webp`;
+for (const id of ['entrance', 'living', 'kitchen', 'attic']) WORLD_FILES[`bg-${id}`] = `bg/${id}.jpg`;
+export const ICON_IDS = [
+  'coin', 'tuna', 'yarn', 'chest', 'chest-open', 'chest-royal',
+  ...['cheese', 'godeungeo', 'huindungi', 'chaos', 'cheesetabby', 'tuxedo', 'samsaek', 'russianblue', 'scottish', 'munchkin',
+    'persian', 'mainecoon', 'siamese', 'cow', 'americanshort', 'abyssinian', 'norwegian', 'ragdoll', 'bengal', 'sphynx'].map((c) => `w-${c}`),
+  'eq-collar-N', 'eq-collar-R', 'eq-collar-SR', 'eq-collar-SSR', 'eq-hat-N', 'eq-hat-R', 'eq-toy-R', 'eq-toy-SR', 'eq-cushion', 'eq-bowl', 'eq-bell',
+];
+for (const id of ICON_IDS) WORLD_FILES[id] = `icons/${id}.webp`;
+
+const world = new Map<string, HTMLImageElement>();
+
+export async function loadWorldArt(): Promise<void> {
+  await Promise.all(Object.entries(WORLD_FILES).map(([id, file]) => new Promise<void>((ok) => {
+    const img = new Image();
+    img.onload = () => { world.set(id, img); ok(); };
+    img.onerror = () => ok();
+    img.src = `art/world/${file}`;
+  })));
+}
+
+export function getWorld(id: string): HTMLImageElement | null {
+  return world.get(id) ?? null;
+}
+
+/** DOM용 아이콘 태그 (그림이 없으면 대신 쓸 이모지) */
+export function iconHtml(id: string, fallback: string, cls = 'ico-img'): string {
+  return world.has(id) ? `<img class="${cls}" src="art/world/${WORLD_FILES[id]}" alt="">` : fallback;
+}

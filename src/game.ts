@@ -31,6 +31,7 @@ export interface Enemy {
   animT: number;
   dead: boolean;
   deathT: number;
+  summonT?: number;
 }
 
 export interface Member {
@@ -404,8 +405,11 @@ export class Game {
     } else if (!this.bossSpawned) {
       this.bossSpawned = true;
       if (st.boss) {
-        for (let i = 0; i < st.boss.count; i++) this.spawn(st.boss.kind, W / 2 + (i - (st.boss.count - 1) / 2) * 160, CONFIG.fieldTop - 40);
-        this.banner = { text: `👑 ${ENEMIES[st.boss.kind].name} 등장! 쓰러뜨리면 승리!`, t: 2.5 };
+        const kinds: EnemyKind[] = [];
+        for (let i = 0; i < st.boss.count; i++) kinds.push(st.boss.kind);
+        if (st.boss.with) kinds.push(st.boss.with);
+        kinds.forEach((kd, i) => this.spawn(kd, W / 2 + (i - (kinds.length - 1) / 2) * 180, CONFIG.fieldTop - 40));
+        this.banner = { text: `👑 ${ENEMIES[st.boss.kind].name}${st.boss.with ? `와 ${ENEMIES[st.boss.with].name}` : ''} 등장!`, t: 2.5 };
         this.sfx('boss');
       } else {
         const kind = this.pickKind(st.late);
@@ -435,6 +439,17 @@ export class Game {
       } else {
         e.attacking = true;
         e.atkTimer += dt * slow;
+      }
+      if (e.def.summon) {
+        e.summonT = (e.summonT ?? 0) + dt;
+        if (e.summonT >= e.def.summon.every) {
+          e.summonT = 0;
+          const sm = e.def.summon;
+          for (let j = 0; j < sm.count; j++) this.spawn(sm.kind, Math.max(30, Math.min(W - 30, e.x + (j - (sm.count - 1) / 2) * 36)), e.y + 10);
+          this.fx.push({ kind: 'poof', x: e.x, y: e.y + 20, r: 40, t: 0, life: 0.4, color: '#ffffff' });
+        }
+      }
+      if (e.attacking) {
         if (e.atkTimer >= e.def.atkInterval) {
           e.atkTimer = 0;
           if (e.def.range) {
@@ -506,6 +521,7 @@ export class Game {
 
   damageEnemy(e: Enemy, dmg: number, o: { crit?: boolean; color?: string; slow?: number; slowDur?: number; stun?: number; knock?: number; quiet?: boolean; src?: number } = {}): void {
     if (e.dead) return;
+    if (e.def.armor) dmg *= 1 - e.def.armor;
     if (o.src !== undefined && o.src >= 0) this.squad[o.src].dealt += Math.min(dmg, e.hp);
     e.hp -= dmg;
     if (o.crit) { this.sfx('crit'); this.fx.push({ kind: 'boom', x: e.x, y: e.y - e.def.size * 0.3, r: 16 + e.def.size * 0.4, t: 0, life: 0.35, color: '#ffb347' }); }

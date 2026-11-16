@@ -415,3 +415,11 @@ canvas#game { display: block; position: fixed; inset: 0; width: 100vw; height: 1
 .lvup-reward { font-size: 26px; background: #0007; border-radius: 12px; padding: 6px 18px; }
 
 .album .album-full { display: block; width: min(100%, 360px); margin: 0 auto; border-radius: 16px; border: 3px solid #2a1420; }
+
+/* 그림 아이콘 */
+.ico-img { width: 1.3em; height: 1.3em; object-fit: contain; vertical-align: -0.3em; display: inline-block; filter: drop-shadow(0 1px 1px #0006); }
+.item .ico .ico-img, .bench-item .ico .ico-img { width: 2.1em; height: 2.1em; vertical-align: middle; }
+.chest .box .ico-img, .side-btn span .ico-img { width: 1.5em; height: 1.5em; }
+.sc-ico .ico-img { width: 1.6em; height: 1.6em; }
+.gear-ico .ico-img { width: 1.4em; height: 1.4em; }
+.skill-badge .ic .ico-img { width: 1.6em; height: 1.6em; }

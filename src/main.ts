@@ -1,5 +1,5 @@
 import './style.css';
-import { loadArt } from './art';
+import { loadArt, loadWorldArt } from './art';
 import { sound } from './audio';
 import { CONFIG, applyLayout } from './data/config';
 import { STAGES } from './data/stages';
@@ -205,7 +205,7 @@ for (const ev of ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown'] as
 document.addEventListener('visibilitychange', () => { if (!document.hidden) sound.wake(); });
 window.addEventListener('pageshow', () => sound.wake());
 window.addEventListener('focus', () => sound.wake());
-void loadArt().then(() => setTimeout(() => menu.refresh(), 300));
+void Promise.all([loadArt(), loadWorldArt()]).then(() => setTimeout(() => menu.refresh(), 300));
 
 // 디버그/테스트용 훅
 Object.assign(window as object, {

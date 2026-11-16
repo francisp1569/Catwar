@@ -1,5 +1,5 @@
 // 로비 (DOM): 하단 5탭 — 상점 · 가방 · 전투 · 고양이 · 지도
-import { drawFaceArtCircle, drawFaceArtSquare, getArt } from './art';
+import { drawFaceArtCircle, drawFaceArtSquare, getArt, iconHtml } from './art';
 import { sound } from './audio';
 import { drawCatLookToon, drawCatPortrait, IDLE_POSE } from './catdraw';
 import { CATS, CAT_BY_ID, HERO_ID, RARITY_COLOR, type CatDef, type CatLook } from './data/cats';
@@ -19,6 +19,20 @@ import {
 import { isUnlocked } from './meta/rewards';
 import { DECK_SIZE, resetSave, writeSave, type Item, type SaveData } from './meta/save';
 import { drawStagePreview } from './render';
+
+// 그림 아이콘 (없으면 이모지)
+const COIN = (): string => iconHtml('coin', '🪙');
+const TUNA = (): string => iconHtml('tuna', '🥫');
+const YARN = (): string => iconHtml('yarn', '🧶');
+const CHEST = (): string => iconHtml('chest', '🎁');
+const wIcon = (c: CatDef): string => iconHtml(`w-${c.id}`, c.weapon.icon);
+const EQ_DEFAULT: Record<Slot, string> = { collar: 'eq-collar-R', hat: 'eq-hat-R', toy: 'eq-toy-R', cushion: 'eq-cushion', bowl: 'eq-bowl', bell: 'eq-bell' };
+const EQ_RARITY: Partial<Record<string, string>> = {
+  'collar-N': 'eq-collar-N', 'collar-R': 'eq-collar-R', 'collar-SR': 'eq-collar-SR', 'collar-SSR': 'eq-collar-SSR',
+  'hat-N': 'eq-hat-N', 'hat-R': 'eq-hat-R', 'toy-R': 'eq-toy-R', 'toy-SR': 'eq-toy-SR',
+};
+const eqIcon = (slot: Slot, rarity?: string): string => iconHtml((rarity && EQ_RARITY[`${slot}-${rarity}`]) || EQ_DEFAULT[slot], SLOT_INFO[slot].icon);
+
 
 type Tab = 'shop' | 'bag' | 'battle' | 'cats' | 'map';
 
@@ -79,7 +93,7 @@ export class Menu {
         <div class="lvup-band">집사 레벨 업!</div>
         <div class="lvup-num">${level}</div>
         <small class="muted">획득 보상</small>
-        <div class="lvup-reward">🥫 ${tuna}</div>
+        <div class="lvup-reward">${TUNA()} ${tuna}</div>
         <button class="btn gold" data-act="close">확인</button>
       </div>`, 'celebrate');
   }
@@ -380,9 +394,9 @@ export class Menu {
           </div>
         </div>
         <div class="res">
-          <span title="코인">🪙 ${fmt(s.coins)}</span>
-          <span title="참치캔">🥫 ${fmt(s.tuna)}</span>
-          <span title="털실">🧶 ${fmt(s.yarn)}</span>
+          <span title="코인">${COIN()} ${fmt(s.coins)}</span>
+          <span title="참치캔">${TUNA()} ${fmt(s.tuna)}</span>
+          <span title="털실">${YARN()} ${fmt(s.yarn)}</span>
         </div>
       </header>
       <main class="view tab-${this.tab}">${body}</main>
@@ -447,7 +461,7 @@ export class Menu {
     const isBoss = !!st.boss;
     const chest = (n: number, label: string) => `
       <div class="chest ${best >= n ? 'got' : ''}">
-        <div class="box">${best >= n ? '✔' : '🎁'}</div>
+        <div class="box">${best >= n ? '✔' : CHEST()}</div>
         <small>${stars(n, n)}</small>
         <small class="muted">${label}</small>
       </div>`;
@@ -467,7 +481,7 @@ export class Menu {
         ${unlocked ? '' : '<div class="lock-cover">🔒<small>이전 스테이지를 클리어하면 열려요</small></div>'}
         <div class="side left">
           <button class="side-btn" data-act="nap"><span>💤</span><small>낮잠 보상</small>${nap.coins > 0 ? `<em>${fmt(nap.coins)}</em>` : ''}</button>
-          <button class="side-btn" data-act="tab" data-arg="shop"><span>🎁</span><small>무료 상자</small>${freeReady ? '<i class="dot"></i>' : ''}</button>
+          <button class="side-btn" data-act="tab" data-arg="shop"><span>${CHEST()}</span><small>무료 상자</small>${freeReady ? '<i class="dot"></i>' : ''}</button>
         </div>
         <div class="side right">
           <button class="side-btn" data-act="deck"><span>🧩</span><small>편성</small></button>
@@ -476,11 +490,11 @@ export class Menu {
         </div>
       </section>
       <section class="chests">
-        ${chest(1, `🪙${st.reward.coins}`)}
+        ${chest(1, `${COIN()}${st.reward.coins}`)}
         <div class="chest-line"></div>
-        ${chest(2, '🥫20 · 장비')}
+        ${chest(2, `${TUNA()}20 · 장비`)}
         <div class="chest-line"></div>
-        ${chest(3, '🥫20 · 장비+1')}
+        ${chest(3, `${TUNA()}20 · 장비+1`)}
       </section>
       <button class="start-btn" data-act="start" data-arg="${st.id}" ${unlocked ? '' : 'disabled'}>
         <span>START</span><small>팀 전투력 ${fmt(teamPower(s))}</small>
@@ -529,12 +543,12 @@ export class Menu {
           ${getArt(def.id, 'face') || getArt(def.id, 'full') ? `<button class="side-btn" data-act="album" data-arg="${def.id}"><span>📷</span><small>앨범</small></button>` : ''}
         </div>
         <div class="side right">
-          <button class="side-btn" data-act="skills" data-arg="${def.id}"><span>${def.weapon.icon}</span><small>스킬</small></button>
+          <button class="side-btn" data-act="skills" data-arg="${def.id}"><span>${wIcon(def)}</span><small>스킬</small></button>
           <button class="side-btn ${inDeck ? 'on' : ''}" data-act="deck-toggle" data-arg="${def.id}"><span>${inDeck ? '⚔️' : '💤'}</span><small>${inDeck ? '출전 중' : '대기'}</small></button>
         </div>
-        <div class="skill-badge"><span class="ic">${def.weapon.icon}</span>${esc(def.skillName)}<small>⚔️ ${st.atk} · 🛡 +${st.hp}</small></div>
+        <div class="skill-badge"><span class="ic">${wIcon(def)}</span>${esc(def.skillName)}<small>⚔️ ${st.atk} · 🛡 +${st.hp}</small></div>
         <div class="cat-actions">
-          <button class="btn ${canLevelUp(s, def.id).ok ? '' : 'off'}" data-act="levelup" data-arg="${def.id}">레벨 업<small>${o.level >= cap ? '상한 도달' : `🪙 ${fmt(lvCost)}`}</small></button>
+          <button class="btn ${canLevelUp(s, def.id).ok ? '' : 'off'}" data-act="levelup" data-arg="${def.id}">레벨 업<small>${o.level >= cap ? '상한 도달' : `${COIN()} ${fmt(lvCost)}`}</small></button>
           <button class="btn gold ${canStarUp(s, def.id).ok ? '' : 'off'}" data-act="starup" data-arg="${def.id}">★ 성급 업<small>${o.stars >= MAX_STARS ? 'MAX' : `조각 ${o.shards}/${need}`}</small></button>
         </div>`;
     }
@@ -552,7 +566,7 @@ export class Menu {
   private itemCard(it: Item, extra = ''): string {
     const eq = isEquipped(this.save, it);
     return `<button class="item r-${it.rarity}" data-act="item" data-arg="${it.uid}" ${extra}>
-      <span class="ico">${SLOT_INFO[it.slot].icon}</span>
+      <span class="ico">${eqIcon(it.slot, it.rarity)}</span>
       <span class="ilv">Lv.${it.level}</span>
       <span class="irar">${it.rarity}</span>
       ${eq ? '<span class="eq">E</span>' : ''}
@@ -564,7 +578,7 @@ export class Menu {
     const b = bonuses(s);
     const slots = SLOTS.map((slot) => {
       const it = s.items.find((i) => i.uid === s.equip[slot]);
-      if (!it) return `<button class="item empty" data-act="slot" data-arg="${slot}"><span class="ico">${SLOT_INFO[slot].icon}</span><span class="ilv">${SLOT_INFO[slot].name}</span></button>`;
+      if (!it) return `<button class="item empty" data-act="slot" data-arg="${slot}"><span class="ico">${eqIcon(slot)}</span><span class="ilv">${SLOT_INFO[slot].name}</span></button>`;
       return this.itemCard(it);
     }).join('');
     const statLine = ([
@@ -579,21 +593,21 @@ export class Menu {
         <div class="inv-head">
           <div class="filters">
             <button class="${this.bagFilter === 'all' ? 'on' : ''}" data-act="bag-filter" data-arg="all">ALL</button>
-            ${SLOTS.map((sl) => `<button class="${this.bagFilter === sl ? 'on' : ''}" data-act="bag-filter" data-arg="${sl}">${SLOT_INFO[sl].icon}</button>`).join('')}
+            ${SLOTS.map((sl) => `<button class="${this.bagFilter === sl ? 'on' : ''}" data-act="bag-filter" data-arg="${sl}">${eqIcon(sl)}</button>`).join('')}
           </div>
           <button class="btn small gold" data-act="merge">일괄 합성</button>
         </div>
         <div class="inv-grid">${list.map((it) => this.itemCard(it)).join('') || '<p class="muted empty-msg">장비가 없어요. 스테이지를 클리어하거나 상점에서 얻어요.</p>'}</div>`;
     } else {
       const mats = [
-        ['🧶', '털실', s.yarn],
-        ['🥫', '참치캔', s.tuna],
-        ['🪙', '코인', s.coins],
-        ...CATS.filter((c) => s.cats[c.id] && s.cats[c.id].shards > 0).map((c) => [c.weapon.icon, `${c.name} 조각`, s.cats[c.id].shards]),
+        [YARN(), '털실', s.yarn],
+        [TUNA(), '참치캔', s.tuna],
+        [COIN(), '코인', s.coins],
+        ...CATS.filter((c) => s.cats[c.id] && s.cats[c.id].shards > 0).map((c) => [wIcon(c), `${c.name} 조각`, s.cats[c.id].shards]),
       ] as [string, string, number][];
       inv = `<div class="inv-grid mats">${mats.map(([ic, name, n]) => `
         <div class="item mat"><span class="ico">${ic}</span><span class="ilv">${fmt(n)}</span><span class="mname">${esc(name)}</span></div>`).join('')}</div>
-        <p class="muted">🧶 털실은 장비 강화 재료예요. 장비 분해, 스테이지 보상, 낮잠 보상으로 얻어요.</p>`;
+        <p class="muted">${YARN()} 털실은 장비 강화 재료예요. 장비 분해, 스테이지 보상, 낮잠 보상으로 얻어요.</p>`;
     }
     return `
       <section class="equip-panel">
@@ -618,7 +632,7 @@ export class Menu {
     const rates = RARITY_LIST.map((r) => `<span><i style="background:${RARITY_COLOR[r]}"></i>${r} ${Math.round(RATES[r] * 100)}%</span>`).join('');
     return `
       <section class="shop-card free ${freeReady ? '' : 'done'}">
-        <div class="sc-ico">🎁</div>
+        <div class="sc-ico">${iconHtml('chest-open', '🎁')}</div>
         <div class="sc-body"><b>오늘의 무료 상자</b><small>매일 고양이 뽑기 1회 + 장비 1개</small></div>
         <button class="btn ${freeReady ? 'gold' : 'off'}" data-act="free">${freeReady ? '받기' : '내일 또!'}</button>
       </section>
@@ -628,17 +642,17 @@ export class Menu {
         <small class="muted">새 고양이를 만나요. 이미 있는 고양이는 성급 조각 +10</small>
         <div class="rates">${rates}</div>
         <div class="pull-buttons">
-          <button class="btn" data-act="pull" data-arg="1">1회<br><small>🥫 ${PULL_COST}</small></button>
-          <button class="btn gold" data-act="pull" data-arg="10">10회<br><small>🥫 ${PULL10_COST} · SR 이상 확정</small></button>
+          <button class="btn" data-act="pull" data-arg="1">1회<br><small>${TUNA()} ${PULL_COST}</small></button>
+          <button class="btn gold" data-act="pull" data-arg="10">10회<br><small>${TUNA()} ${PULL10_COST} · SR 이상 확정</small></button>
         </div>
       </section>
       <section class="shop-card big gear">
-        <div class="gear-ico">${SLOTS.map((sl) => `<span>${SLOT_INFO[sl].icon}</span>`).join('')}</div>
+        <div class="gear-ico">${SLOTS.map((sl) => `<span>${eqIcon(sl)}</span>`).join('')}</div>
         <b class="sc-title">집사 장비 상자</b>
         <small class="muted">목걸이·모자·장난감·방석·밥그릇·방울 중 하나. 스테이지를 깰수록 좋은 장비가 잘 나와요</small>
         <div class="pull-buttons">
-          <button class="btn" data-act="pull-item" data-arg="1">1개<br><small>🥫 ${ITEM_BOX_COST}</small></button>
-          <button class="btn gold" data-act="pull-item" data-arg="10">10개<br><small>🥫 ${ITEM_BOX10_COST} · SR 이상 확정</small></button>
+          <button class="btn" data-act="pull-item" data-arg="1">1개<br><small>${TUNA()} ${ITEM_BOX_COST}</small></button>
+          <button class="btn gold" data-act="pull-item" data-arg="10">10개<br><small>${TUNA()} ${ITEM_BOX10_COST} · SR 이상 확정</small></button>
         </div>
       </section>`;
   }
@@ -683,7 +697,7 @@ export class Menu {
       const id = s.deck[i];
       if (!id) return `<div class="slot empty">빈 자리</div>`;
       const d = CAT_BY_ID[id];
-      return `<button class="slot" data-act="deck-toggle" data-arg="${id}"><canvas class="portrait" data-look="${id}"></canvas><b>${d.name}</b><small>${d.weapon.icon} ${esc(d.skillName)}</small></button>`;
+      return `<button class="slot" data-act="deck-toggle" data-arg="${id}"><canvas class="portrait" data-look="${id}"></canvas><b>${d.name}</b><small>${wIcon(d)} ${esc(d.skillName)}</small></button>`;
     }).join('');
     const owned = CATS.filter((c) => !c.hero && s.cats[c.id]);
     this.openModal(`
@@ -699,7 +713,7 @@ export class Menu {
         return `<button class="card ${s.deck.includes(d.id) ? 'in-deck' : ''}" data-act="deck-toggle" data-arg="${d.id}" style="--rc:${RARITY_COLOR[d.rarity]}">
           ${rarityBadge(d.rarity)}${s.deck.includes(d.id) ? '<span class="check">✔</span>' : ''}
           <canvas class="portrait" data-look="${d.id}"></canvas><b>${d.name}</b><small>Lv.${o.level} ${stars(o.stars)}</small>
-          <small class="muted">${d.weapon.icon} ${esc(d.skillName)}</small></button>`;
+          <small class="muted">${wIcon(d)} ${esc(d.skillName)}</small></button>`;
       }).join('')}</div>`);
   }
 
@@ -709,7 +723,7 @@ export class Menu {
     const w = def.weapon;
     this.openModal(`
       <button class="x" data-act="close">✕</button>
-      <h2>${w.icon} ${esc(def.skillName)} <small>${def.name}</small></h2>
+      <h2>${wIcon(def)} ${esc(def.skillName)} <small>${def.name}</small></h2>
       <p class="muted">${esc(w.intro)}</p>
       <p class="muted">전투 중 NEW 카드로 합류한 뒤, 아래 강화 중에서 골라 키워요. 고양이 레벨과 성급(★)은 기본 위력을 올려요.</p>
       <ul class="skill">${w.mods.map((x) => `<li class="cur">${esc(x.name)} <small>(최대 ${x.max}회)</small><br><span class="muted">${esc(x.desc)}</span></li>`).join('')}</ul>
@@ -735,7 +749,7 @@ export class Menu {
         <button class="btn ${sound.musicOn ? 'blue' : 'off'}" data-act="toggle-music">${sound.musicOn ? '🎵 배경음악 켜짐' : '🎵 배경음악 꺼짐'}</button>
       </div>
       <p class="muted">진행 상황은 이 브라우저에 자동 저장돼요.</p>
-      <p class="muted">낮잠 보상: 시간당 🪙${napRate(this.save)} (최대 ${NAP_MAX_HOURS}시간 쌓임)</p>
+      <p class="muted">낮잠 보상: 시간당 ${COIN()}${napRate(this.save)} (최대 ${NAP_MAX_HOURS}시간 쌓임)</p>
       <button class="btn ${this.resetArmed ? 'danger' : 'off'}" data-act="reset">${this.resetArmed ? '정말 초기화할까요? 한 번 더 누르면 삭제돼요' : '진행 상황 초기화'}</button>`);
   }
 
@@ -753,7 +767,7 @@ export class Menu {
     this.openModal(`
       <button class="x" data-act="close">✕</button>
       <div class="bench">
-        <div class="bench-item r-${it.rarity}"><span class="ico">${info.icon}</span><span class="irar">${it.rarity}</span></div>
+        <div class="bench-item r-${it.rarity}"><span class="ico">${eqIcon(it.slot, it.rarity)}</span><span class="irar">${it.rarity}</span></div>
         <b class="iname">${esc(itemName(it))}</b>
         <small>${info.name} ${rarityBadge(it.rarity)}${eq ? ' · 장착 중' : ''}</small>
       </div>
@@ -763,8 +777,8 @@ export class Menu {
         <div class="uprow"><span>${info.statName} ${fmtStat(cur)}</span><span class="arrow">➜</span><span class="g">${fmtStat(next)}</span></div>
       </div>
       <div class="costs">
-        <span class="${s.yarn >= cost.yarn ? '' : 'lack'}">🧶 ${s.yarn}/${cost.yarn}</span>
-        <span class="${s.coins >= cost.coins ? '' : 'lack'}">🪙 ${fmt(s.coins)}/${fmt(cost.coins)}</span>
+        <span class="${s.yarn >= cost.yarn ? '' : 'lack'}">${YARN()} ${s.yarn}/${cost.yarn}</span>
+        <span class="${s.coins >= cost.coins ? '' : 'lack'}">${COIN()} ${fmt(s.coins)}/${fmt(cost.coins)}</span>
       </div>
       <div class="row center gap">
         <button class="btn blue" data-act="item-up" data-arg="${it.uid}">Lv.UP</button>
@@ -772,7 +786,7 @@ export class Menu {
       </div>
       <div class="row center gap">
         <button class="btn ${eq ? 'off' : ''}" data-act="item-equip" data-arg="${it.uid}">${eq ? '장착 해제' : '장착하기'}</button>
-        <button class="btn small danger" data-act="item-break" data-arg="${it.uid}">분해 (🧶+${dismantleValue(it)})</button>
+        <button class="btn small danger" data-act="item-break" data-arg="${it.uid}">분해 (${YARN()}+${dismantleValue(it)})</button>
       </div>
       <div class="same-row">${same.map((x) => this.itemCard(x, x.uid === it.uid ? 'data-sel="1"' : '')).join('')}</div>`, 'workbench');
   }

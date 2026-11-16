@@ -22,7 +22,7 @@ export interface StageDef {
   early: Mix;
   late: Mix;
   bursts: Burst[];
-  boss?: { kind: EnemyKind; count: number };
+  boss?: { kind: EnemyKind; count: number; with?: EnemyKind };
   /** 바리케이드 기본 체력 */
   baseHp: number;
   reward: { coins: number; tuna: number };
@@ -52,17 +52,17 @@ const RAW: Raw[] = [
     early: { mouse: 3, ant: 2 }, late: { mouse: 3, roach: 2, spider: 0.6 },
     bursts: [b(105, 'mouse', 33), b(175, 'ant', 57)], boss: { kind: 'ratking', count: 1 } },
   { area: 'kitchen', name: '싱크대 아래', mul: 4.3, duration: 222, rate: [5.3, 11.3], baseHp: 550,
-    early: { roach: 4, ant: 2 }, late: { roach: 4, spider: 1, mosquito: 2 },
+    early: { roach: 4, ant: 2, fly: 1 }, late: { roach: 4, spider: 1, mosquito: 2, fly: 2 },
     bursts: [b(68, 'roach', 48), b(154, 'ant', 72), b(205, 'spider', 15)] },
   { area: 'kitchen', name: '냉장고 뒤편', mul: 5.0, duration: 234, rate: [5.6, 12.0], baseHp: 600,
-    early: { mosquito: 3, mouse: 2 }, late: { mosquito: 3, mouse: 3, spider: 1, roach: 2 },
-    bursts: [b(84, 'mosquito', 48), b(167, 'mouse', 44), b(217, 'spider', 20)] },
-  { area: 'kitchen', name: '쓰레기통 대작전', mul: 5.9, duration: 246, rate: [6.3, 13.4], baseHp: 650,
-    early: { roach: 3, ant: 3, mouse: 2 }, late: { roach: 3, spider: 1.2, mosquito: 2, mouse: 2 },
-    bursts: [b(74, 'ant', 72), b(156, 'roach', 57), b(221, 'spider', 24)], boss: { kind: 'ratking', count: 1 } },
-  { area: 'attic', name: '[보스] 다락방의 쥐왕국', mul: 7.2, duration: 258, rate: [7.0, 14.8], baseHp: 700,
-    early: { mouse: 3, ant: 3, mosquito: 2 }, late: { mouse: 3, roach: 3, spider: 1.4, mosquito: 2 },
-    bursts: [b(76, 'mouse', 57), b(152, 'mosquito', 57), b(228, 'spider', 28)], boss: { kind: 'ratking', count: 2 } },
+    early: { fly: 3, mouse: 2 }, late: { mosquito: 2, fly: 2, mouse: 2, shieldmouse: 1, spider: 1, roach: 2 },
+    bursts: [b(84, 'fly', 48), b(167, 'mouse', 44), b(217, 'spider', 20)] },
+  { area: 'kitchen', name: '[보스] 쓰레기통의 바퀴 장군', mul: 5.9, duration: 246, rate: [6.3, 13.4], baseHp: 650,
+    early: { roach: 3, ant: 3, fly: 2 }, late: { roach: 3, spider: 1.2, fly: 2, shieldmouse: 1.2 },
+    bursts: [b(74, 'ant', 72), b(156, 'roach', 57), b(221, 'shieldmouse', 16)], boss: { kind: 'roachgen', count: 1 } },
+  { area: 'attic', name: '[보스] 다락방의 거미 여왕', mul: 7.2, duration: 258, rate: [7.0, 14.8], baseHp: 700,
+    early: { mouse: 3, ant: 3, mosquito: 2 }, late: { mouse: 2, shieldmouse: 1.5, roach: 3, spider: 1.4, mosquito: 2 },
+    bursts: [b(76, 'mouse', 57), b(152, 'mosquito', 57), b(228, 'shieldmouse', 24)], boss: { kind: 'spiderqueen', count: 1, with: 'ratking' } },
 ];
 
 export const STAGES: StageDef[] = RAW.map((s, i) => ({
