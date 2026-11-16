@@ -85,7 +85,7 @@ export const WEAPONS: Record<string, WeaponDef> = {
   godeungeo: {
     kind: 'guard', fx: 'scratchpost', icon: '🪵', color: '#9a9aa6',
     base: { interval: 0, dmg: 1.0, reduce: 0.15, thorns: 0 },
-    intro: '바리케이드에 스크래처를 덧대 받는 피해 15% 감소.',
+    intro: '바리케이드에 스크래처를 덧대 받는 피해 15% 감소. 바리케이드에 붙은 적은 방패로 쾅 밀쳐낸다.',
     mods: [
       m('thick', '두꺼운 스크래처', '받는 피해 7% 추가 감소', 3, { reduce: 0.07 }),
       m('thorn', '할퀴기 반격', '바리케이드를 때린 적을 할퀴어 반격 (+공격력 100%)', 3, { thorns: 1.0 }),
@@ -138,7 +138,7 @@ export const WEAPONS: Record<string, WeaponDef> = {
   samsaek: {
     kind: 'heal', fx: 'groom', icon: '💗', color: '#7dff9a',
     base: { interval: 5, dmg: 0, repair: 0.02 },
-    intro: '그루밍하듯 바리케이드를 다듬어 5초마다 2% 수리.',
+    intro: '그루밍하듯 바리케이드를 다듬어 5초마다 2% 수리. 틈틈이 털뭉치를 퉤 뱉어 공격한다.',
     mods: [
       m('more', '꼼꼼한 그루밍', '수리량 +1.2%', 3, { repair: 0.012 }),
       m('often', '부지런한 혀', '수리 간격 -20%', 2, undefined, { interval: 0.8 }),
@@ -180,7 +180,7 @@ export const WEAPONS: Record<string, WeaponDef> = {
   persian: {
     kind: 'aura', fx: 'notes', icon: '🎵', color: '#ffe9a8',
     base: { interval: 0, dmg: 0, buff: 0.08 },
-    intro: '골골송을 불러 모든 고양이 공격력 +8%.',
+    intro: '골골송을 불러 모든 고양이 공격력 +8%. 음표를 날려 적을 꿰뚫는다.',
     mods: [m('song', '앙코르 골골송', '모든 고양이 공격력 +8%', 4, { buff: 0.08 })],
   },
   mainecoon: {
@@ -252,7 +252,7 @@ export const WEAPONS: Record<string, WeaponDef> = {
   ragdoll: {
     kind: 'barrier', fx: 'cushion', icon: '☁️', color: '#bfe3ff',
     base: { interval: 8, dmg: 0, shield: 0.06 },
-    intro: '꾹꾹이로 폭신한 쿠션을 만들어 바리케이드에 보호막(최대 체력 6%)을 씌운다.',
+    intro: '꾹꾹이로 폭신한 쿠션을 만들어 바리케이드에 보호막(최대 체력 6%)을 씌운다. 쿠션을 던져 적을 때린다.',
     mods: [
       m('soft', '더 폭신하게', '보호막 +3%', 3, { shield: 0.03 }),
       m('often', '열심히 꾹꾹', '보호막 간격 -20%', 2, undefined, { interval: 0.8 }),

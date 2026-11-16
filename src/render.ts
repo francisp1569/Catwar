@@ -1217,7 +1217,14 @@ function drawShots(ctx: Ctx, game: Game): void {
     ctx.globalAlpha = 0.3;
     ellipse(ctx, -s.radius * 1.8, 0, s.radius * 2.2, s.radius * 0.6, s.color);
     ctx.globalAlpha = 1;
-    if (s.style === 'paw') {
+    const sideImg = s.style === 'notes' ? getWorld('fx-notes') : s.style === 'cushion' ? getWorld('eq-cushion') : s.style === 'hairball' ? getWorld('fx-poof') : null;
+    if (sideImg) {
+      // 지원 고양이 보조 공격: 음표 / 쿠션 / 털뭉치
+      ctx.rotate(-a + (s.style === 'cushion' ? s.spin * 2 : Math.sin(s.spin * 3) * 0.3));
+      if (s.style === 'hairball') ctx.filter = 'sepia(0.6) brightness(0.9)';
+      drawContain(ctx, sideImg, 0, 0, s.style === 'cushion' ? 34 : 30);
+      ctx.filter = 'none';
+    } else if (s.style === 'paw') {
       // 젤리 발바닥
       ctx.rotate(Math.PI / 2);
       const r = s.radius * 1.5;

@@ -56,6 +56,8 @@ export interface Member {
   power: number;
   /** 스킬 각성 (갈래 강화를 다 찍으면 열림) */
   evolved?: boolean;
+  /** 지원형 고양이의 보조 공격 타이머 */
+  sideT?: number;
   timer: number;
   x: number;
   y: number;
@@ -748,6 +750,7 @@ export class Game {
       m.swing = Math.max(0, m.swing - dt * 3);
       m.wakeFx = Math.max(0, m.wakeFx - dt);
       if (m.level <= 0) continue;
+      this.sideAttack(m, dt);
       const p = this.params(m);
       if (p.interval <= 0) continue;
       m.timer += dt * (m.weapon.kind === 'heal' ? 1 : spd);
@@ -759,6 +762,43 @@ export class Game {
         m.timer = p.interval; // 대상이 생길 때까지 대기
       }
     }
+  }
+
+  /** 지원·수비형 고양이도 직접 싸우게 하는 보조 공격 (기본 스킬과 따로 돈다) */
+  private static SIDE: Partial<Record<string, { every: number; dmg: number; style: 'bash' | WeaponFx; pierce?: number }>> = {
+    godeungeo: { every: 2.2, dmg: 1.7, style: 'bash' },
+    samsaek: { every: 1.5, dmg: 1.0, style: 'hairball' },
+    persian: { every: 1.3, dmg: 0.8, style: 'notes', pierce: 3 },
+    ragdoll: { every: 1.7, dmg: 1.1, style: 'cushion', pierce: 1 },
+  };
+
+  private sideAttack(m: Member, dt: number): void {
+    const sd = Game.SIDE[m.def.id];
+    if (!sd) return;
+    m.sideT = (m.sideT ?? 0) + dt * this.speedMul;
+    if (m.sideT < sd.every) return;
+    const grow = (1 + 0.12 * (m.level - 1)) * (m.evolved ? 1.6 : 1);
+    const dmg = m.power * sd.dmg * grow * this.dmgMul;
+    const list = this.alive();
+    if (sd.style === 'bash') {
+      // 스크래처 방패로 앞에 붙은 적들을 밀쳐낸다
+      const near = list.filter((e) => e.y > CONFIG.barricadeY - 160 && Math.abs(e.x - m.x) < 110);
+      if (!near.length) return;
+      for (const e of near) this.damageEnemy(e, dmg, { src: m.slot, knock: 38, quiet: true });
+      this.fx.push({ kind: 'slam', x: m.x, y: CONFIG.barricadeY - 70, r: 100, t: 0, life: 0.35, color: '#c9c9d6' });
+      this.sfx('thud');
+    } else {
+      const t = this.frontmost(list.filter((e) => e.y > CONFIG.fieldTop));
+      if (!t) return;
+      const ox = m.x;
+      const oy = m.y - 46;
+      const a = Math.atan2(t.y - oy, t.x - ox);
+      const sp = 560;
+      this.shots.push({ kind: 'bolt', x: ox, y: oy, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, dmg, radius: 10, pierce: sd.pierce ?? 0, color: m.weapon.color, crit: false, hit: new Set(), tick: 0, done: false, spin: 0, style: sd.style, src: m.slot });
+      this.sfx('throw');
+    }
+    m.sideT = 0;
+    m.swing = Math.max(m.swing, 0.6);
   }
 
   private static FIRE_SFX: Partial<Record<WeaponFx, string>> = {
