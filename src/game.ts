@@ -111,9 +111,9 @@ export type Phase = 'playing' | 'victory' | 'defeat';
 export interface BattleResult { victory: boolean; stars: number; kills: number; time: number; progress: number; discovered: string[]; bonusCoins?: number; }
 
 /** 필살기: 쿨타임(초), 폭주 지속(초), 공격 속도 배율, 피해 배율 */
-export const ULT_CD = 28;
+export const ULT_CD = 32;
 export const ULT_DUR = 4;
-const ULT_RATE = 2.6;
+const ULT_RATE = 2.2;
 const ULT_DMG = 1.3;
 
 /** 공격 종류별 밀려나는 거리 (px). 보스는 15%만 */
