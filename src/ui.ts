@@ -9,7 +9,10 @@ export type ButtonId =
   | { type: 'reroll' }
   | { type: 'resume' }
   | { type: 'quit' }
-  | { type: 'sound' };
+  | { type: 'sound' }
+  | { type: 'next' }
+  | { type: 'retry' }
+  | { type: 'lobby' };
 
 export interface Button { id: ButtonId; rect: Rect; }
 
@@ -38,6 +41,12 @@ export function buttonKey(id: ButtonId): string {
   return id.type === 'card' ? `card:${id.index}` : id.type;
 }
 
+/** 결과 화면 버튼: [로비로, 다음 스테이지 또는 다시 도전] */
+export const RESULT_BUTTONS: Button[] = [
+  { id: { type: 'lobby' }, rect: { x: 40, y: 760, w: 200, h: 64 } },
+  { id: { type: 'next' }, rect: { x: 256, y: 760, w: 244, h: 64 } },
+];
+
 /** 바닥 기준 버튼 위치 갱신 */
 export function layoutButtons(height: number): void {
   const rally = HUD_BUTTONS.find((b) => b.id.type === 'rally')!;
@@ -45,4 +54,5 @@ export function layoutButtons(height: number): void {
   const off = (height - 960) / 2;
   CHOICE_BUTTONS.forEach((b) => { b.rect.y = (b.id.type === 'reroll' ? 660 : 330) + off; });
   PAUSE_BUTTONS.forEach((b, i) => { b.rect.y = 420 + i * 80 + off; });
+  RESULT_BUTTONS.forEach((b) => { b.rect.y = height - 190; });
 }

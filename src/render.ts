@@ -5,10 +5,11 @@ import { sound } from './audio';
 import { RARITY_COLOR, type CatLook } from './data/cats';
 import { CONFIG } from './data/config';
 import { ENEMIES, type EnemyDef, type EnemyKind } from './data/enemies';
-import type { Area, StageDef } from './data/stages';
+import { STAGES, type Area, type StageDef } from './data/stages';
+const STAGE_COUNT = STAGES.length;
 import { GENERIC } from './data/weapons';
 import { fmtDmg, type Card, type Decal, type Enemy, type Game, type Member } from './game';
-import { CHOICE_BUTTONS, HUD_BUTTONS, PAUSE_BUTTONS, buttonKey, type Rect } from './ui';
+import { CHOICE_BUTTONS, HUD_BUTTONS, PAUSE_BUTTONS, RESULT_BUTTONS, buttonKey, type Rect } from './ui';
 
 type Ctx = CanvasRenderingContext2D;
 const W = CONFIG.width;
@@ -1664,6 +1665,8 @@ function drawPause(ctx: Ctx, pressed: string | null): void {
   }
 }
 
+let pressedKey: string | null = null;
+
 function drawResult(ctx: Ctx, game: Game, t: number, reward: RewardView | null): void {
   ctx.fillStyle = 'rgba(25,12,25,0.72)';
   ctx.fillRect(0, 0, W, CONFIG.height);
@@ -1716,11 +1719,33 @@ function drawResult(ctx: Ctx, game: Game, t: number, reward: RewardView | null):
       text(ctx, `${Math.round(m.dealt / Math.max(1, res.time))}`, W - 60, y, 14, '#fff', 'right', false);
     });
   }
-  ctx.save();
-  ctx.globalAlpha = 0.6 + 0.4 * Math.sin(t * 4);
-  text(ctx, '터치해서 로비로', W / 2, rows.length ? 562 + 44 + rows.length * 30 + 30 : 600, 22, '#fff');
   ctx.restore();
-  ctx.restore();
+  if (!reward) return;
+  // 결과 버튼
+  const hasNext = res.victory && nextStageNo(game) !== null;
+  for (const b of RESULT_BUTTONS) {
+    const r = b.rect;
+    ctx.save();
+    if (pressedKey === buttonKey(b.id)) ctx.translate(0, 3);
+    if (b.id.type === 'lobby') {
+      drawButtonBase(ctx, r, true, '#9b7bd6', 32);
+      text(ctx, '🏠 로비로', r.x + r.w / 2, r.y + r.h / 2, 21, '#fff');
+    } else {
+      const label = hasNext ? `St.${nextStageNo(game)} 다음 ▶` : res.victory ? '🔁 다시 하기' : '🔁 다시 도전';
+      const pulse = 1 + Math.sin(t * 5) * 0.03;
+      ctx.translate(r.x + r.w / 2, r.y + r.h / 2);
+      ctx.scale(pulse, pulse);
+      ctx.translate(-(r.x + r.w / 2), -(r.y + r.h / 2));
+      drawButtonBase(ctx, r, true, hasNext ? '#ffb000' : '#ff7a6b', 32);
+      text(ctx, label, r.x + r.w / 2, r.y + r.h / 2, 22, '#fff');
+    }
+    ctx.restore();
+  }
+}
+
+/** 다음 스테이지 번호 (없으면 null) */
+export function nextStageNo(game: Game): number | null {
+  return game.stage.no < STAGE_COUNT ? game.stage.no + 1 : null;
 }
 
 export function render(ctx: Ctx, game: Game, t: number, pressed: string | null, reward: RewardView | null): void {
@@ -1756,6 +1781,7 @@ export function render(ctx: Ctx, game: Game, t: number, pressed: string | null, 
   ctx.restore();
 
   drawHud(ctx, game, t, pressed);
+  pressedKey = pressed;
   if (game.phase !== 'playing') drawResult(ctx, game, t, reward);
   else if (game.choice || game.pickAnim) drawChoice(ctx, game, t, pressed);
   else if (game.paused) drawPause(ctx, pressed);

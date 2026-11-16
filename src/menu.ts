@@ -455,13 +455,15 @@ export class Menu {
     return `
       <section class="stage-head">
         <div class="area">${AREA_NAME[st.area]} · ${best ? stars(best, 3) : '미클리어'}</div>
-        <h1>St.${st.no} - ${esc(st.name.replace('[보스] ', ''))}${isBoss ? ' <span class="skull">💀</span>' : ''}</h1>
+        <div class="stage-title">
+          <button class="stage-arrow" data-act="stage-prev" ${st.no === 1 ? 'disabled' : ''}>◀</button>
+          <h1>St.${st.no} - ${esc(st.name.replace('[보스] ', ''))}${isBoss ? ' <span class="skull">💀</span>' : ''}</h1>
+          <button class="stage-arrow" data-act="stage-next" ${st.no === STAGES.length ? 'disabled' : ''}>▶</button>
+        </div>
         <div class="pill">적 강함 x${st.mul.toFixed(1)} · ${fmtTime(st.duration)} 버티기${isBoss ? ' + 보스' : ''}</div>
       </section>
       <section class="diorama">
         <canvas data-anim="stage" data-stage="${st.id}"></canvas>
-        <button class="nav-arrow left" data-act="stage-prev" ${st.no === 1 ? 'disabled' : ''}>◀</button>
-        <button class="nav-arrow right" data-act="stage-next" ${st.no === STAGES.length ? 'disabled' : ''}>▶</button>
         ${unlocked ? '' : '<div class="lock-cover">🔒<small>이전 스테이지를 클리어하면 열려요</small></div>'}
         <div class="side left">
           <button class="side-btn" data-act="nap"><span>💤</span><small>낮잠 보상</small>${nap.coins > 0 ? `<em>${fmt(nap.coins)}</em>` : ''}</button>

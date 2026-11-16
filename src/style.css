@@ -120,6 +120,16 @@ canvas#game { display: block; position: fixed; inset: 0; width: 100vw; height: 1
 .stage-head .area { font-size: 13px; color: var(--muted); }
 .stage-head h1 { margin: 2px 0 4px; font-size: 26px; font-weight: normal; text-shadow: var(--outline), 0 4px 8px #000a; }
 .skull { font-size: 22px; }
+.stage-title { display: flex; align-items: center; justify-content: center; gap: 10px; }
+.stage-title h1 { flex: 0 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stage-arrow {
+  flex: none; width: 44px; height: 44px; border-radius: 50%; border: 3px solid #fff; color: #fff; font-size: 18px;
+  background: radial-gradient(circle at 35% 30%, #ffd86b, #ff9f1a 60%, #d86a00); box-shadow: 0 3px 0 #8a4300, 0 5px 10px #0007;
+  display: grid; place-items: center; padding: 0 0 0 2px; text-shadow: 0 1px 2px #0008;
+}
+.stage-arrow[data-act="stage-prev"] { padding: 0 2px 0 0; }
+.stage-arrow:active { transform: translateY(2px); box-shadow: 0 1px 0 #8a4300; }
+.stage-arrow:disabled { filter: grayscale(1); opacity: 0.35; }
 .pill { display: inline-block; font-size: 12px; background: linear-gradient(#59c46a, #2e8a3e); border: 2px solid #ffffff66; border-radius: 99px; padding: 2px 12px; }
 .diorama {
   position: relative; flex: 1; min-height: 240px; border-radius: 18px; overflow: hidden;

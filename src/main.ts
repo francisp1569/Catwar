@@ -9,7 +9,7 @@ import { bonuses } from './meta/items';
 import { applyResult } from './meta/rewards';
 import { loadSave, writeSave, type SaveData } from './meta/save';
 import { render, type RewardView } from './render';
-import { CHOICE_BUTTONS, HUD_BUTTONS, PAUSE_BUTTONS, buttonKey, hit, layoutButtons, type Button } from './ui';
+import { CHOICE_BUTTONS, HUD_BUTTONS, PAUSE_BUTTONS, RESULT_BUTTONS, buttonKey, hit, layoutButtons, type Button } from './ui';
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
 const ctx = canvas.getContext('2d')!;
@@ -32,6 +32,16 @@ function startBattle(stageId: string): void {
   canvas.hidden = false;
   resize();
   sound.music('battle');
+}
+
+/** 승리 → 다음 스테이지, 패배 → 같은 스테이지 다시 */
+function afterResult(g: Game): void {
+  const lv = reward && (reward as { levelUp?: [number, number] | null }).levelUp;
+  const next = g.result?.victory ? STAGES.find((s) => s.no === g.stage.no + 1) : null;
+  const target = next ?? g.stage;
+  pressed = null;
+  startBattle(target.id);
+  if (lv) setTimeout(() => sound.play('levelup'), 200);
 }
 
 function endBattle(): void {
@@ -95,7 +105,15 @@ canvas.addEventListener('pointerdown', (e) => {
   const g = game;
   if (!g) return;
   if (g.phase !== 'playing') {
-    if (reward) endBattle();
+    if (!reward) return;
+    const p = toLogical(e);
+    for (const b of RESULT_BUTTONS) {
+      if (!hit(b.rect, p.x, p.y)) continue;
+      pressed = buttonKey(b.id);
+      if (b.id.type === 'lobby') endBattle();
+      else afterResult(g);
+      return;
+    }
     return;
   }
   if (g.pickAnim) return;
@@ -121,7 +139,9 @@ window.addEventListener('keydown', (e) => {
   const g = game;
   if (!g) return;
   if (g.phase !== 'playing') {
-    if ((e.key === 'Enter' || e.key === ' ') && reward) endBattle();
+    if (!reward) return;
+    if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowRight') afterResult(g);
+    else if (e.key === 'Escape') endBattle();
     return;
   }
   if (g.pickAnim) return;
@@ -154,6 +174,11 @@ function frame(now: number): void {
     g.events.length = 0;
     if (g.phase !== 'playing' && !reward) {
       reward = applyResult(save, g.stage, g.result!);
+      // 승리하면 로비에서도 다음 스테이지가 선택되어 있게
+      if (g.result!.victory) {
+        const next = STAGES.find((s) => s.no === g.stage.no + 1);
+        if (next) save.selectedStage = next.id;
+      }
       writeSave(save);
     }
     ctx.setTransform(1, 0, 0, 1, 0, 0);
