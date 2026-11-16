@@ -8,7 +8,7 @@ import { ENEMIES, type EnemyDef, type EnemyKind } from './data/enemies';
 import { STAGES, type Area, type StageDef } from './data/stages';
 const STAGE_COUNT = STAGES.length;
 import { GENERIC } from './data/weapons';
-import { fmtDmg, type Card, type Decal, type Enemy, type Game, type Member } from './game';
+import { ULT_CD, ULT_DUR, fmtDmg, type Card, type Decal, type Enemy, type Game, type Member } from './game';
 import { CHOICE_BUTTONS, HUD_BUTTONS, PAUSE_BUTTONS, RESULT_BUTTONS, buttonKey, type Rect } from './ui';
 
 type Ctx = CanvasRenderingContext2D;
@@ -622,11 +622,12 @@ function drawBarricade(ctx: Ctx, game: Game, t: number): void {
 // 적 그림을 애니메이션 프레임별로 한 번만 만화 스타일로 그려두고 재사용한다
 const enemySprites = new Map<string, { c: HTMLCanvasElement; box: { x: number; y: number; w: number; h: number } }>();
 
-function enemySprite(ctx: Ctx, d: EnemyDef, frame: number, tint = false) {
+/** tint: false/true(맞음, 붉게) 또는 'white'(쓰러지는 순간 하얗게) */
+function enemySprite(ctx: Ctx, d: EnemyDef, frame: number, tint: boolean | 'white' = false) {
   const tr = ctx.getTransform();
   const k = Math.min(4, Math.max(1, Math.round(Math.hypot(tr.a, tr.b) * 2) / 2));
   const art = getWorld(`enemy-${d.id}`);
-  const key = `${d.id}:${frame}:${k}:${tint ? 1 : 0}:${art ? 1 : 0}`;
+  const key = `${d.id}:${frame}:${k}:${tint === 'white' ? 2 : tint ? 1 : 0}:${art ? 1 : 0}`;
   let sp = enemySprites.get(key);
   if (sp) return sp;
   const s = d.size;
@@ -656,7 +657,7 @@ function enemySprite(ctx: Ctx, d: EnemyDef, frame: number, tint = false) {
     if (tint) {
       cc.setTransform(1, 0, 0, 1, 0, 0);
       cc.globalCompositeOperation = 'source-atop';
-      cc.fillStyle = 'rgba(255,70,60,0.55)';
+      cc.fillStyle = tint === 'white' ? 'rgba(255,255,255,0.92)' : 'rgba(255,70,60,0.55)';
       cc.fillRect(0, 0, c.width, c.height);
       cc.globalCompositeOperation = 'source-over';
     }
@@ -677,7 +678,7 @@ function enemySprite(ctx: Ctx, d: EnemyDef, frame: number, tint = false) {
     // 맞았을 때: 붉게 빛나는 버전
     cc.setTransform(1, 0, 0, 1, 0, 0);
     cc.globalCompositeOperation = 'source-atop';
-    cc.fillStyle = 'rgba(255,70,60,0.62)';
+    cc.fillStyle = tint === 'white' ? 'rgba(255,255,255,0.92)' : 'rgba(255,70,60,0.62)';
     cc.fillRect(0, 0, c.width, c.height);
     cc.globalCompositeOperation = 'lighter';
     cc.fillStyle = 'rgba(255,200,120,0.18)';
@@ -840,9 +841,11 @@ function drawEnemy(ctx: Ctx, e: Enemy): void {
   ctx.translate(e.x, e.y);
   ellipse(ctx, d.flying ? 6 : 0, d.flying ? s * 1.4 : s * 0.4, s * 0.9, s * 0.45, 'rgba(40,20,10,0.22)');
   if (e.dead) {
+    // 쓰러짐: 하얗게 번쩍 → 톡 부풀었다가 납작해지며 사라짐
     const k = e.deathT / 0.45;
-    ctx.globalAlpha = Math.max(0, 1 - k);
-    ctx.scale(1 + k * 0.4, 1 - k * 0.5);
+    const pop = e.deathT < 0.1 ? 1 + (e.deathT / 0.1) * 0.25 : 1.25 - (k - 0.22) * 0.6;
+    ctx.globalAlpha = e.deathT < 0.1 ? 1 : Math.max(0, 1 - (k - 0.22) / 0.78);
+    ctx.scale(pop, e.deathT < 0.1 ? pop : pop * (1 - k * 0.5));
   }
   if (e.attacking && !e.dead) ctx.translate(0, Math.sin(t * 18) * 2);
   const frame = moving ? Math.floor(((t * (d.speed / 4)) / (Math.PI * 2)) * 6) % 6 : 6;
@@ -866,7 +869,7 @@ function drawEnemy(ctx: Ctx, e: Enemy): void {
     ctx.scale(1 + hk * 0.16, 1 - hk * 0.12);
     ctx.translate(0, -s * 0.6);
   }
-  const spr = enemySprite(ctx, d, frame, e.hitFlash > 0 && !e.dead);
+  const spr = enemySprite(ctx, d, frame, e.dead ? (e.deathT < 0.1 ? 'white' : false) : e.hitFlash > 0);
   ctx.drawImage(spr.c, spr.box.x, spr.box.y, spr.box.w, spr.box.h);
   ctx.restore();
 
@@ -1801,6 +1804,15 @@ function drawTutorial(ctx: Ctx, game: Game, t: number): void {
     tutBubble(ctx, 50, CONFIG.height * 0.42, W - 100, ['고양이들은 자동으로 공격해요!', '적을 물리치면 경험치가 쌓여 레벨업해요'], t);
     return;
   }
+  if (game.tutStep === 2 && !game.choice) {
+    const active = game.squad.filter((m) => m.level > 0);
+    const i = active.findIndex((m) => game.canUlt(m.slot));
+    if (i >= 0) {
+      tutBubble(ctx, 80, 130 + i * 58 - 8, 270, ['고양이 얼굴을 눌러봐요!', '필살기: 4초 동안 폭주 공격'], t);
+      tutFinger(ctx, 36, 130 + i * 58 + 62, t);
+    }
+    return;
+  }
   if (game.tutStep === 1 && !game.choice && game.time > 16 && game.canRally()) {
     const rb = HUD_BUTTONS.find((b) => b.id.type === 'rally')!.rect;
     tutBubble(ctx, W - 300, rb.y - 120, 280, ['응원 버튼을 눌러봐요!', '바리케이드 회복 + 모두 공격 UP'], t);
@@ -1872,8 +1884,42 @@ function drawSkillChip(ctx: Ctx, m: Member, x: number, y: number, t: number): vo
   ctx.fillStyle = '#3d2a40'; ctx.fillRect(x, y, 48, 48);
   iconFace(ctx, m.def.id, x + 24, y + 22, 21, () => drawFaceAt(ctx, m.def.look, x + 24, y + 28, 14, t));
   ctx.restore();
+  // 필살기 쿨타임 / 준비 완료 / 폭주 중
+  const cx = x + 24;
+  const cy = y + 22;
+  if (m.ultT > 0) {
+    ctx.save();
+    ctx.strokeStyle = `hsl(${(t * 400) % 360}, 100%, 60%)`;
+    ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.arc(cx, cy, 26, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (m.ultT / ULT_DUR)); ctx.stroke();
+    ctx.restore();
+  } else if (m.ultCd > 0) {
+    ctx.save();
+    ctx.fillStyle = 'rgba(20,10,20,0.55)';
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, 21, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (m.ultCd / ULT_CD)); ctx.closePath(); ctx.fill();
+    ctx.restore();
+  } else {
+    const pulse = 0.6 + Math.sin(t * 6) * 0.4;
+    ctx.save();
+    ctx.shadowColor = '#ffd84d'; ctx.shadowBlur = 14 * pulse;
+    ctx.strokeStyle = '#ffd84d'; ctx.lineWidth = 3.5;
+    ctx.beginPath(); ctx.arc(cx, cy, 26, 0, Math.PI * 2); ctx.stroke();
+    ctx.restore();
+    text(ctx, '탭!', x + 66, y + 22, 13, '#ffd84d', 'center', false);
+  }
   circle(ctx, x + 42, y + 38, 10, '#2a1a22');
   text(ctx, `${m.level}`, x + 42, y + 38, 12, '#ffe98a', 'center', false);
+}
+
+/** 왼쪽 고양이 얼굴(필살기 버튼) 위치: 누른 곳에 있는 고양이 슬롯 */
+export function chipAt(game: Game, x: number, y: number): number | null {
+  const active = game.squad.filter((m) => m.level > 0);
+  for (let i = 0; i < active.length; i++) {
+    const cx = 12 + 24;
+    const cy = 130 + i * 58 + 22;
+    if (Math.hypot(x - cx, y - cy) <= 30) return active[i].slot;
+  }
+  return null;
 }
 
 // ───────────────────────── 스킬 선택 / 오버레이 ─────────────────────────

@@ -58,6 +58,9 @@ export interface Member {
   evolved?: boolean;
   /** 지원형 고양이의 보조 공격 타이머 */
   sideT?: number;
+  /** 필살기(폭주) 쿨타임 남은 시간 / 폭주 남은 시간 */
+  ultCd: number;
+  ultT: number;
   timer: number;
   x: number;
   y: number;
@@ -106,6 +109,12 @@ export type Card =
 
 export type Phase = 'playing' | 'victory' | 'defeat';
 export interface BattleResult { victory: boolean; stars: number; kills: number; time: number; progress: number; discovered: string[]; bonusCoins?: number; }
+
+/** 필살기: 쿨타임(초), 폭주 지속(초), 공격 속도 배율, 피해 배율 */
+export const ULT_CD = 28;
+export const ULT_DUR = 4;
+const ULT_RATE = 2.6;
+const ULT_DMG = 1.3;
 
 /** 공격 종류별 밀려나는 거리 (px). 보스는 15%만 */
 const KNOCK_BY_KIND: Partial<Record<string, number>> = {
@@ -162,6 +171,9 @@ export class Game {
 
   kills = 0;
   banner: { text: string; t: number } | null = null;
+  /** 타격감: 잠깐 멈춤 */
+  hitStop = 0;
+  private lastStopAt = -9;
   /** 이번 전투에서 바리케이드 체력이 가장 낮았던 비율 (밸런스 측정용) */
   minHpRatio = 1;
   /** 황금쥐로 번 코인 */
@@ -202,7 +214,7 @@ export class Game {
       if (i === 0) hp += s.hp; // 다른 고양이는 합류할 때 바리케이드 체력에 더해진다
       return {
         slot: i, def: e.def, owned: e.owned, weapon: e.def.weapon,
-        level: i === 0 ? 1 : 0, picks: {}, joinOrder: i === 0 ? 0 : -1, targetX: W / 2, enterT: 0, power: s.atk, timer: 0,
+        level: i === 0 ? 1 : 0, picks: {}, joinOrder: i === 0 ? 0 : -1, targetX: W / 2, enterT: 0, power: s.atk, timer: 0, ultCd: i === 0 ? ULT_CD * 0.6 : ULT_CD, ultT: 0,
         x: W / 2, y: CONFIG.squadY + 6, swing: 0, wakeFx: 0, dealt: 0, speech: null,
       };
     });
@@ -242,7 +254,7 @@ export class Game {
 
   get dmgMul(): number {
     let m = 1 + 0.12 * this.generic.tuna + this.bonus.atk + this.bonus.collection;
-    for (const s of this.squad) if (s.level > 0 && s.weapon.kind === 'aura') m += this.params(s).buff ?? 0;
+    for (const s of this.squad) if (s.level > 0 && s.weapon.kind === 'aura') m += (this.params(s).buff ?? 0) * (s.ultT > 0 ? 2.5 : 1);
     return m;
   }
   get speedMul(): number {
@@ -252,7 +264,8 @@ export class Game {
     const g = this.squad.find((s) => s.level > 0 && s.weapon.kind === 'guard');
     if (!g) return { reduce: 0, thorns: 0, power: 0, slot: -1 };
     const p = this.params(g);
-    return { reduce: p.reduce ?? 0, thorns: p.thorns ?? 0, power: g.power, slot: g.slot };
+    const boost = g.ultT > 0 ? 2 : 1;
+    return { reduce: Math.min(0.8, (p.reduce ?? 0) * boost), thorns: (p.thorns ?? 0) * boost, power: g.power, slot: g.slot };
   }
 
   params(m: Member): WeaponParams {
@@ -268,6 +281,37 @@ export class Game {
   }
 
   // ───────────── 플레이어 조작 ─────────────
+
+  /** 히트스톱 (너무 자주 걸리지 않게) */
+  private stop(sec: number, shake = 0): void {
+    if (this.time - this.lastStopAt < 0.3) return;
+    this.lastStopAt = this.time;
+    this.hitStop = Math.max(this.hitStop, sec);
+    this.shake = Math.max(this.shake, shake);
+  }
+
+  canUlt(slot: number): boolean {
+    const m = this.squad[slot];
+    return !!m && m.level > 0 && m.ultCd <= 0 && this.active;
+  }
+
+  /** 필살기: 고양이 얼굴을 누르면 몇 초간 폭주 */
+  useUlt(slot: number): boolean {
+    if (!this.canUlt(slot)) return false;
+    const m = this.squad[slot];
+    m.ultT = ULT_DUR;
+    m.ultCd = ULT_CD;
+    m.wakeFx = 1.2;
+    m.timer = 9999; // 바로 한 번 공격
+    if (this.tutorial && this.tutStep === 2) this.tutStep = 3;
+    this.banner = { text: `🔥 ${m.def.name} 필살! ${m.def.skillName} 폭주!`, t: 1.5 };
+    this.fx.push({ kind: 'boom', x: m.x, y: m.y - 40, r: 50, t: 0, life: 0.5, color: '#ffb000' });
+    this.say(m, '냥냥냥냥!');
+    this.sfx('levelup');
+    this.sfx('meow-hi');
+    this.stop(0.08, 0.2);
+    return true;
+  }
 
   canRally(): boolean { return this.active && this.rallyCd <= 0; }
 
@@ -386,6 +430,7 @@ export class Game {
       return;
     }
     if (!this.active) return;
+    if (this.hitStop > 0) { this.hitStop -= Math.min(rawDt, 0.05); return; }
     const dt = Math.min(rawDt, 0.05) * this.speed;
     this.time += dt;
     this.rallyCd = Math.max(0, this.rallyCd - dt);
@@ -620,6 +665,8 @@ export class Game {
     if (e.def.armor) dmg *= 1 - e.def.armor;
     if (o.src !== undefined && o.src >= 0) this.squad[o.src].dealt += Math.min(dmg, e.hp);
     e.hp -= dmg;
+    if (o.crit) this.stop(0.035, 0.06);
+    else if (!o.quiet && dmg > e.maxHp * 0.3) this.stop(0.03);
     if (o.crit) { this.sfx('crit'); this.fx.push({ kind: 'boom', x: e.x, y: e.y - e.def.size * 0.3, r: 16 + e.def.size * 0.4, t: 0, life: 0.35, color: '#ffb347' }); }
     else if (!o.quiet) this.sfx('hit');
     e.hitFlash = 0.12;
@@ -659,7 +706,7 @@ export class Game {
       this.decals.push({ x: e.x, y: e.y, r: e.def.size * (e.def.boss ? 2.2 : 1.4), color: goo, t: 0, seed: Math.random() * 10 });
       if (this.decals.length > 70) this.decals.shift();
       this.gainXp(e.def.xp);
-      if (e.def.boss) { this.shake = 0.5; this.banner = { text: `${e.def.name} 격파!`, t: 1.8 }; }
+      if (e.def.boss) { this.hitStop = 0.18; this.shake = 0.6; this.banner = { text: `${e.def.name} 격파!`, t: 1.8 }; }
     }
   }
 
@@ -750,10 +797,13 @@ export class Game {
       m.swing = Math.max(0, m.swing - dt * 3);
       m.wakeFx = Math.max(0, m.wakeFx - dt);
       if (m.level <= 0) continue;
-      this.sideAttack(m, dt);
+      m.ultCd = Math.max(0, m.ultCd - dt);
+      m.ultT = Math.max(0, m.ultT - dt);
+      const frenzy = m.ultT > 0 ? ULT_RATE : 1;
+      this.sideAttack(m, dt * frenzy);
       const p = this.params(m);
       if (p.interval <= 0) continue;
-      m.timer += dt * (m.weapon.kind === 'heal' ? 1 : spd);
+      m.timer += dt * (m.weapon.kind === 'heal' ? 1 : spd) * frenzy;
       if (m.timer < p.interval) continue;
       if (this.fire(m, p)) {
         m.timer = 0;
@@ -813,7 +863,7 @@ export class Game {
   }
 
   private fireInner(m: Member, p: WeaponParams): boolean {
-    const dmg = m.power * p.dmg * this.dmgMul;
+    const dmg = m.power * p.dmg * this.dmgMul * (m.ultT > 0 ? ULT_DMG : 1);
     const list = this.alive();
     const ox = m.x;
     const oy = m.y - 46;

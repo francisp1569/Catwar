@@ -8,7 +8,7 @@ import { Menu } from './menu';
 import { bonuses } from './meta/items';
 import { applyResult, isUnlocked } from './meta/rewards';
 import { loadSave, writeSave, type SaveData } from './meta/save';
-import { render, type RewardView } from './render';
+import { chipAt, render, type RewardView } from './render';
 import { CH2_CUTS, story } from './story';
 import * as gacha from './meta/gacha';
 import * as items from './meta/items';
@@ -144,6 +144,11 @@ canvas.addEventListener('pointerdown', (e) => {
       return;
     }
   }
+  // 왼쪽 고양이 얼굴 = 필살기
+  if (!g.choice && !g.paused) {
+    const slot = chipAt(g, x, y);
+    if (slot !== null) g.useUlt(slot);
+  }
 });
 const release = (): void => { pressed = null; };
 canvas.addEventListener('pointerup', release);
@@ -166,6 +171,8 @@ window.addEventListener('keydown', (e) => {
     else if (e.key === 'r' || e.key === 'R') g.reroll();
     return;
   }
+  const n = Number(e.key);
+  if (n >= 1 && n <= 6) { const act = g.squad.filter((m) => m.level > 0)[n - 1]; if (act) g.useUlt(act.slot); return; }
   if (e.key === 'q' || e.key === 'Q' || e.key === ' ') g.useRally();
   else if (e.key === 'p' || e.key === 'P' || e.key === 'Escape') g.paused = !g.paused;
   else if (e.key === 'f' || e.key === 'F') cycleSpeed(g);
