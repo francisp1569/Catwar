@@ -611,3 +611,6 @@ canvas#game { display: block; position: fixed; inset: 0; width: 100vw; height: 1
 .hp-cat.on { border-color: #ffcf5a; background: #ffcf5a33; transform: scale(1.05); }
 .hp-actions { display: flex; gap: 10px; justify-content: center; }
 .hp-actions .btn { min-width: 40%; font-size: 18px; padding: 12px 0; }
+
+.rename-btn { font: inherit; font-size: 13px; vertical-align: middle; margin-left: 6px; padding: 3px 10px; border-radius: 99px; border: 2px solid #fff; background: linear-gradient(#ffcf5a, #ff9f43); color: #5a2c00; }
+.rename-input { margin: 8px 0 12px; }

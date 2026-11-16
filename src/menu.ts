@@ -4,7 +4,7 @@ import { sound } from './audio';
 import { story } from './story';
 import { openHeroPicker } from './heroPick';
 import { drawCatLookToon, drawCatPortrait, IDLE_POSE } from './catdraw';
-import { CATS, CAT_BY_ID, HERO_ID, RARITY_COLOR, setHero, type CatDef, type CatLook } from './data/cats';
+import { CATS, CAT_BY_ID, HERO_ID, RARITY_COLOR, originalName, setHero, type CatDef, type CatLook } from './data/cats';
 import { SLOTS, SLOT_INFO, ITEM_MAX_LV, type Slot } from './data/items';
 import { AREA_NAME, CHAPTERS, STAGES, getStage, type StageDef } from './data/stages';
 import { rallyDesc } from './data/weapons';
@@ -201,6 +201,25 @@ export class Menu {
       }
       case 'skills': this.openSkills(arg); break;
       case 'album': this.openAlbum(arg); break;
+      case 'rename':
+        this.openModal(`
+          <button class="x" data-act="close">✕</button>
+          <h2>✏️ 대장 이름 짓기</h2>
+          <p class="muted">우리 집 고양이 이름을 붙여 주세요. 스토리와 전투에서 이 이름으로 불려요. (최대 8글자, 비우면 원래 이름)</p>
+          <input class="hp-name rename-input" maxlength="8" placeholder="${esc(originalName(HERO_ID))}" value="${esc(s.heroName ?? '')}">
+          <div class="row center"><button class="btn gold" data-act="rename-ok">저장</button></div>`);
+        (this.modal.querySelector('.rename-input') as HTMLInputElement).focus();
+        break;
+      case 'rename-ok': {
+        const v = (this.modal.querySelector('.rename-input') as HTMLInputElement).value.trim().slice(0, 8);
+        s.heroName = v || undefined;
+        s.heroId = HERO_ID;
+        setHero(HERO_ID, v);
+        this.closeModal();
+        this.commit();
+        this.toast(`이제부터 「${CAT_BY_ID[HERO_ID].name}」라고 불러요!`);
+        break;
+      }
       case 'pull': this.doPull(arg === '10' ? 10 : 1); break;
       case 'pull-item': this.doPullItems(arg === '10' ? 10 : 1); break;
       case 'free': {
@@ -573,7 +592,7 @@ export class Menu {
       main = `
         <div class="cat-title">
           <div>${rarityBadge(def.rarity)} <span class="breed">${esc(def.breed)}</span></div>
-          <h2>${def.name}</h2>
+          <h2>${esc(def.name)}${def.hero ? ' <button class="rename-btn" data-act="rename">✏️ 이름</button>' : ''}</h2>
           <div class="lv">Lv.${o.level}<small>/${cap}</small> ${stars(o.stars)}</div>
         </div>
         <canvas class="bigcat" data-anim="cat" data-id="${def.id}"></canvas>
