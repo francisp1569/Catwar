@@ -10,6 +10,7 @@ import { applyResult, isUnlocked } from './meta/rewards';
 import { loadSave, writeSave, type SaveData } from './meta/save';
 import { chipAt, render, type RewardView } from './render';
 import { ch2Cuts, story } from './story';
+import { cloudFlush, cloudInit, cloudPush } from './cloud';
 import * as gacha from './meta/gacha';
 import * as items from './meta/items';
 import * as progression from './meta/progression';
@@ -282,7 +283,25 @@ for (const ev of ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown'] as
 document.addEventListener('visibilitychange', () => { if (!document.hidden) sound.wake(); });
 window.addEventListener('pageshow', () => sound.wake());
 window.addEventListener('focus', () => sound.wake());
-void Promise.all([loadArt(), loadWorldArt()]).then(() => {
+// 클라우드 저장: 저장할 때마다 서버로 (설정이 비어 있으면 아무것도 안 함)
+saveMod.setOnWrite((d) => cloudPush(d));
+window.addEventListener('pagehide', () => cloudFlush());
+document.addEventListener('visibilitychange', () => { if (document.hidden) cloudFlush(); });
+// 로딩하는 동안 게스트 로그인 + 서버 저장 확인 (최대 5초만 기다림)
+const cloudReady = Promise.race([
+  cloudInit(save).then((remote) => {
+    if (remote) {
+      // 서버 저장이 더 최근: 이 기기 저장을 바꾼다
+      save = remote;
+      saveMod.replaceLocalSave(save);
+      setHero(save.heroId ?? 'cheese', save.heroName);
+      menu.show(save);
+    }
+  }),
+  new Promise<void>((ok) => setTimeout(ok, 5000)),
+]);
+
+void Promise.all([loadArt(), loadWorldArt(), cloudReady]).then(() => {
   loaded = true;
   bar.style.width = '100%';
   menu.refresh();

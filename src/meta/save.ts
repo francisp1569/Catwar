@@ -34,6 +34,7 @@ export interface SaveData {
   ch2Seen?: boolean;   // 2장 컷씬을 봤는지
   heroId?: string;     // 대장 고양이 (없으면 치즈)
   heroName?: string;   // 대장 고양이에게 붙인 이름
+  savedAt?: number;    // 마지막 저장 시각 (클라우드와 비교용)
 }
 
 const KEY = 'catwar.save.v1';
@@ -106,12 +107,23 @@ export function loadSave(): SaveData {
   return newSave();
 }
 
+/** 저장할 때마다 불리는 콜백 (클라우드 저장) */
+let onWrite: ((data: SaveData) => void) | null = null;
+export function setOnWrite(fn: (data: SaveData) => void): void { onWrite = fn; }
+
 export function writeSave(data: SaveData): void {
+  data.savedAt = Date.now();
   try {
     localStorage.setItem(KEY, JSON.stringify(data));
   } catch {
     /* 사생활 보호 모드 등 */
   }
+  onWrite?.(data);
+}
+
+/** 다른 곳(클라우드)에서 받은 저장으로 이 기기 저장을 바꾼다 */
+export function replaceLocalSave(data: SaveData): void {
+  try { localStorage.setItem(KEY, JSON.stringify(data)); } catch { /* */ }
 }
 
 export function resetSave(): SaveData {

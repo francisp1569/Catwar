@@ -3,6 +3,7 @@ import { drawFaceArtCircle, drawFaceArtSquare, getArt, iconHtml } from './art';
 import { sound } from './audio';
 import { story } from './story';
 import { openHeroPicker } from './heroPick';
+import { cloud, cloudEnabled, linkEmailStart, linkEmailVerify, loginEmailStart, loginEmailVerify } from './cloud';
 import { drawCatLookToon, drawCatPortrait, IDLE_POSE } from './catdraw';
 import { CATS, CAT_BY_ID, HERO_ID, RARITY_COLOR, originalName, setHero, type CatDef, type CatLook } from './data/cats';
 import { SLOTS, SLOT_INFO, ITEM_MAX_LV, type Slot } from './data/items';
@@ -19,7 +20,7 @@ import {
   MAX_STARS, STAR_COST, canLevelUp, canStarUp, catStats, levelCap, levelUp, levelUpCost, starUp,
 } from './meta/progression';
 import { isUnlocked } from './meta/rewards';
-import { exportSave, importSave, resetSave, writeSave, type Item, type SaveData } from './meta/save';
+import { exportSave, importSave, replaceLocalSave, resetSave, writeSave, type Item, type SaveData } from './meta/save';
 import { drawStagePreview } from './render';
 
 // 그림 아이콘 (없으면 이모지)
@@ -149,7 +150,7 @@ export class Menu {
 
   // ───────────── 이벤트 ─────────────
 
-  private onClick(e: MouseEvent): void {
+  private async onClick(e: MouseEvent): Promise<void> {
     const el = (e.target as HTMLElement).closest<HTMLElement>('[data-act]');
     if (!el) {
       if (e.target === this.modal) this.closeModal();
@@ -323,6 +324,52 @@ export class Menu {
           <textarea class="save-code" placeholder="CATWAR1:로 시작하는 코드를 붙여 넣어요"></textarea>
           <div class="row center"><button class="btn gold" data-act="save-import-go">불러오기</button></div>`);
         break;
+      case 'cloud-link':
+      case 'cloud-login': {
+        const login = act === 'cloud-login';
+        this.openModal(`
+          <button class="x" data-act="settings">✕</button>
+          <h2>${login ? '📥 다른 기기 저장 불러오기' : '📧 이메일로 저장 지키기'}</h2>
+          <p class="muted">${login ? '저장을 지켜 둔 이메일을 넣으면 6자리 코드를 보내 드려요. 지금 이 기기의 진행은 그 저장으로 바뀌어요.' : '이메일을 연결해 두면 브라우저 기록을 지워도, 다른 기기에서도 이어 할 수 있어요. 메일로 온 6자리 코드를 넣어 주세요.'}</p>
+          <input class="hp-name cloud-email" type="email" placeholder="이메일 주소" autocomplete="email">
+          <div class="row center"><button class="btn gold" data-act="${login ? 'cloud-login-send' : 'cloud-link-send'}">코드 받기</button></div>
+          <div class="cloud-code" hidden>
+            <input class="hp-name cloud-otp" inputmode="numeric" maxlength="6" placeholder="6자리 코드">
+            <div class="row center"><button class="btn gold" data-act="${login ? 'cloud-login-ok' : 'cloud-link-ok'}">확인</button></div>
+          </div>`);
+        break;
+      }
+      case 'cloud-link-send':
+      case 'cloud-login-send': {
+        const email = (this.modal.querySelector('.cloud-email') as HTMLInputElement).value.trim();
+        if (!/^\S+@\S+\.\S+$/.test(email)) { this.toast('이메일 주소를 확인해 주세요'); break; }
+        const err = act === 'cloud-link-send' ? await linkEmailStart(email) : await loginEmailStart(email);
+        if (err) { this.toast(`보내지 못했어요: ${err}`); break; }
+        (this.modal.querySelector('.cloud-code') as HTMLElement).hidden = false;
+        this.toast('메일로 코드를 보냈어요 (스팸함도 확인해 주세요)');
+        break;
+      }
+      case 'cloud-link-ok': {
+        const email = (this.modal.querySelector('.cloud-email') as HTMLInputElement).value.trim();
+        const code = (this.modal.querySelector('.cloud-otp') as HTMLInputElement).value.trim();
+        const err = await linkEmailVerify(email, code);
+        if (err) { this.toast(`코드가 맞지 않아요: ${err}`); break; }
+        this.toast('이메일로 저장을 지켰어요!');
+        this.commit();
+        this.openSettings();
+        break;
+      }
+      case 'cloud-login-ok': {
+        const email = (this.modal.querySelector('.cloud-email') as HTMLInputElement).value.trim();
+        const code = (this.modal.querySelector('.cloud-otp') as HTMLInputElement).value.trim();
+        const r = await loginEmailVerify(email, code);
+        if (r.error) { this.toast(`불러오지 못했어요: ${r.error}`); break; }
+        if (!r.save) { this.toast('그 계정에 저장된 진행이 없어요'); break; }
+        replaceLocalSave(r.save);
+        this.toast('불러왔어요! 다시 시작합니다');
+        setTimeout(() => location.reload(), 600);
+        break;
+      }
       case 'save-import-go': {
         const v = (this.modal.querySelector('textarea') as HTMLTextAreaElement).value;
         if (!importSave(v)) { this.toast('코드가 올바르지 않아요'); break; }
@@ -786,6 +833,14 @@ export class Menu {
         <button class="btn ${sound.musicOn ? 'blue' : 'off'}" data-act="toggle-music">${sound.musicOn ? '🎵 배경음악 켜짐' : '🎵 배경음악 꺼짐'}</button>
       </div>
       <div class="row center gap"><button class="btn" data-act="story">📖 스토리 다시 보기</button><button class="btn" data-act="hero">👑 대장 바꾸기·이름</button></div>
+      ${cloudEnabled() ? `<div class="cloud-box">
+        <b>☁️ 클라우드 저장 ${cloud.status === 'on' ? '<em class="ok">켜짐</em>' : cloud.status === 'connecting' ? '<em>연결 중…</em>' : '<em class="bad">연결 안 됨</em>'}</b>
+        <small>${cloud.email ? `📧 ${esc(cloud.email)} 계정에 저장 중 · 다른 기기에서도 이어 할 수 있어요` : '게스트로 자동 저장 중이에요. 브라우저 기록을 지우면 사라질 수 있으니 이메일로 지켜 두세요.'}</small>
+        <div class="row center gap">
+          ${cloud.email ? '' : '<button class="btn small gold" data-act="cloud-link">📧 이메일로 저장 지키기</button>'}
+          <button class="btn small" data-act="cloud-login">📥 다른 기기 저장 불러오기</button>
+        </div>
+      </div>` : ''}
       <div class="row center gap"><button class="btn small" data-act="save-export">💾 저장 코드 복사</button><button class="btn small" data-act="save-import">📥 저장 코드 불러오기</button></div>
       <p class="muted">진행 상황은 이 브라우저에 자동 저장돼요.</p>
       <p class="muted">낮잠 보상: 시간당 ${COIN()}${napRate(this.save)} (최대 ${NAP_MAX_HOURS}시간 쌓임)</p>
