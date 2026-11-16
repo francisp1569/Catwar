@@ -454,6 +454,9 @@ canvas#game { display: block; position: fixed; inset: 0; width: 100vw; height: 1
 @keyframes stShake { 0%, 100% { transform: none; } 20% { transform: translate(-8px, 4px); } 40% { transform: translate(7px, -5px); } 60% { transform: translate(-5px, 3px); } 80% { transform: translate(4px, -2px); } }
 .st-bg { position: absolute; inset: -4%; background: center / cover no-repeat; animation: stFade 0.6s both; }
 .st-bg.kb-in { animation: stFade 0.6s both, stKb 8s ease-out both; }
+.st-bg.kb-out { animation: stFade 0.4s both, stKbOut 3s ease-out both; }
+@keyframes stKbOut { from { transform: scale(1.25); } to { transform: scale(1.02); } }
+.st-bg.panel { background-position: center 20%; }
 .st-bg.dim::after, .st-bg.night::after { content: ''; position: absolute; inset: 0; background: rgba(20, 10, 40, 0.35); }
 .st-bg.night { filter: brightness(0.45) saturate(0.7) hue-rotate(200deg); }
 .st-bg.night::after { background: radial-gradient(circle at 50% 10%, transparent 20%, rgba(5, 0, 20, 0.6) 80%); }
@@ -488,7 +491,7 @@ canvas#game { display: block; position: fixed; inset: 0; width: 100vw; height: 1
 .st-face.f1 { left: 5%; top: 14%; } .st-face.f2 { right: 6%; top: 10%; } .st-face.f3 { right: 10%; top: 34%; width: 18%; }
 .st-face.r1 { left: 6%; top: 18%; } .st-face.r2 { left: 39.5%; top: 12%; } .st-face.r3 { right: 6%; top: 18%; }
 .st-face.r4 { left: 20%; top: 40%; } .st-face.r5 { right: 20%; top: 40%; }
-.st-tag { left: 50%; top: 60%; transform: translateX(-50%); translate: -50% 0; text-align: center; background: linear-gradient(#ffcf5a, #ff9f43); border: 3px solid #fff; border-radius: 16px; padding: 6px 18px; color: #5a2c00; }
+.st-tag { left: 50%; top: 52%; transform: translateX(-50%); translate: -50% 0; text-align: center; background: linear-gradient(#ffcf5a, #ff9f43); border: 3px solid #fff; border-radius: 16px; padding: 6px 18px; color: #5a2c00; }
 .st-tag b { display: block; font-weight: normal; font-size: 26px; }
 .st-tag small { font-size: 13px; }
 .st-bg.black { background: #0d0710; }
@@ -523,3 +526,30 @@ canvas#game { display: block; position: fixed; inset: 0; width: 100vw; height: 1
 .st-next { position: absolute; right: 16px; bottom: 8px; font-size: 13px; color: #ff5f8a; animation: stBob 0.8s ease-in-out infinite; }
 .st-box.narr .st-next { color: #ffcf5a; }
 @keyframes stBob { 50% { translate: 0 4px; } }
+
+/* ───────── 로딩 화면 ───────── */
+#loading { position: fixed; inset: 0; z-index: 300; max-width: 560px; margin: 0 auto; background: #1a0f1c; overflow: hidden; transition: opacity 0.5s; user-select: none; -webkit-user-select: none; }
+#loading.out { opacity: 0; pointer-events: none; }
+#loading .ld-art { position: absolute; inset: 0; background: center 30% / cover no-repeat; opacity: 0; transition: opacity 0.6s; }
+#loading.has-art .ld-art { opacity: 1; animation: stKb 12s ease-out both; }
+#loading .ld-art::after { content: ''; position: absolute; inset: 0; background: linear-gradient(#1a0f1c99, transparent 30%, transparent 55%, #1a0f1cee 85%); }
+#loading .ld-logo { position: absolute; top: max(48px, 9vh); left: 0; right: 0; text-align: center; animation: stPop 0.7s cubic-bezier(.3, 1.6, .5, 1) both; }
+#loading .ld-logo b { display: block; font-weight: normal; font-size: 52px; color: #ffcf5a; text-shadow: 0 4px 0 #8a4300, 0 0 3px #3b2228, 3px 3px 0 #3b2228, -3px 3px 0 #3b2228, 3px -3px 0 #3b2228, -3px -3px 0 #3b2228, 0 8px 18px #000a; transform: rotate(-3deg); }
+#loading .ld-logo small { display: inline-block; margin-top: 6px; font-size: 16px; letter-spacing: 6px; color: #fff; background: #ff5f8a; border: 3px solid #3b2228; border-radius: 99px; padding: 2px 14px; }
+#loading .ld-bottom { position: absolute; left: 30px; right: 30px; bottom: max(40px, 7vh); text-align: center; }
+#loading .ld-bar { height: 16px; border-radius: 99px; background: #0007; border: 3px solid #fff; overflow: hidden; }
+#loading .ld-bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #ffcf5a, #ff9f43); transition: width 0.3s; }
+#loading .ld-msg { margin: 12px 0 0; color: #fff; font-size: 17px; text-shadow: var(--outline); }
+#loading.ready .ld-bar { display: none; }
+#loading.ready .ld-msg { font-size: 22px; animation: stBob 0.9s ease-in-out infinite; }
+
+.save-code { width: 100%; height: 110px; border-radius: 12px; border: 2px solid #ffffff55; background: #0006; color: #fff; font: 12px/1.3 monospace; padding: 8px; word-break: break-all; resize: none; }
+
+/* 보통/어려움 전환 */
+.mode-toggle { display: inline-flex; margin: 0 auto 4px; background: #0006; border-radius: 99px; padding: 3px; border: 2px solid #ffffff33; }
+.mode-toggle button { border: 0; background: transparent; color: #ffffffaa; font: inherit; font-size: 13px; padding: 3px 14px; border-radius: 99px; }
+.mode-toggle button.on { background: linear-gradient(#ffcf5a, #ff9f43); color: #5a2c00; }
+.stage-head.hard .mode-toggle button.on { background: linear-gradient(#ff7a6b, #d6304a); color: #fff; }
+.stage-head.hard h1 { color: #ffb3a8; }
+.tab-map .chapter { margin: 18px 0 2px; font-weight: normal; font-size: 19px; color: #ffcf5a; text-shadow: var(--outline); }
+.hardstars { font-size: 12px; color: #ff9f8a; margin-left: 4px; }

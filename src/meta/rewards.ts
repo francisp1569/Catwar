@@ -17,6 +17,12 @@ export interface Reward {
 export const DISCOVER_TUNA = 10;
 
 export function isUnlocked(save: SaveData, stage: StageDef): boolean {
+  if (stage.hard) {
+    // 어려움: 같은 스테이지 보통을 깼고, 이전 스테이지 어려움도 깼어야 함
+    const base = STAGES[stage.no - 1];
+    if ((save.stages[base.id] ?? 0) <= 0) return false;
+    return stage.no === 1 || (save.stages[`${STAGES[stage.no - 2].id}h`] ?? 0) > 0;
+  }
   if (stage.no === 1) return true;
   const prev = STAGES[stage.no - 2];
   return (save.stages[prev.id] ?? 0) > 0;
@@ -57,6 +63,6 @@ export function applyResult(save: SaveData, stage: StageDef, res: BattleResult):
   save.stages[stage.id] = Math.max(prevStars, res.stars);
   // 장비 드롭: 1개 + 별 3개면 1개 더 + 첫 클리어 1개 더
   const n = 1 + (res.stars >= 3 ? 1 : 0) + (firstClear ? 1 : 0);
-  const items = Array.from({ length: n }, () => randomItem(save, stage.no));
+  const items = Array.from({ length: n }, () => randomItem(save, stage.no + (stage.hard ? 6 : 0)));
   return { coins, tuna, yarn, exp, heroShards, firstClear, newStars, items, ...extra };
 }

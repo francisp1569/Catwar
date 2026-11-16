@@ -29,9 +29,29 @@ export interface SaveData {
   selectedStage: string;
   seen: string[];      // 발견한 적 종류
   introSeen?: boolean; // 시작 스토리를 봤는지
+  tutorialDone?: boolean; // 첫 판 안내를 끝냈는지
+  hardMode?: boolean;  // 로비에서 어려움 모드 선택
 }
 
 const KEY = 'catwar.save.v1';
+
+/** 저장 코드 (다른 기기로 옮기기) */
+export function exportSave(save: SaveData): string {
+  return 'CATWAR1:' + btoa(unescape(encodeURIComponent(JSON.stringify(save))));
+}
+
+/** 저장 코드를 읽어 이 기기에 덮어쓴다. 성공하면 true */
+export function importSave(code: string): boolean {
+  try {
+    const body = code.trim().replace(/^CATWAR1:/, '');
+    const data = JSON.parse(decodeURIComponent(escape(atob(body))));
+    if (!data || typeof data !== 'object' || !data.cats || !data.cats.cheese) return false;
+    localStorage.setItem(KEY, JSON.stringify(data));
+    return true;
+  } catch {
+    return false;
+  }
+}
 export const DECK_SIZE = 5;
 
 export function newSave(): SaveData {

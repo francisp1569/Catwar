@@ -1,7 +1,15 @@
 import type { EnemyKind } from './enemies';
 
-export type Area = 'entrance' | 'living' | 'kitchen' | 'attic';
-export const AREA_NAME: Record<Area, string> = { entrance: '현관', living: '거실', kitchen: '부엌', attic: '다락방' };
+export type Area = 'entrance' | 'living' | 'kitchen' | 'attic' | 'bathroom' | 'balcony' | 'garden';
+export const AREA_NAME: Record<Area, string> = {
+  entrance: '현관', living: '거실', kitchen: '부엌', attic: '다락방',
+  bathroom: '욕실', balcony: '베란다', garden: '마당',
+};
+/** 장(챕터) 이름: 시작 스테이지 번호 → 이름 */
+export const CHAPTERS: { from: number; name: string }[] = [
+  { from: 1, name: '1장 · 우리 집을 지켜라' },
+  { from: 11, name: '2장 · 찍찍 도적단의 역습' },
+];
 
 export type Mix = Partial<Record<EnemyKind, number>>;
 
@@ -26,6 +34,8 @@ export interface StageDef {
   /** 바리케이드 기본 체력 */
   baseHp: number;
   reward: { coins: number; tuna: number };
+  /** 어려움 모드 */
+  hard?: boolean;
 }
 
 const b = (t: number, kind: EnemyKind, count: number): Burst => ({ t, kind, count });
@@ -63,6 +73,37 @@ const RAW: Raw[] = [
   { area: 'attic', name: '[보스] 다락방의 거미 여왕', mul: 7.2, duration: 258, rate: [7.0, 14.8], baseHp: 700,
     early: { mouse: 3, ant: 3, mosquito: 2 }, late: { mouse: 2, shieldmouse: 1.5, roach: 3, spider: 1.4, mosquito: 2 },
     bursts: [b(76, 'mouse', 57), b(152, 'mosquito', 57), b(228, 'shieldmouse', 24)], boss: { kind: 'spiderqueen', count: 1, with: 'ratking' } },
+  // ───── 2장: 찍찍 도적단의 역습 (욕실 → 베란다 → 마당) ─────
+  { area: 'bathroom', name: '젖은 타일 위의 행진', mul: 8.6, duration: 210, rate: [6.0, 13.0], baseHp: 750,
+    early: { roach: 3, ant: 3, fly: 2 }, late: { roach: 3, fly: 3, shieldmouse: 1, spider: 1 },
+    bursts: [b(70, 'roach', 60), b(150, 'fly', 60)] },
+  { area: 'bathroom', name: '하수구에서 온 손님', mul: 10.5, duration: 222, rate: [6.4, 13.8], baseHp: 780,
+    early: { mouse: 3, roach: 2, mosquito: 2 }, late: { shieldmouse: 2, roach: 3, mosquito: 2, spider: 1.2 },
+    bursts: [b(80, 'mouse', 60), b(160, 'shieldmouse', 28)] },
+  { area: 'bathroom', name: '[보스] 거품 속의 대왕쥐', mul: 12.8, duration: 234, rate: [6.8, 14.4], baseHp: 820,
+    early: { mouse: 3, ant: 3, fly: 2 }, late: { mouse: 3, shieldmouse: 1.5, spider: 1.2, fly: 2 },
+    bursts: [b(90, 'ant', 90), b(180, 'mouse', 60)], boss: { kind: 'ratking', count: 2 } },
+  { area: 'balcony', name: '빨래 건조대 습격', mul: 15.5, duration: 222, rate: [7.0, 15.0], baseHp: 850,
+    early: { mosquito: 3, fly: 3 }, late: { mosquito: 3, fly: 3, spider: 1.4, roach: 2 },
+    bursts: [b(70, 'mosquito', 70), b(150, 'fly', 70)] },
+  { area: 'balcony', name: '화분 뒤의 매복', mul: 19.0, duration: 234, rate: [7.3, 15.6], baseHp: 880,
+    early: { spider: 1.2, ant: 3, roach: 2 }, late: { spider: 1.8, shieldmouse: 1.5, roach: 3, mosquito: 2 },
+    bursts: [b(85, 'spider', 30), b(170, 'roach', 70)] },
+  { area: 'balcony', name: '[보스] 난간 위의 바퀴 장군', mul: 23.0, duration: 246, rate: [7.6, 16.2], baseHp: 920,
+    early: { roach: 4, fly: 2 }, late: { roach: 4, shieldmouse: 1.5, fly: 2, spider: 1.2 },
+    bursts: [b(80, 'roach', 80), b(170, 'shieldmouse', 32)], boss: { kind: 'roachgen', count: 1, with: 'ratking' } },
+  { area: 'garden', name: '잔디밭의 개미굴', mul: 28.0, duration: 234, rate: [8.0, 17.0], baseHp: 950,
+    early: { ant: 5, roach: 2 }, late: { ant: 5, shieldmouse: 1.5, spider: 1.4, roach: 2 },
+    bursts: [b(60, 'ant', 110), b(140, 'ant', 120), b(200, 'shieldmouse', 36)] },
+  { area: 'garden', name: '창고 옆 뒷골목', mul: 34.0, duration: 246, rate: [8.3, 17.6], baseHp: 980,
+    early: { mouse: 3, shieldmouse: 1.5, fly: 2 }, late: { mouse: 3, shieldmouse: 2, mosquito: 2, spider: 1.6 },
+    bursts: [b(90, 'mouse', 80), b(180, 'spider', 36)] },
+  { area: 'garden', name: '달밤의 총공격', mul: 41.0, duration: 258, rate: [8.6, 18.2], baseHp: 1000,
+    early: { roach: 3, mosquito: 3, ant: 3 }, late: { roach: 3, shieldmouse: 2, spider: 1.6, fly: 3 },
+    bursts: [b(70, 'fly', 90), b(150, 'roach', 90), b(220, 'shieldmouse', 40)] },
+  { area: 'garden', name: '[보스] 찍찍 도적단 총출동', mul: 50.0, duration: 270, rate: [9.0, 19.0], baseHp: 1050,
+    early: { mouse: 3, ant: 3, roach: 2 }, late: { mouse: 2, shieldmouse: 2, spider: 1.8, fly: 2, roach: 2 },
+    bursts: [b(80, 'mouse', 90), b(160, 'spider', 40), b(240, 'shieldmouse', 48)], boss: { kind: 'spiderqueen', count: 1, with: 'roachgen' } },
 ];
 
 export const STAGES: StageDef[] = RAW.map((s, i) => ({
@@ -71,3 +112,23 @@ export const STAGES: StageDef[] = RAW.map((s, i) => ({
   no: i + 1,
   reward: { coins: 200 + 100 * i, tuna: i % 3 === 2 || s.boss ? 200 : 100 },
 }));
+
+/** 어려움 모드 스테이지 (보통을 깨면 열림): 적 x2.4, 보상 x2 */
+export function hardStage(st: StageDef): StageDef {
+  return {
+    ...st,
+    id: `${st.id}h`,
+    hard: true,
+    mul: st.mul * 2.4,
+    rate: [st.rate[0] * 1.1, st.rate[1] * 1.1],
+    baseHp: Math.round(st.baseHp * 1.3),
+    reward: { coins: st.reward.coins * 2, tuna: Math.round(st.reward.tuna * 1.5) },
+  };
+}
+
+/** id로 스테이지 찾기 ('s3h' 처럼 h가 붙으면 어려움) */
+export function getStage(id: string): StageDef | undefined {
+  const hard = id.endsWith('h');
+  const base = STAGES.find((s) => s.id === (hard ? id.slice(0, -1) : id));
+  return base && hard ? hardStage(base) : base;
+}

@@ -48,6 +48,8 @@ export interface Member {
   /** 합류 등장 연출 남은 시간 */
   enterT: number;
   power: number;
+  /** 스킬 각성 (갈래 강화를 다 찍으면 열림) */
+  evolved?: boolean;
   timer: number;
   x: number;
   y: number;
@@ -89,6 +91,7 @@ export interface Particle { x: number; y: number; vx: number; vy: number; t: num
 export type Card =
   | { type: 'new'; slot: number }
   | { type: 'mod'; slot: number; mod: string; next: number }
+  | { type: 'evolve'; slot: number }
   | { type: 'generic'; id: GenericCard };
 
 export type Phase = 'playing' | 'victory' | 'defeat';
@@ -143,6 +146,11 @@ export class Game {
 
   kills = 0;
   banner: { text: string; t: number } | null = null;
+  /** 결과 화면 '다음' 버튼으로 이어 할 스테이지 */
+  nextId: string | null = null;
+  /** 첫 판 튜토리얼 (0: 카드 고르기 안내, 1: 응원 버튼 안내, 2: 끝) */
+  tutorial = false;
+  tutStep = 0;
   /** 보스 등장 컷인 (등장 시각) */
   bossIntro: { kinds: EnemyKind[]; at: number } | null = null;
   result: BattleResult | null = null;
@@ -180,7 +188,7 @@ export class Game {
     });
     this.maxHp = Math.round(hp * (1 + this.bonus.hp));
     this.hp = this.maxHp;
-    this.banner = { text: `STAGE ${stage.no} · ${stage.name}`, t: 2.5 };
+    this.banner = { text: `${stage.hard ? "🔥 어려움 · " : ""}STAGE ${stage.no} · ${stage.name}`, t: 2.5 };
     this.layout(true);
   }
 
@@ -228,7 +236,15 @@ export class Game {
   }
 
   params(m: Member): WeaponParams {
-    return applyMods(m.weapon, m.picks);
+    const p = applyMods(m.weapon, m.picks);
+    if (m.evolved) {
+      // 각성: 피해 +60%, 공격 간격 -25%, 개수형 스킬은 +1
+      p.dmg *= 1.6;
+      p.interval *= 0.75;
+      if (p.count) p.count += 1;
+      if (p.radius) p.radius *= 1.15;
+    }
+    return p;
   }
 
   // ───────────── 플레이어 조작 ─────────────
@@ -237,6 +253,7 @@ export class Game {
 
   useRally(): boolean {
     if (!this.canRally()) return false;
+    if (this.tutorial && this.tutStep === 1) this.tutStep = 2;
     const r = this.heroRally;
     this.rallyCd = r.cd;
     this.rallyT = r.dur;
@@ -253,6 +270,7 @@ export class Game {
     const c = this.choice?.[i];
     if (!c) return;
     this.pickAnim = { card: c, index: i, t: 0.7 };
+    if (this.tutorial && this.tutStep === 0) this.tutStep = 1;
     if (c.type === 'new') {
       const m = this.squad[c.slot];
       m.level = 1;
@@ -277,6 +295,16 @@ export class Game {
       const mod = m.weapon.mods.find((x) => x.id === c.mod)!;
       this.sfx('card');
       this.addFloat(m.x, m.y - 90, `${mod.name}!`, '#ffe98a', 18);
+    } else if (c.type === 'evolve') {
+      const m = this.squad[c.slot];
+      m.evolved = true;
+      m.level++;
+      m.wakeFx = 1.6;
+      this.sfx('levelup');
+      this.sfx('meow-hi');
+      this.banner = { text: `✨ ${m.def.name}의 ${m.def.skillName} 각성!`, t: 2 };
+      this.fx.push({ kind: 'boom', x: m.x, y: m.y - 40, r: 60, t: 0, life: 0.6, color: '#ffd84d' });
+      this.addFloat(m.x, m.y - 90, '각성!', '#ffd84d', 24);
     } else {
       this.generic[c.id]++;
       if (c.id === 'snack') this.repair(this.maxHp * 0.25);
@@ -302,6 +330,8 @@ export class Game {
     for (const m of this.squad) {
       if (m.level === 0) { if (joined < MAX_JOIN) pool.push({ card: { type: 'new', slot: m.slot }, w: newW }); continue; }
       const open = m.weapon.mods.filter((x) => (m.picks[x.id] ?? 0) < x.max);
+      // 갈래 강화를 전부 찍으면 각성 카드 (나오면 꼭 눈에 띄게 높은 확률)
+      if (!open.length && !m.evolved) { pool.push({ card: { type: 'evolve', slot: m.slot }, w: 6 }); continue; }
       for (const mod of open) pool.push({ card: { type: 'mod', slot: m.slot, mod: mod.id, next: (m.picks[mod.id] ?? 0) + 1 }, w: 2.4 / Math.max(1.5, open.length) + 0.3 });
     }
     for (const id of Object.keys(GENERIC) as GenericCard[]) {

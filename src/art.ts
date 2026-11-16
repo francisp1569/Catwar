@@ -8,6 +8,13 @@ export type ArtKind = 'back' | 'face' | 'card' | 'full';
 type Entry = ArtKind[] | Partial<Record<ArtKind, string>> & { faceFocus?: [number, number, number]; fullFocus?: [number, number, number] };
 
 const images = new Map<string, HTMLImageElement>();
+
+/** 로딩 화면용 진행도 */
+export const artProgress = { done: 0, total: 0 };
+function track<T>(p: Promise<T>): Promise<T> {
+  artProgress.total++;
+  return p.finally(() => { artProgress.done++; });
+}
 const focus = new Map<string, [number, number, number]>();
 const fullFocus = new Map<string, [number, number, number]>();
 
@@ -25,7 +32,7 @@ export async function loadArt(): Promise<void> {
       if (!Array.isArray(entry) && entry.fullFocus) fullFocus.set(id, entry.fullFocus);
       for (const [kind, file] of files) {
         const img = new Image();
-        loads.push(new Promise((ok) => { img.onload = () => ok(); img.onerror = () => ok(); }));
+        loads.push(track(new Promise((ok) => { img.onload = () => ok(); img.onerror = () => ok(); })));
         img.src = `art/cats/${file}`;
         images.set(`${id}-${kind}`, img);
       }
@@ -88,6 +95,7 @@ for (const id of ['vacuum', 'web', 'girl-happy', 'girl-worried', 'girl-cry', 'ba
   'cheese-attack', 'cheese-win', 'cheese-lose', 'box', 'box-open', 'boss-ratking', 'boss-roachgen', 'boss-spiderqueen']) WORLD_FILES[id] = `props/${id}.webp`;
 for (const id of ['claw', 'spark', 'boom', 'poof', 'splash', 'zap', 'heal', 'notes']) WORLD_FILES[`fx-${id}`] = `fx/${id}.webp`;
 for (const id of ['lobby', 'map']) WORLD_FILES[`bg-${id}`] = `bg/${id}.jpg`;
+for (const id of ['1', '2', '3', '4', '5', '6', '7', 'title']) WORLD_FILES[`story-${id}`] = `story/${id}.jpg`;
 for (const id of ['entrance', 'living', 'kitchen', 'attic']) WORLD_FILES[`bg-${id}`] = `bg/${id}.jpg`;
 export const ICON_IDS = [
   'coin', 'tuna', 'yarn', 'chest', 'chest-open', 'chest-royal',
@@ -104,12 +112,12 @@ for (const id of ICON_IDS) WORLD_FILES[id] = `icons/${id}.webp`;
 const world = new Map<string, HTMLImageElement>();
 
 export async function loadWorldArt(): Promise<void> {
-  await Promise.all(Object.entries(WORLD_FILES).map(([id, file]) => new Promise<void>((ok) => {
+  await Promise.all(Object.entries(WORLD_FILES).map(([id, file]) => track(new Promise<void>((ok) => {
     const img = new Image();
     img.onload = () => { world.set(id, img); ok(); };
     img.onerror = () => ok();
     img.src = `art/world/${file}`;
-  })));
+  }))));
 }
 
 export function getWorld(id: string): HTMLImageElement | null {

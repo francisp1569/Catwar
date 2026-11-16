@@ -1,12 +1,12 @@
 import './style.css';
-import { loadArt, loadWorldArt } from './art';
+import { artProgress, loadArt, loadWorldArt } from './art';
 import { sound } from './audio';
 import { CONFIG, applyLayout } from './data/config';
-import { STAGES } from './data/stages';
+import { STAGES, getStage } from './data/stages';
 import { Game, buildSquad } from './game';
 import { Menu } from './menu';
 import { bonuses } from './meta/items';
-import { applyResult } from './meta/rewards';
+import { applyResult, isUnlocked } from './meta/rewards';
 import { loadSave, writeSave, type SaveData } from './meta/save';
 import { render, type RewardView } from './render';
 import { story } from './story';
@@ -22,12 +22,13 @@ let reward: RewardView | null = null;
 const menu = new Menu(save, startBattle);
 
 function startBattle(stageId: string): void {
-  const stage = STAGES.find((s) => s.id === stageId);
+  const stage = getStage(stageId);
   if (!stage) return;
   applyLayout(window.innerWidth, window.innerHeight);
   layoutButtons(CONFIG.height);
-  save.selectedStage = stage.id;
+  save.selectedStage = stage.id.replace(/h$/, '');
   game = new Game(stage, buildSquad(save.cats), bonuses(save), save.seen);
+  game.tutorial = !save.tutorialDone;
   reward = null;
   menu.hide();
   canvas.hidden = false;
@@ -38,8 +39,7 @@ function startBattle(stageId: string): void {
 /** 승리 → 다음 스테이지, 패배 → 같은 스테이지 다시 */
 function afterResult(g: Game): void {
   const lv = reward && (reward as { levelUp?: [number, number] | null }).levelUp;
-  const next = g.result?.victory ? STAGES.find((s) => s.no === g.stage.no + 1) : null;
-  const target = next ?? g.stage;
+  const target = (g.result?.victory && g.nextId ? getStage(g.nextId) : null) ?? g.stage;
   pressed = null;
   startBattle(target.id);
   if (lv) setTimeout(() => sound.play('levelup'), 200);
@@ -175,10 +175,16 @@ function frame(now: number): void {
     g.events.length = 0;
     if (g.phase !== 'playing' && !reward) {
       reward = applyResult(save, g.stage, g.result!);
+      if (g.tutorial && g.tutStep >= 1) save.tutorialDone = true;
       // 승리하면 로비에서도 다음 스테이지가 선택되어 있게
       if (g.result!.victory) {
         const next = STAGES.find((s) => s.no === g.stage.no + 1);
-        if (next) save.selectedStage = next.id;
+        if (next) {
+          save.selectedStage = next.id;
+          // 같은 모드(보통/어려움)의 다음 판이 열려 있으면 결과 화면에서 바로 이어 하기
+          const cand = getStage(next.id + (g.stage.hard ? 'h' : ''))!;
+          g.nextId = isUnlocked(save, cand) ? cand.id : null;
+        }
       }
       writeSave(save);
     }
@@ -199,14 +205,42 @@ requestAnimationFrame(frame);
 
 canvas.hidden = true;
 menu.show(save);
-sound.music('lobby');
-// 처음 켜면 스토리 컷씬 → (아직 아무 판도 안 깼으면) 바로 1스테이지
-if (!save.introSeen) {
-  story.play(() => {
-    save.introSeen = true;
-    writeSave(save);
-    if (!Object.keys(save.stages).length) startBattle('s1');
-  });
+
+// ───────────── 로딩 화면 → 터치해서 시작 ─────────────
+const loading = document.createElement('div');
+loading.id = 'loading';
+loading.innerHTML = `
+  <div class="ld-art"></div>
+  <div class="ld-logo"><b>냥냥 방위대</b><small>CATWAR</small></div>
+  <div class="ld-bottom">
+    <div class="ld-bar"><i></i></div>
+    <p class="ld-msg">고양이들이 출동 준비 중…</p>
+  </div>`;
+document.body.appendChild(loading);
+const titleImg = new Image();
+titleImg.onload = () => { (loading.querySelector('.ld-art') as HTMLElement).style.backgroundImage = `url(${titleImg.src})`; loading.classList.add('has-art'); };
+titleImg.src = 'art/world/story/title.jpg';
+const bar = loading.querySelector('.ld-bar i') as HTMLElement;
+let loaded = false;
+const tickLoad = (): void => {
+  const k = artProgress.total ? artProgress.done / artProgress.total : 0;
+  bar.style.width = `${Math.round((loaded ? 1 : Math.min(0.97, k)) * 100)}%`;
+  if (!loaded) requestAnimationFrame(tickLoad);
+};
+requestAnimationFrame(tickLoad);
+
+function enterGame(): void {
+  loading.classList.add('out');
+  setTimeout(() => loading.remove(), 500);
+  sound.music('lobby');
+  // 처음 켜면 스토리 컷씬 → (아직 아무 판도 안 깼으면) 바로 1스테이지
+  if (!save.introSeen) {
+    story.play(() => {
+      save.introSeen = true;
+      writeSave(save);
+      if (!Object.keys(save.stages).length) startBattle('s1');
+    });
+  }
 }
 // 브라우저 정책: 첫 터치/키 입력 때 소리를 켠다
 // 브라우저마다 '사용자 동작'으로 인정하는 이벤트가 달라서 여러 개에 건다 (구형 iOS는 touchend/click만 인정)
@@ -214,7 +248,15 @@ for (const ev of ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown'] as
 document.addEventListener('visibilitychange', () => { if (!document.hidden) sound.wake(); });
 window.addEventListener('pageshow', () => sound.wake());
 window.addEventListener('focus', () => sound.wake());
-void Promise.all([loadArt(), loadWorldArt()]).then(() => setTimeout(() => menu.refresh(), 300));
+void Promise.all([loadArt(), loadWorldArt()]).then(() => {
+  loaded = true;
+  bar.style.width = '100%';
+  menu.refresh();
+  (loading.querySelector('.ld-msg') as HTMLElement).textContent = '화면을 터치해서 시작!';
+  loading.classList.add('ready');
+  // 터치(소리 켜기에도 필요) 한 번으로 시작
+  loading.addEventListener('pointerdown', enterGame, { once: true });
+});
 
 // 디버그/테스트용 훅
 Object.assign(window as object, {

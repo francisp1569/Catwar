@@ -5,7 +5,7 @@ import { story } from './story';
 import { drawCatLookToon, drawCatPortrait, IDLE_POSE } from './catdraw';
 import { CATS, CAT_BY_ID, HERO_ID, RARITY_COLOR, type CatDef, type CatLook } from './data/cats';
 import { SLOTS, SLOT_INFO, ITEM_MAX_LV, type Slot } from './data/items';
-import { AREA_NAME, STAGES, type StageDef } from './data/stages';
+import { AREA_NAME, CHAPTERS, STAGES, getStage, type StageDef } from './data/stages';
 import { rallyDesc } from './data/weapons';
 import {
   ITEM_BOX10_COST, ITEM_BOX_COST, PULL10_COST, PULL_COST, RATES, claimFree, pull, pullItems, today, type PullResult,
@@ -18,7 +18,7 @@ import {
   MAX_STARS, STAR_COST, canLevelUp, canStarUp, catStats, levelCap, levelUp, levelUpCost, starUp,
 } from './meta/progression';
 import { isUnlocked } from './meta/rewards';
-import { resetSave, writeSave, type Item, type SaveData } from './meta/save';
+import { exportSave, importSave, resetSave, writeSave, type Item, type SaveData } from './meta/save';
 import { drawStagePreview } from './render';
 
 // 그림 아이콘 (없으면 이모지)
@@ -52,6 +52,10 @@ function power(def: CatDef, save: SaveData): number {
   if (!o) return 0;
   const s = catStats(def, o);
   return Math.round(s.hp / 3 + s.atk * 6 + o.stars * 20);
+}
+
+function chapterOf(no: number): string {
+  return [...CHAPTERS].reverse().find((c) => no >= c.from)!.name.split(' · ')[0];
 }
 
 function teamPower(save: SaveData): number {
@@ -136,7 +140,8 @@ export class Menu {
   }
 
   private get stage(): StageDef {
-    return STAGES.find((s) => s.id === this.save.selectedStage) ?? STAGES[0];
+    const base = STAGES.find((s) => s.id === this.save.selectedStage) ?? STAGES[0];
+    return (this.save.hardMode && getStage(`${base.id}h`)) || base;
   }
 
   // ───────────── 이벤트 ─────────────
@@ -156,8 +161,8 @@ export class Menu {
       case 'toggle-music': sound.setMusic(!sound.musicOn); this.openSettings(); break;
       case 'tab': this.tab = arg as Tab; this.closeModal(); this.render(); break;
       case 'start': {
-        const st = STAGES.find((x) => x.id === arg)!;
-        if (!isUnlocked(s, st)) { this.toast('이전 스테이지를 먼저 클리어해요'); break; }
+        const st = getStage(arg)!;
+        if (!isUnlocked(s, st)) { this.toast(st.hard ? '보통을 깨고, 이전 판 어려움도 깨야 열려요' : '이전 스테이지를 먼저 클리어해요'); break; }
         this.onStart(arg);
         break;
       }
@@ -170,6 +175,7 @@ export class Menu {
         break;
       }
       case 'select-stage': s.selectedStage = arg; this.tab = 'battle'; this.commit(); break;
+      case 'mode': s.hardMode = arg === 'hard'; this.commit(); break;
       case 'cat-prev': this.catIdx = (this.catIdx + CATS.length - 1) % CATS.length; this.render(); break;
       case 'cat-next': this.catIdx = (this.catIdx + 1) % CATS.length; this.render(); break;
       case 'cat-pick': this.catIdx = CATS.findIndex((c) => c.id === arg); this.render(); break;
@@ -258,6 +264,33 @@ export class Menu {
       }
       case 'settings': this.resetArmed = false; this.openSettings(); break;
       case 'story': this.closeModal(); story.play(() => {}); break;
+      case 'save-export': {
+        const code = exportSave(this.save);
+        this.openModal(`
+          <button class="x" data-act="settings">✕</button>
+          <h2>💾 저장 코드</h2>
+          <p class="muted">이 코드를 다른 기기의 「저장 코드 불러오기」에 붙여 넣으면 진행이 그대로 옮겨져요.</p>
+          <textarea class="save-code" readonly>${code}</textarea>`);
+        const ta = this.modal.querySelector('textarea') as HTMLTextAreaElement;
+        ta.select();
+        navigator.clipboard?.writeText(code).then(() => this.toast('저장 코드를 복사했어요'), () => {});
+        break;
+      }
+      case 'save-import':
+        this.openModal(`
+          <button class="x" data-act="settings">✕</button>
+          <h2>📥 저장 코드 불러오기</h2>
+          <p class="muted">지금 이 기기의 진행은 덮어써져요.</p>
+          <textarea class="save-code" placeholder="CATWAR1:로 시작하는 코드를 붙여 넣어요"></textarea>
+          <div class="row center"><button class="btn gold" data-act="save-import-go">불러오기</button></div>`);
+        break;
+      case 'save-import-go': {
+        const v = (this.modal.querySelector('textarea') as HTMLTextAreaElement).value;
+        if (!importSave(v)) { this.toast('코드가 올바르지 않아요'); break; }
+        this.toast('불러왔어요! 다시 시작합니다');
+        setTimeout(() => location.reload(), 600);
+        break;
+      }
       case 'reset':
         if (!this.resetArmed) { this.resetArmed = true; this.openSettings(); break; }
         this.save = resetSave();
@@ -318,7 +351,7 @@ export class Menu {
     const h = c.clientHeight;
     if (!w || !h) return;
     if (c.dataset.anim === 'stage') {
-      const st = STAGES.find((x) => x.id === c.dataset.stage) ?? STAGES[0];
+      const st = getStage(c.dataset.stage ?? '') ?? STAGES[0];
       drawStagePreview(ctx, st, w, h, t, !isUnlocked(this.save, st));
     } else if (c.dataset.anim === 'cat') {
       const id = c.dataset.id!;
@@ -450,8 +483,12 @@ export class Menu {
       </div>`;
     const team = [HERO_ID, ...CATS.filter((c) => !c.hero && s.cats[c.id]).map((c) => c.id)];
     return `
-      <section class="stage-head">
-        <div class="area">${AREA_NAME[st.area]} · ${best ? stars(best, 3) : '미클리어'}</div>
+      <section class="stage-head ${st.hard ? 'hard' : ''}">
+        <div class="mode-toggle">
+          <button class="${st.hard ? '' : 'on'}" data-act="mode" data-arg="normal">보통</button>
+          <button class="${st.hard ? 'on' : ''}" data-act="mode" data-arg="hard">🔥 어려움</button>
+        </div>
+        <div class="area">${chapterOf(st.no)} · ${AREA_NAME[st.area]} · ${best ? stars(best, 3) : '미클리어'}</div>
         <div class="stage-title">
           <button class="stage-arrow" data-act="stage-prev" ${st.no === 1 ? 'disabled' : ''}>◀</button>
           <h1>St.${st.no} - ${esc(st.name.replace('[보스] ', ''))}${isBoss ? ' <span class="skull">💀</span>' : ''}</h1>
@@ -461,7 +498,7 @@ export class Menu {
       </section>
       <section class="diorama">
         <canvas data-anim="stage" data-stage="${st.id}"></canvas>
-        ${unlocked ? '' : '<div class="lock-cover">🔒<small>이전 스테이지를 클리어하면 열려요</small></div>'}
+        ${unlocked ? '' : `<div class="lock-cover">🔒<small>${st.hard ? '보통을 깨고 이전 판 어려움도 깨면 열려요' : '이전 스테이지를 클리어하면 열려요'}</small></div>`}
         <div class="side left">
           <button class="side-btn" data-act="nap"><span>${iconHtml('btn-nap', '💤')}</span><small>낮잠 보상</small>${nap.coins > 0 ? `<em>${fmt(nap.coins)}</em>` : ''}</button>
           <button class="side-btn" data-act="tab" data-arg="shop"><span>${iconHtml('btn-gift', '🎁')}</span><small>무료 상자</small>${freeReady ? '<i class="dot"></i>' : ''}</button>
@@ -646,8 +683,10 @@ export class Menu {
     return `<h2 class="map-title">지도 <small>스테이지를 골라 출전해요</small></h2>` + STAGES.map((st) => {
       const unlocked = isUnlocked(s, st);
       const best = s.stages[st.id] ?? 0;
-      const header = st.area !== lastArea ? `<h3 class="area">${AREA_NAME[st.area]}</h3>` : '';
+      const ch = CHAPTERS.find((c) => c.from === st.no);
+      const header = (ch ? `<h2 class="chapter">${ch.name}</h2>` : '') + (st.area !== lastArea ? `<h3 class="area">${AREA_NAME[st.area]}</h3>` : '');
       lastArea = st.area;
+      const hardBest = s.stages[`${st.id}h`] ?? 0;
       return `${header}
         <button class="stage ${unlocked ? '' : 'locked'} ${st.boss ? 'boss' : ''} ${st.id === s.selectedStage ? 'sel' : ''}" data-act="select-stage" data-arg="${st.id}">
           <div class="no">${st.no}</div>
@@ -656,6 +695,7 @@ export class Menu {
             <small>${fmtTime(st.duration)} 버티기 · 적 강함 x${st.mul.toFixed(1)}</small>
           </div>
           ${unlocked ? (best ? stars(best, 3) : '<span class="newtag">NEW</span>') : '<span class="lock">🔒</span>'}
+          ${hardBest ? `<span class="hardstars">🔥${hardBest}</span>` : ''}
         </button>`;
     }).join('');
   }
@@ -704,7 +744,8 @@ export class Menu {
         <button class="btn ${sound.sfxOn ? 'blue' : 'off'}" data-act="toggle-sfx">${sound.sfxOn ? '🔊 효과음 켜짐' : '🔇 효과음 꺼짐'}</button>
         <button class="btn ${sound.musicOn ? 'blue' : 'off'}" data-act="toggle-music">${sound.musicOn ? '🎵 배경음악 켜짐' : '🎵 배경음악 꺼짐'}</button>
       </div>
-      <div class="row center"><button class="btn" data-act="story">📖 스토리 다시 보기</button></div>
+      <div class="row center gap"><button class="btn" data-act="story">📖 스토리 다시 보기</button></div>
+      <div class="row center gap"><button class="btn small" data-act="save-export">💾 저장 코드 복사</button><button class="btn small" data-act="save-import">📥 저장 코드 불러오기</button></div>
       <p class="muted">진행 상황은 이 브라우저에 자동 저장돼요.</p>
       <p class="muted">낮잠 보상: 시간당 ${COIN()}${napRate(this.save)} (최대 ${NAP_MAX_HOURS}시간 쌓임)</p>
       <button class="btn ${this.resetArmed ? 'danger' : 'off'}" data-act="reset">${this.resetArmed ? '정말 초기화할까요? 한 번 더 누르면 삭제돼요' : '진행 상황 초기화'}</button>`);

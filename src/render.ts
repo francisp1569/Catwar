@@ -155,7 +155,24 @@ const FLOORS: Record<Area, { a: string; b: string; tile: boolean; line: string; 
   living: { a: '#d9a874', b: '#cf9c66', tile: false, line: 'rgba(110,60,20,0.22)', wall: '#ffd6e4' },
   kitchen: { a: '#f4efe4', b: '#e6dcc6', tile: true, line: 'rgba(150,120,80,0.2)', wall: '#ffe9ad' },
   attic: { a: '#8f6a48', b: '#836041', tile: false, line: 'rgba(40,20,5,0.3)', wall: '#bfa27c' },
+  bathroom: { a: '#dff2f7', b: '#cfe6ee', tile: true, line: 'rgba(80,130,150,0.2)', wall: '#bfe6f2' },
+  balcony: { a: '#d8c9b0', b: '#cbbb9f', tile: true, line: 'rgba(110,90,60,0.2)', wall: '#e8f4d8' },
+  garden: { a: '#9fd27a', b: '#93c56f', tile: false, line: 'rgba(40,90,20,0.2)', wall: '#c8a878' },
 };
+
+/** 새 지역 그림이 아직 없으면 기존 배경을 색만 바꿔서 임시로 쓴다 */
+const BG_FALLBACK: Partial<Record<Area, [Area, string]>> = {
+  bathroom: ['kitchen', 'hue-rotate(170deg) saturate(0.9) brightness(1.05)'],
+  balcony: ['living', 'hue-rotate(-25deg) saturate(1.1) brightness(1.05)'],
+  garden: ['entrance', 'hue-rotate(55deg) saturate(1.4)'],
+};
+function bgArtFor(area: Area): { img: HTMLImageElement; filter: string } | null {
+  const own = getWorld(`bg-${area}`);
+  if (own) return { img: own, filter: 'none' };
+  const fb = BG_FALLBACK[area];
+  const img = fb ? getWorld(`bg-${fb[0]}`) : null;
+  return img && fb ? { img, filter: fb[1] } : null;
+}
 
 // 바닥은 스테이지마다 한 번만 자세히 그려두고(오프스크린) 매 프레임 그 그림을 찍는다
 const floorCache = new Map<string, HTMLCanvasElement>();
@@ -263,9 +280,11 @@ function buildFloor(area: Area, h: number, k: number): HTMLCanvasElement {
   c.height = Math.ceil(h * k);
   const ctx = c.getContext('2d')!;
   ctx.setTransform(k, 0, 0, k, 0, 0);
-  const bgArt = getWorld(`bg-${area}`);
+  const bgArt = bgArtFor(area);
   if (bgArt) {
-    drawBgArt(ctx, bgArt, h);
+    ctx.filter = bgArt.filter;
+    drawBgArt(ctx, bgArt.img, h);
+    ctx.filter = 'none';
     return c;
   }
   const f = FLOORS[area];
@@ -451,8 +470,8 @@ function buildFloor(area: Area, h: number, k: number): HTMLCanvasElement {
 function drawField(ctx: Ctx, area: Area, t: number): void {
   const tr = ctx.getTransform();
   const k = Math.min(3, Math.max(1, Math.round(Math.hypot(tr.a, tr.b) * 2) / 2));
-  const art = getWorld(`bg-${area}`);
-  const key = `${area}:${CONFIG.height}:${CONFIG.barricadeY}:${k}:${art ? 1 : 0}`;
+  const art = bgArtFor(area)?.img ?? null;
+  const key = `${area}:${CONFIG.height}:${CONFIG.barricadeY}:${k}:${art ? art.src.length : 0}`;
   let c = floorCache.get(key);
   if (!c) { c = buildFloor(area, CONFIG.height, k); floorCache.set(key, c); }
   ctx.drawImage(c, 0, 0, W, CONFIG.height);
@@ -856,6 +875,17 @@ function drawSquad(ctx: Ctx, game: Game, t: number): void {
       ctx.restore();
     }
     ellipse(ctx, m.x, m.y + 2, s * 1.0, s * 0.3, 'rgba(60,30,10,0.2)');
+    if (m.evolved) {
+      // 각성한 고양이: 발밑 금빛 오라
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalAlpha = 0.55 + Math.sin(t * 4 + m.slot) * 0.2;
+      const ag = ctx.createRadialGradient(m.x, m.y, 2, m.x, m.y, s * 1.5);
+      ag.addColorStop(0, 'rgba(255,220,90,0.9)'); ag.addColorStop(1, 'rgba(255,180,40,0)');
+      ctx.fillStyle = ag;
+      ctx.beginPath(); ctx.ellipse(m.x, m.y, s * 1.5, s * 0.5, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
     if (m.wakeFx > 0) {
       ctx.save();
       ctx.globalAlpha = Math.min(1, m.wakeFx);
@@ -1540,7 +1570,7 @@ function drawHud(ctx: Ctx, game: Game, t: number, pressed: string | null): void 
   ctx.fillRect(0, 0, W, 64);
   roundRect(ctx, 60, 14, 78, 32, 16); ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.fill();
   text(ctx, game.time >= game.stage.duration ? 'BOSS' : fmtTime(game.timeLeft), 99, 30, 17, game.timeLeft < 15 ? '#ff8a8a' : '#fff');
-  text(ctx, `St.${game.stage.no} · ${game.stage.name}`, 306, 30, 17, '#fff');
+  text(ctx, `${game.stage.hard ? "🔥" : ""}St.${game.stage.no} · ${game.stage.name}`, 306, 30, 17, game.stage.hard ? "#ffb3a8" : "#fff");
   // 진행 바
   ctx.fillStyle = 'rgba(0,0,0,0.45)';
   ctx.fillRect(10, 56, W - 20, 6);
@@ -1661,6 +1691,51 @@ function drawHud(ctx: Ctx, game: Game, t: number, pressed: string | null): void 
   }
 }
 
+/** 말풍선 + 손가락 안내 */
+function tutBubble(ctx: Ctx, x: number, y: number, w: number, lines: string[], t: number): void {
+  const h = 18 + lines.length * 24;
+  const bob = Math.sin(t * 3) * 3;
+  ctx.save();
+  ctx.translate(0, bob);
+  roundRect(ctx, x, y, w, h, 16);
+  ctx.fillStyle = 'rgba(255,250,240,0.97)';
+  ctx.fill();
+  ctx.lineWidth = 3; ctx.strokeStyle = '#3b2228'; ctx.stroke();
+  lines.forEach((ln, i) => text(ctx, ln, x + w / 2, y + 21 + i * 24, i === 0 ? 17 : 14, i === 0 ? '#ff5f8a' : '#3b2228', 'center', false));
+  ctx.restore();
+}
+
+function tutFinger(ctx: Ctx, x: number, y: number, t: number, up = true): void {
+  const d = Math.abs(Math.sin(t * 4)) * 12;
+  ctx.save();
+  ctx.translate(x, y + (up ? d : -d));
+  if (!up) ctx.rotate(Math.PI);
+  text(ctx, '👆', 0, 0, 42, '#fff', 'center', false);
+  ctx.restore();
+}
+
+/** 첫 판 튜토리얼 안내 */
+function drawTutorial(ctx: Ctx, game: Game, t: number): void {
+  if (game.pickAnim) return;
+  if (game.tutStep === 0 && game.choice) {
+    const off = (CONFIG.height - 960) / 2;
+    tutBubble(ctx, 40, 740 + off, W - 80, ['레벨업! 카드 1장을 골라요', 'NEW 카드를 고르면 고양이 친구가 합류해요'], t);
+    const ni = Math.max(0, game.choice.findIndex((c) => c.type === 'new'));
+    const r = CHOICE_BUTTONS[ni].rect;
+    tutFinger(ctx, r.x + r.w / 2, r.y + r.h + 4, t);
+    return;
+  }
+  if (game.tutStep === 0 && !game.choice && game.time < 9) {
+    tutBubble(ctx, 50, CONFIG.height * 0.42, W - 100, ['고양이들은 자동으로 공격해요!', '적을 물리치면 경험치가 쌓여 레벨업해요'], t);
+    return;
+  }
+  if (game.tutStep === 1 && !game.choice && game.time > 16 && game.canRally()) {
+    const rb = HUD_BUTTONS.find((b) => b.id.type === 'rally')!.rect;
+    tutBubble(ctx, W - 300, rb.y - 120, 280, ['응원 버튼을 눌러봐요!', '바리케이드 회복 + 모두 공격 UP'], t);
+    tutFinger(ctx, rb.x + rb.w / 2, rb.y - 20, t, false);
+  }
+}
+
 /** 보스 등장 컷인: 얼굴 그림이 옆에서 미끄러져 들어오는 띠 */
 function drawBossIntro(ctx: Ctx, game: Game): void {
   const bi = game.bossIntro!;
@@ -1741,6 +1816,10 @@ function cardInfo(game: Game, c: Card) {
     const mod = m.weapon.mods.find((x) => x.id === c.mod)!;
     return { title: mod.name, sub: `${m.def.name} · ${m.def.skillName}`, desc: mod.desc, badge: '', color: RARITY_COLOR[m.def.rarity], look: m.def.look as CatLook | null, icon: m.weapon.icon, iconId: `w-${m.def.id}` };
   }
+  if (c.type === 'evolve') {
+    const m = game.squad[c.slot];
+    return { title: `${m.def.skillName} 각성`, sub: `${m.def.name} · EVOLUTION`, desc: '스킬이 각성! 피해 +60%, 공격 속도 +33%, 투사체·범위도 늘어나요.', badge: '각성', color: '#ffd84d', look: m.def.look as CatLook | null, icon: m.weapon.icon, iconId: `w-${m.def.id}` };
+  }
   const g = GENERIC[c.id];
   return { title: g.name, sub: c.id === 'snack' ? '회복' : `${game.generic[c.id] + 1}단계`, desc: g.desc, badge: '강화', color: '#7ad99a', look: null as CatLook | null, icon: g.icon, iconId: `g-${c.id}` };
 }
@@ -1804,6 +1883,19 @@ function drawChoice(ctx: Ctx, game: Game, t: number, pressed: string | null): vo
 
 function drawCard(ctx: Ctx, game: Game, c: Card, r: Rect, t: number, _glow: number): void {
   const info = cardInfo(game, c);
+  if (c.type === 'evolve') {
+    // 각성 카드: 뒤에서 금빛 햇살이 돈다
+    ctx.save();
+    ctx.translate(r.x + r.w / 2, r.y + r.h / 2 - 40);
+    ctx.rotate(t * 0.8);
+    ctx.globalAlpha = 0.55;
+    for (let i = 0; i < 12; i++) {
+      ctx.rotate(Math.PI / 6);
+      ctx.fillStyle = i % 2 ? '#ffd84d' : '#fff3b0';
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-18, -190); ctx.lineTo(18, -190); ctx.closePath(); ctx.fill();
+    }
+    ctx.restore();
+  }
   // 카드 위로 튀어나오는 캐릭터
   if (info.look) {
     ctx.save();
@@ -1897,12 +1989,12 @@ function drawCard(ctx: Ctx, game: Game, c: Card, r: Rect, t: number, _glow: numb
     text(ctx, `${c.next}`, ix + 24, iy + 24, 14, '#ffffff', 'center', false);
   }
   // 배지
-  if (info.badge === 'NEW' || info.badge === '강화') {
+  if (info.badge === 'NEW' || info.badge === '강화' || info.badge === '각성') {
     const bx = r.x - 6;
     const by = r.y + 84;
-    ctx.fillStyle = info.badge === 'NEW' ? '#ffcf3a' : '#7ad99a';
+    ctx.fillStyle = info.badge === 'NEW' ? '#ffcf3a' : info.badge === '각성' ? '#ff5fa0' : '#7ad99a';
     ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx + 70, by); ctx.lineTo(bx + 84, by + 13); ctx.lineTo(bx + 70, by + 26); ctx.lineTo(bx, by + 26); ctx.closePath(); ctx.fill();
-    text(ctx, info.badge, bx + 36, by + 13, 16, info.badge === 'NEW' ? '#7a3a00' : '#1d3b22', 'center', false);
+    text(ctx, info.badge, bx + 36, by + 13, 16, info.badge === 'NEW' ? '#7a3a00' : info.badge === '각성' ? '#fff' : '#1d3b22', 'center', false);
   }
   // 이름 띠
   ctx.fillStyle = '#5a2c1c';
@@ -2006,7 +2098,7 @@ function drawResult(ctx: Ctx, game: Game, t: number, reward: RewardView | null):
   ctx.restore();
   if (!reward) return;
   // 결과 버튼
-  const hasNext = res.victory && nextStageNo(game) !== null;
+  const hasNext = res.victory && !!game.nextId;
   for (const b of RESULT_BUTTONS) {
     const r = b.rect;
     ctx.save();
@@ -2070,6 +2162,7 @@ export function render(ctx: Ctx, game: Game, t: number, pressed: string | null, 
   if (game.phase !== 'playing') drawResult(ctx, game, t, reward);
   else if (game.choice || game.pickAnim) drawChoice(ctx, game, t, pressed);
   else if (game.paused) drawPause(ctx, pressed);
+  if (game.tutorial && game.phase === 'playing' && !game.paused) drawTutorial(ctx, game, t);
 }
 
 /** 로비용 스테이지 미리보기: 그 스테이지 바닥과 몰려오는 적들 */

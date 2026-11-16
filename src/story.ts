@@ -24,53 +24,20 @@ interface Cut {
 
 const W = 'art/world/';
 
+const S = `${W}story/`;
 const CUTS: Cut[] = [
+  { bg: `${S}1.jpg`, bgCls: 'kb-in panel', layers: [], text: '여기는 집사 누나와 고양이들이 함께 사는 평화로운 집.', sfx: ['meow-hi'] },
+  { bg: `${S}2.jpg`, bgCls: 'kb-in panel', layers: [], text: '그런데 어느 날 밤… 벽 너머 쥐구멍에서 수상한 눈빛들이 반짝였다.', sfx: ['discover'] },
   {
-    bg: `${W}bg/lobby.jpg`, bgCls: 'kb-in',
-    layers: [
-      { src: `${W}props/girl-happy.webp`, cls: 'st-girl pop' },
-      { src: 'art/cats/godeungeo-face.jpg', cls: 'st-face f1 float', delay: 0.4 },
-      { src: 'art/cats/huindungi-face.jpg', cls: 'st-face f2 float', delay: 0.6 },
-      { src: 'art/cats/cheese-face.jpg', cls: 'st-face f3 float', delay: 0.8 },
-    ],
-    text: '여기는 집사 누나와 고양이들이 함께 사는 평화로운 집.',
-    sfx: ['meow-hi'],
-  },
-  {
-    bg: '', bgCls: 'black',
-    layers: [{
-      // 벽 그림 위에 쥐구멍 위치(가로 17%/50%/83%, 세로 8.5%)에 맞춰 눈빛을 띄운다
-      html: `<img src="${W}bg/entrance.jpg" alt="">${[17.2, 50, 83].map((x, i) => `<span class="st-eyes" style="left:${x}%;animation-delay:${0.4 + i * 0.5}s"><i></i><i></i></span>`).join('')}`,
-      cls: 'st-wall',
-    }],
-    text: '그런데 어느 날 밤… 벽 너머 쥐구멍에서 수상한 눈빛들이 반짝였다.',
-    sfx: ['discover'],
-  },
-  {
-    bg: `${W}bg/entrance.jpg`, bgCls: 'night',
-    layers: [
-      { src: `${W}enemies/ant.webp`, cls: 'st-en e1 walk', delay: 0.2 },
-      { src: `${W}enemies/roach.webp`, cls: 'st-en e2 walk', delay: 0.35 },
-      { src: `${W}enemies/mouse.webp`, cls: 'st-en e3 walk', delay: 0.5 },
-      { src: `${W}enemies/mouse.webp`, cls: 'st-en e4 walk flip', delay: 0.6 },
-      { src: `${W}enemies/ratking.webp`, cls: 'st-boss slam', delay: 0.9 },
-    ],
+    bg: `${S}3.jpg`, bgCls: 'kb-in panel', layers: [],
     speaker: '대왕쥐',
     text: '찍찍! 이 집 간식은 오늘부터 전부 우리 「찍찍 도적단」 거다! 몽땅 털어라!',
-    sfx: ['boss'],
-    shake: true,
+    sfx: ['boss'], shake: true,
   },
+  { bg: `${S}4.jpg`, bgCls: 'kb-in panel', layers: [], speaker: '집사 누나', text: '꺄아악! 쥐랑 벌레가 잔뜩 몰려와…! 누가 좀 도와줘!', sfx: ['hurt'] },
   {
-    bg: `${W}bg/lobby.jpg`, bgCls: 'kb-in dim',
-    layers: [{ src: `${W}props/girl-cry.webp`, cls: 'st-girl big tremble' }],
-    speaker: '집사 누나',
-    text: '꺄아악! 쥐랑 벌레가 잔뜩 몰려와…! 누가 좀 도와줘!',
-    sfx: ['hurt'],
-  },
-  {
-    bg: '', bgCls: 'burst',
+    bg: `${S}5.jpg`, bgCls: 'kb-out panel',
     layers: [
-      { src: 'art/cats/cheese-full.jpg', cls: 'st-hero hero-in' },
       { html: '✦', cls: 'st-spark s1', delay: 0.5 },
       { html: '✦', cls: 'st-spark s2', delay: 0.7 },
       { html: '✦', cls: 'st-spark s3', delay: 0.9 },
@@ -80,32 +47,13 @@ const CUTS: Cut[] = [
     sfx: ['meow', 'levelup'],
   },
   {
-    bg: `${W}bg/living.jpg`, bgCls: 'kb-in dim',
-    layers: [
-      { src: 'art/cats/godeungeo-face.jpg', cls: 'st-face r1 pop', delay: 0.1 },
-      { src: 'art/cats/huindungi-face.jpg', cls: 'st-face r2 pop', delay: 0.25 },
-      { src: 'art/cats/chaos-face.jpg', cls: 'st-face r3 pop', delay: 0.4 },
-      { src: 'art/cats/tuxedo-face.jpg', cls: 'st-face r4 pop', delay: 0.55 },
-      { src: 'art/cats/russianblue-face.jpg', cls: 'st-face r5 pop', delay: 0.7 },
-      { html: '<b>LEVEL UP!</b><small>NEW 카드로 친구 합류</small>', cls: 'st-tag pop', delay: 1.0 },
-    ],
+    bg: `${S}6.jpg`, bgCls: 'kb-in panel',
+    layers: [{ html: '<b>LEVEL UP!</b><small>NEW 카드로 친구 합류</small>', cls: 'st-tag pop', delay: 0.8 }],
     speaker: '치즈',
     text: '레벨업할 때마다 고양이 친구들이 하나씩 달려와 줄 거다냥. 카드를 잘 골라라냥!',
     sfx: ['meow-hi', 'card'],
   },
-  {
-    bg: `${W}bg/entrance.jpg`, bgCls: 'battle',
-    layers: [
-      { src: `${W}enemies/mouse.webp`, cls: 'st-far m1 walk', delay: 0.1 },
-      { src: `${W}enemies/ant.webp`, cls: 'st-far m2 walk', delay: 0.2 },
-      { src: `${W}enemies/roach.webp`, cls: 'st-far m3 walk', delay: 0.3 },
-      { src: `${W}props/barricade-0.webp`, cls: 'st-barricade rise' },
-      { src: 'art/cats/cheese-back.png', cls: 'st-back rise', delay: 0.2 },
-    ],
-    speaker: '치즈',
-    text: '바리케이드가 무너지기 전에 전부 물리치자! 냥냥 방위대, 출동이다냥!',
-    sfx: ['win'],
-  },
+  { bg: `${S}7.jpg`, bgCls: 'kb-in panel', layers: [], speaker: '치즈', text: '바리케이드가 무너지기 전에 전부 물리치자! 냥냥 방위대, 출동이다냥!', sfx: ['win'] },
 ];
 
 export class Story {
