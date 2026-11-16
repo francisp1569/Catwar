@@ -55,6 +55,8 @@ function power(def: CatDef, save: SaveData): number {
   return Math.round(s.hp / 3 + s.atk * 6 + o.stars * 20);
 }
 
+const STAMP_DESC = '대장이 되면 자기 스킬과 함께 쓰는 전용 공격. 약 3초마다 적이 가장 몰린 곳에 거대한 금빛 발바닥을 찍어 범위 피해 + 잠깐 기절 + 밀쳐내기. 전투 중 레벨·각성·폭주로 강해짐.';
+
 function chapterOf(no: number): string {
   return [...CHAPTERS].reverse().find((c) => no >= c.from)!.name.split(' · ')[0];
 }
@@ -761,6 +763,7 @@ export class Menu {
       <p class="muted">${esc(w.intro)}</p>
       <p class="muted">전투 중 NEW 카드로 합류한 뒤, 아래 강화 중에서 골라 키워요. 고양이 레벨과 성급(★)은 기본 위력을 올려요.</p>
       <ul class="skill">${w.mods.map((x) => `<li class="cur">${esc(x.name)} <small>(최대 ${x.max}회)</small><br><span class="muted">${esc(x.desc)}</span></li>`).join('')}</ul>
+      ${def.hero && o ? `<h3>🐾 대장의 발도장 <small>대장 전용</small></h3><ul class="skill"><li class="cur">${STAMP_DESC}</li></ul>` : ''}
       ${def.hero && o ? `<h3>📣 꾹꾹이 응원 <small>★${o.stars}</small></h3><ul class="skill"><li class="cur">${esc(rallyDesc(o.stars))}</li></ul>` : ''}
       <p class="muted">${esc(def.bio)}</p>`);
   }

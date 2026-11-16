@@ -31,7 +31,7 @@ export function openHeroPicker(o: PickOptions): void {
     root.innerHTML = `
       <div class="hp-head">
         <h2>${o.title ?? '나의 대장 고양이를 골라 주세요'}</h2>
-        <p>우리 집 고양이와 닮은 아이를 골라 보세요! 대장은 어떤 고양이든 능력치가 같아요.</p>
+        <p>우리 집 고양이와 닮은 아이를 골라 보세요! 대장은 어떤 고양이든 능력치가 같고, 전용 공격 「대장의 발도장」을 함께 써요.</p>
       </div>
       <div class="hp-preview" style="--rc:${RARITY_COLOR[d.rarity]}">
         <img class="hp-full" src="${fullSrc(sel)}" alt="">

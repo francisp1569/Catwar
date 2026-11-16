@@ -1616,6 +1616,24 @@ function drawFx(ctx: Ctx, game: Game): void {
         ctx.fillRect(0, f.y - 60 - k * 20, W, 110);
         break;
       }
+      case 'stamp': {
+        // 대장의 발도장: 위에서 쿵 내려찍는 금빛 발바닥 + 퍼지는 고리
+        const drop = Math.min(1, k / 0.18);
+        ctx.globalAlpha = k < 0.6 ? 1 : (1 - k) / 0.4;
+        if (k > 0.15) {
+          ctx.strokeStyle = 'rgba(255,216,77,0.8)';
+          ctx.lineWidth = 6 * (1 - k);
+          ctx.beginPath(); ctx.ellipse(f.x, f.y, f.r * (0.6 + k), f.r * (0.6 + k) * 0.55, 0, 0, Math.PI * 2); ctx.stroke();
+        }
+        ctx.translate(f.x, f.y - (1 - drop) * 80);
+        const sc = 1.6 - drop * 0.6;
+        ctx.scale(sc, sc);
+        ctx.globalAlpha *= 0.9;
+        pawPrint(ctx, 0, 0, f.r * 0.62, '#3b2228');
+        pawPrint(ctx, 0, 0, f.r * 0.55, '#ffd84d');
+        pawPrint(ctx, -f.r * 0.05, -f.r * 0.05, f.r * 0.32, '#fff3b0');
+        break;
+      }
       case 'heal': {
         const hi = getWorld('fx-heal');
         if (hi) for (let i = 0; i < 5; i++) drawContain(ctx, hi, (i + 0.5) * (W / 5), f.y - k * 40 - (i % 2) * 12, 54);

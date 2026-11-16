@@ -58,6 +58,8 @@ export interface Member {
   evolved?: boolean;
   /** 지원형 고양이의 보조 공격 타이머 */
   sideT?: number;
+  /** 대장 전용 공격 타이머 */
+  stampT?: number;
   /** 필살기(폭주) 쿨타임 남은 시간 / 폭주 남은 시간 */
   ultCd: number;
   ultT: number;
@@ -88,7 +90,7 @@ export interface Shot {
   trail?: { x: number; y: number }[];
 }
 
-export type FxKind = 'beam' | 'slam' | 'quake' | 'snipe' | 'dash' | 'heal' | 'thorns' | 'spark' | 'boom' | 'poof' | 'zap' | 'pounce' | 'spray' | 'shield' | 'feather' | 'dirt' | 'coins' | 'ring' | 'slime';
+export type FxKind = 'beam' | 'slam' | 'quake' | 'snipe' | 'dash' | 'heal' | 'thorns' | 'spark' | 'boom' | 'poof' | 'zap' | 'pounce' | 'spray' | 'shield' | 'feather' | 'dirt' | 'coins' | 'ring' | 'slime' | 'stamp';
 export interface ZapPoint { x: number; y: number; }
 export interface Fx { kind: FxKind; x: number; y: number; x2?: number; y2?: number; r: number; t: number; life: number; color: string; style?: WeaponFx; pts?: ZapPoint[]; ang?: number; }
 export interface Mine { x: number; y: number; r: number; dmg: number; src: number; t: number; seed: number; }
@@ -115,6 +117,15 @@ export const ULT_CD = 32;
 export const ULT_DUR = 4;
 const ULT_RATE = 2.2;
 const ULT_DMG = 1.3;
+
+/** 혼자서는 약한 고양이(지원·느린 공격형)가 대장이 되면 발도장을 더 세게 (대장끼리 비슷한 힘이 되게) */
+/** [피해 배율, 빈도 배율] */
+export const LEADER_STAMP: Partial<Record<string, [number, number]>> = {
+  sphynx: [1.6, 3], abyssinian: [1.6, 3], tuxedo: [1.6, 3],
+  bengal: [1.5, 2.5], russianblue: [1.5, 2.5], scottish: [1.5, 2.5],
+  samsaek: [1.4, 2], cheesetabby: [1.4, 2],
+  persian: [1.3, 1.3], ragdoll: [1.3, 1.3],
+};
 
 /** 공격 종류별 밀려나는 거리 (px). 보스는 15%만 */
 const KNOCK_BY_KIND: Partial<Record<string, number>> = {
@@ -176,6 +187,8 @@ export class Game {
   private lastStopAt = -9;
   /** 이번 전투에서 바리케이드 체력이 가장 낮았던 비율 (밸런스 측정용) */
   minHpRatio = 1;
+  /** 대장 발도장이 준 피해 (밸런스 측정용) */
+  stampDealt = 0;
   /** 황금쥐로 번 코인 */
   bonusCoins = 0;
   /** 결과 화면 '다음' 버튼으로 이어 할 스테이지 */
@@ -801,6 +814,7 @@ export class Game {
       m.ultT = Math.max(0, m.ultT - dt);
       const frenzy = m.ultT > 0 ? ULT_RATE : 1;
       this.sideAttack(m, dt * frenzy);
+      if (m.slot === 0) this.leaderStamp(m, dt * frenzy);
       const p = this.params(m);
       if (p.interval <= 0) continue;
       m.timer += dt * (m.weapon.kind === 'heal' ? 1 : spd) * frenzy;
@@ -821,6 +835,27 @@ export class Game {
     persian: { every: 1.3, dmg: 0.8, style: 'notes', pierce: 3 },
     ragdoll: { every: 1.7, dmg: 1.1, style: 'cushion', pierce: 1 },
   };
+
+  /** 대장 전용 공격 '대장의 발도장': 적이 가장 몰린 곳에 거대한 금빛 발바닥을 찍는다 */
+  static readonly STAMP_EVERY = 2.8;
+  private leaderStamp(m: Member, dt: number): void {
+    const [dmgK, freqK] = LEADER_STAMP[m.def.id] ?? [1, 1];
+    m.stampT = (m.stampT ?? 0) + dt * this.speedMul * freqK;
+    if (m.stampT < Game.STAMP_EVERY) return;
+    const list = this.alive().filter((e) => e.y > CONFIG.fieldTop + 20);
+    const c = this.densest(list, 70);
+    if (!c) return;
+    m.stampT = 0;
+    const grow = (1 + 0.12 * (m.level - 1)) * (m.evolved ? 1.6 : 1);
+    const r = 62 + Math.min(40, m.level * 3);
+    const dmg = m.power * 1.5 * dmgK * grow * this.dmgMul;
+    for (const e of list) {
+      if (Math.hypot(e.x - c.x, e.y - c.y) <= r + e.def.size * 0.5) { this.stampDealt += Math.min(dmg, e.hp); this.damageEnemy(e, dmg, { src: m.slot, knock: 16, stun: 0.25, quiet: true, color: '#ffd84d' }); }
+    }
+    this.fx.push({ kind: 'stamp', x: c.x, y: c.y, r, t: 0, life: 0.55, color: '#ffd84d' });
+    this.sfx('thud');
+    this.shake = Math.max(this.shake, 0.12);
+  }
 
   private sideAttack(m: Member, dt: number): void {
     const sd = Game.SIDE[m.def.id];
