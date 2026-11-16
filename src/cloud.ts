@@ -72,9 +72,16 @@ export async function cloudInit(local: SaveData): Promise<SaveData | null> {
     return null;
   } catch (e) {
     cloud.status = 'error';
-    cloud.error = (e as Error).message ?? String(e);
+    cloud.error = friendly(e);
     return null;
   }
+}
+
+/** 연결 실패 이유를 알기 쉽게: 미리보기(claude.ai) 링크는 보안 정책상 외부 서버 연결이 막혀 있다 */
+function friendly(e: unknown): string {
+  const m = (e as Error)?.message ?? String(e);
+  if (/fetch|network|load failed/i.test(m)) return '이 링크에서는 외부 서버 연결이 막혀 있어요. 정식 배포 주소에서는 돼요.';
+  return m;
 }
 
 async function pushNow(s: SaveData): Promise<void> {
@@ -101,9 +108,25 @@ export function cloudFlush(): void {
 // ───────────── 이메일로 저장 지키기 / 다른 기기에서 이어 하기 ─────────────
 
 /** 지금 게스트 계정에 이메일을 연결 (메일로 6자리 코드가 감) */
+/** 시작할 때 연결이 실패했으면 여기서 다시 게스트 로그인을 시도 */
+async function reconnect(): Promise<string | null> {
+  try {
+    uid = await ensureUser();
+    cloud.status = 'on';
+    cloud.error = '';
+    return null;
+  } catch (e) {
+    cloud.status = 'error';
+    cloud.error = friendly(e);
+    return cloud.error;
+  }
+}
+
 export async function linkEmailStart(email: string): Promise<string | null> {
+  const bad = await reconnect();
+  if (bad) return bad;
   const { error } = await client().auth.updateUser({ email });
-  return error ? error.message : null;
+  return error ? friendly(error) : null;
 }
 
 export async function linkEmailVerify(email: string, code: string): Promise<string | null> {
@@ -116,7 +139,7 @@ export async function linkEmailVerify(email: string, code: string): Promise<stri
 /** 다른 기기: 이메일로 6자리 코드 받기 */
 export async function loginEmailStart(email: string): Promise<string | null> {
   const { error } = await client().auth.signInWithOtp({ email, options: { shouldCreateUser: false } });
-  return error ? error.message : null;
+  return error ? friendly(error) : null;
 }
 
 /** 코드 확인 → 그 계정의 저장을 돌려줌 (호출한 쪽에서 적용) */

@@ -835,6 +835,7 @@ export class Menu {
       <div class="row center gap"><button class="btn" data-act="story">📖 스토리 다시 보기</button><button class="btn" data-act="hero">👑 대장 바꾸기·이름</button></div>
       ${cloudEnabled() ? `<div class="cloud-box">
         <b>☁️ 클라우드 저장 ${cloud.status === 'on' ? '<em class="ok">켜짐</em>' : cloud.status === 'connecting' ? '<em>연결 중…</em>' : '<em class="bad">연결 안 됨</em>'}</b>
+        ${cloud.status === 'error' && cloud.error ? `<small class="muted">(${esc(cloud.error.slice(0, 80))})</small>` : ''}
         <small>${cloud.email ? `📧 ${esc(cloud.email)} 계정에 저장 중 · 다른 기기에서도 이어 할 수 있어요` : '게스트로 자동 저장 중이에요. 브라우저 기록을 지우면 사라질 수 있으니 이메일로 지켜 두세요.'}</small>
         <div class="row center gap">
           ${cloud.email ? '' : '<button class="btn small gold" data-act="cloud-link">📧 이메일로 저장 지키기</button>'}
