@@ -911,6 +911,15 @@ function drawEnemy(ctx: Ctx, e: Enemy): void {
 
 // ───────────────────────── 고양이 부대 ─────────────────────────
 
+/** 전투 뒷모습 키 (고양이 크기 s 대비) */
+const BACK_H = 4.2;
+/** 공격 포즈 몸집 보정 (같은 키로 그렸을 때 머리 크기를 뒷모습과 맞춘 값) */
+const ATK_SCALE: Record<string, number> = {
+  cheese: 0.93, godeungeo: 1, huindungi: 1, chaos: 1.06, cheesetabby: 1, tuxedo: 1, samsaek: 1.06, russianblue: 1.32,
+  scottish: 0.85, munchkin: 1.04, persian: 1, mainecoon: 0.9, siamese: 1, cow: 1.15, americanshort: 1.15,
+  abyssinian: 0.94, norwegian: 0.95, ragdoll: 1, sphynx: 1.12,
+};
+
 function drawSquad(ctx: Ctx, game: Game, t: number): void {
   const order = game.squad.filter((m) => m.level > 0).sort((a, b) => a.y - b.y);
   const crowd = order.length >= 6 ? 0.88 : 1;
@@ -955,17 +964,16 @@ function drawSquad(ctx: Ctx, game: Game, t: number): void {
     if (enter > 0) ctx.scale(1 - enter * 0.3, 1 + enter * 0.2);
     const atkArt = m.swing > 0.35 || m.ultT > 0 && m.swing > 0.1 ? getWorld(`atk-${m.def.id}`) ?? (m.slot === 0 ? getWorld('cheese-attack') : null) : null;
     const art = getArt(m.def.id, 'back');
+    // 크기는 '키' 기준으로 통일 (모든 뒷모습이 귀~발끝 전신이라 키가 같으면 몸집도 같아 보임)
+    const backH = s * BACK_H;
     if (atkArt) {
-      // 공격하는 순간엔 공격 포즈 (발 위치를 맞추고, 높이는 평소 뒷모습과 비슷하게)
-      const baseH = art ? (art.naturalHeight / art.naturalWidth) * s * 2.35 : s * 3.3;
-      const h = baseH * 1.04;
+      // 공격 포즈: 웅크리거나 팔을 든 자세라 고양이마다 몸집 보정값을 곱한다
+      const h = backH * (ATK_SCALE[m.def.id] ?? 1);
       const w = (atkArt.naturalWidth / atkArt.naturalHeight) * h;
       ctx.drawImage(atkArt, -w / 2, -h + s * 0.25, w, h);
     } else if (art) {
-      // 일러스트 뒷모습: 공격할 때 살짝 튕기듯
-      // 폭 기준으로 맞춘다 (무릎 아래를 잘라낸 그림도 같은 크기로 보이게)
-      const w = s * 2.35;
-      const h = (art.naturalHeight / art.naturalWidth) * w;
+      const h = backH;
+      const w = (art.naturalWidth / art.naturalHeight) * h;
       ctx.scale(1 + m.swing * 0.05, 1 - m.swing * 0.04);
       ctx.drawImage(art, -w / 2, -h + s * 0.25 - m.swing * 5, w, h);
     } else {
@@ -974,7 +982,7 @@ function drawSquad(ctx: Ctx, game: Game, t: number): void {
       drawCatBackToon(ctx, `sq${m.slot}`, m.def.look, s, t + m.slot, { sleep: sleeping, swing: m.swing });
     }
     ctx.restore();
-    if (!sleeping && m.swing > 0.6) {
+    if (!sleeping && m.swing > 0.6 && !getWorld(`atk-${m.def.id}`)) {
       const fy = m.y - s * 2.6;
       ctx.save();
       ctx.globalAlpha = (m.swing - 0.6) * 2.5;
