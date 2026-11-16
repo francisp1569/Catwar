@@ -27,6 +27,46 @@ Thick clean black line art, cel shading with soft highlights, vivid colors, cute
 
 ---
 
+## 🐾 3차 원샷 A: 고양이 20마리 공격 포즈 (뒷모습)
+
+전투 중 공격하는 순간 바꿔 끼울 **공격 포즈 뒷모습**입니다.
+- **20마리 캐릭터 시트(앞모습)와 치즈 뒷모습 그림**을 참고 이미지로 함께 넣으세요.
+- 비율 **5:8 세로**, 가능한 가장 높은 해상도. 가로 5칸 × 세로 4칸, 칸마다 1마리.
+
+```
+ONE single image, portrait 5:8, highest resolution: a character sheet of 20 anthropomorphic cats in the attached school-uniform style, every cat seen from DIRECTLY BEHIND (back view, facing away from the viewer, toward enemies far ahead) in a dynamic ATTACK pose, full body from ears to boots.
+Match the attached character sheet exactly for each cat's fur colors, patterns, uniform and weapon. Same art style: thick clean black line art, cel shading, vivid colors, cute anime game style.
+
+LAYOUT (very important): a precise, perfectly even grid of 5 columns x 4 rows of equal tall cells, separated by straight pure white gutters, plain flat light grey background (#DEDEDE) in every cell, no ground shadows. Each cat fully inside its own cell, centered, same size and same foot line in every cell, nothing cut off. No text, no labels, no numbers, no watermark.
+
+Row 1: 1 orange-and-white tabby (Cheese) firing twin toy pistols forward with muzzle flashes; 2 grey mackerel tabby bashing forward with a round cardboard scratching-post shield; 3 fluffy white cat throwing a pink yarn ball overhand; 4 calico cat lunging forward slashing with both claws; 5 orange tabby pushing a rolling cat exercise wheel forward.
+Row 2: 6 tuxedo cat aiming and flicking a jingle bell ball like a sniper; 7 calico cat swinging a grooming brush, spitting a little fur ball; 8 Russian blue casting a feather fishing-rod wand forward; 9 Scottish fold jumping up for a big butt-slam; 10 short-legged munchkin cat scratching rapidly with both paws.
+Row 3: 11 white Persian singing into a pink microphone with music notes flying forward; 12 huge Maine coon throwing a giant paw punch forward; 13 Siamese aiming a red laser pointer forward with a beam; 14 black-and-white cow-pattern cat throwing a churu treat bomb overhand; 15 silver American shorthair throwing a toy-mouse boomerang.
+Row 4: 16 ruddy Abyssinian setting a fur-ball trap on the floor; 17 long-haired Norwegian forest cat shooting a static electricity spark from a paw; 18 ragdoll cat throwing a fluffy cushion forward; 19 spotted Bengal crouching and pouncing forward; 20 hairless Sphynx shooting a water spray bottle forward.
+```
+
+## 🐭 3차 원샷 B: 적 21종 걷기 2번째 동작 + 쓰러진 모습
+
+적이 **발을 바꾸며 걷고**, 쓰러질 때 **기절한 그림**으로 바뀌게 하는 시트입니다.
+- **1차 적 시트와 2장 시트**를 참고 이미지로 함께 넣으세요.
+- 비율 **1:1**, 가능한 가장 높은 해상도. 가로 7칸 × 세로 6칸.
+- 홀수 줄은 「걷기 2번째 동작」, 짝수 줄은 바로 위 칸 적의 「쓰러진 모습」입니다.
+
+```
+ONE single image, square 1:1, highest resolution: an animation frame sheet for 21 cute-but-mischievous enemy characters from the attached reference sheets (bugs, mice, birds and their bosses). Match each enemy's design exactly. Same art style: thick clean black line art, cel shading, vivid colors.
+All characters seen from slightly above in front 3/4 view, facing the viewer.
+
+LAYOUT (very important): a precise, perfectly even grid of 7 columns x 6 rows of equal square cells, separated by straight pure white gutters, plain flat light grey background (#DEDEDE) in every cell, no ground shadows. Each character fully inside its cell, centered, nothing cut off. No text, no labels, no numbers, no watermark.
+Rows 1, 3, 5 = WALK FRAME: the character mid-stride with the OPPOSITE leg forward compared to the reference (alternate walking frame), same size and angle as the reference.
+Rows 2, 4, 6 = DEFEATED: the same character as directly above it, knocked out flat on its back or tumbling, swirly dizzy eyes, small stars around the head, comical.
+
+Row 1 and Row 2 characters (columns 1-7): ant henchman with red bandana; grey bandit mouse with eye mask and cheese sack; cockroach speedster with goggles and red scarf; mosquito with pilot cap; purple spider with witch hat; housefly with chef bandana; brown mouse soldier with bottle-cap helmet and tin-lid shield.
+Row 3 and Row 4 characters: green pirate slug; red centipede with sneakers; masked grey pigeon; goggled wasp; miner mole with helmet lamp; frog thug with red scarf; golden mouse with coin sack.
+Row 5 and Row 6 characters: armored stag beetle; fat rat king with crown and red cape; armored cockroach general; black-violet spider queen; toad king; pirate crow captain; rat emperor with white beard and purple robe.
+```
+
+---
+
 ## 🌿 2장 원샷 (욕실·베란다·마당 배경 + 새 적·보스 + 2장 스토리)
 
 2장 「찍찍 도적단의 역습」에 쓸 그림을 **그림 1장**에 뽑는 프롬프트입니다.
