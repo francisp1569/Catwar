@@ -289,7 +289,7 @@ function openWelcome(onNew: () => void): void {
       <p>진행은 자동으로 저장돼요.<br><b>첫 판을 깬 뒤</b> 이메일을 연결하면<br>폰을 바꿔도 이어 할 수 있어요.</p>
       <button class="btn gold" data-w="new">🐾 처음부터 시작할래요</button>
       <button class="btn" data-w="load">📥 다른 기기에서 하던 저장이 있어요</button>
-      <small class="muted">비밀번호 없이 이메일로 받은 6자리 코드만 있으면 돼요.</small>
+      <small class="muted">비밀번호 없이 이메일로 받은 숫자 코드만 있으면 돼요.</small>
     </div>`;
   document.body.appendChild(el);
   el.addEventListener('click', (e) => {

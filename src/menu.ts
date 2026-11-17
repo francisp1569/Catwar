@@ -139,7 +139,7 @@ export class Menu {
     this.openModal(`
       <h2>🎉 첫 승리 축하해요!</h2>
       <p>지금 진행은 <b>이 브라우저</b>에만 묶여 있어요.<br>브라우저 기록을 지우거나 폰을 바꾸면 사라질 수 있어요.</p>
-      <p class="muted">이메일을 연결해 두면 어느 기기에서든 6자리 코드로 이어 할 수 있어요. (비밀번호 없음)</p>
+      <p class="muted">이메일을 연결해 두면 어느 기기에서든 숫자 코드로 이어 할 수 있어요. (비밀번호 없음)</p>
       <div class="row center gap">
         <button class="btn off" data-act="cloud-later">나중에</button>
         <button class="btn gold" data-act="cloud-link">📧 이메일로 저장 지키기</button>
@@ -352,11 +352,11 @@ export class Menu {
         this.openModal(`
           <button class="x" data-act="settings">✕</button>
           <h2>${login ? '📥 다른 기기 저장 불러오기' : '📧 이메일로 저장 지키기'}</h2>
-          <p class="muted">${login ? '저장을 지켜 둔 이메일을 넣으면 6자리 코드를 보내 드려요. 지금 이 기기의 진행은 그 저장으로 바뀌어요.' : '이메일을 연결해 두면 브라우저 기록을 지워도, 다른 기기에서도 이어 할 수 있어요. 메일로 온 6자리 코드를 넣거나, 메일 속 링크를 누른 뒤 게임을 다시 열어 주세요.'}</p>
+          <p class="muted">${login ? '저장을 지켜 둔 이메일을 넣으면 숫자 코드를 보내 드려요. 지금 이 기기의 진행은 그 저장으로 바뀌어요.' : '이메일을 연결해 두면 브라우저 기록을 지워도, 다른 기기에서도 이어 할 수 있어요. 메일로 온 숫자 코드를 넣거나, 메일 속 링크를 누른 뒤 게임을 다시 열어 주세요.'}</p>
           <input class="hp-name cloud-email" type="email" placeholder="이메일 주소" autocomplete="email">
           <div class="row center"><button class="btn gold" data-act="${login ? 'cloud-login-send' : 'cloud-link-send'}">코드 받기</button></div>
           <div class="cloud-code" hidden>
-            <input class="hp-name cloud-otp" inputmode="numeric" maxlength="6" placeholder="6자리 코드">
+            <input class="hp-name cloud-otp" inputmode="numeric" maxlength="10" placeholder="메일로 온 숫자 코드">
             <div class="row center"><button class="btn gold" data-act="${login ? 'cloud-login-ok' : 'cloud-link-ok'}">확인</button></div>
           </div>`);
         break;
@@ -373,7 +373,7 @@ export class Menu {
       }
       case 'cloud-link-ok': {
         const email = (this.modal.querySelector('.cloud-email') as HTMLInputElement).value.trim();
-        const code = (this.modal.querySelector('.cloud-otp') as HTMLInputElement).value.trim();
+        const code = (this.modal.querySelector('.cloud-otp') as HTMLInputElement).value.replace(/\D/g, '');
         const err = await linkEmailVerify(email, code);
         if (err) { this.toast(`코드가 맞지 않아요: ${err}`); break; }
         this.toast('이메일로 저장을 지켰어요!');
@@ -383,7 +383,7 @@ export class Menu {
       }
       case 'cloud-login-ok': {
         const email = (this.modal.querySelector('.cloud-email') as HTMLInputElement).value.trim();
-        const code = (this.modal.querySelector('.cloud-otp') as HTMLInputElement).value.trim();
+        const code = (this.modal.querySelector('.cloud-otp') as HTMLInputElement).value.replace(/\D/g, '');
         const r = await loginEmailVerify(email, code);
         if (r.error) { this.toast(`불러오지 못했어요: ${r.error}`); break; }
         if (!r.save) { this.toast('그 계정에 저장된 진행이 없어요'); break; }

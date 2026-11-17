@@ -1,6 +1,6 @@
 // 클라우드 저장 (Supabase)
 // - 처음 접속하면 게스트(익명) 계정을 자동으로 만들고 진행을 서버에 자동 저장
-// - 이메일로 '저장 지키기'를 하면 다른 기기·브라우저에서 6자리 코드로 이어 하기
+// - 이메일로 '저장 지키기'를 하면 다른 기기·브라우저에서 숫자 코드로 이어 하기
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { CLOUD } from './cloudConfig';
 import type { SaveData } from './meta/save';
@@ -112,7 +112,7 @@ export function cloudFlush(): void {
 
 // ───────────── 이메일로 저장 지키기 / 다른 기기에서 이어 하기 ─────────────
 
-/** 지금 게스트 계정에 이메일을 연결 (메일로 6자리 코드가 감) */
+/** 지금 게스트 계정에 이메일을 연결 (메일로 숫자 코드가 감) */
 /** 시작할 때 연결이 실패했으면 여기서 다시 게스트 로그인을 시도 */
 async function reconnect(): Promise<string | null> {
   try {
@@ -141,7 +141,7 @@ export async function linkEmailVerify(email: string, code: string): Promise<stri
   return null;
 }
 
-/** 다른 기기: 이메일로 6자리 코드 받기 */
+/** 다른 기기: 이메일로 숫자 코드 받기 */
 export async function loginEmailStart(email: string): Promise<string | null> {
   const { error } = await client().auth.signInWithOtp({ email, options: { shouldCreateUser: false } });
   return error ? friendly(error) : null;
