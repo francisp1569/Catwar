@@ -330,7 +330,7 @@ export class Menu {
         this.openModal(`
           <button class="x" data-act="settings">✕</button>
           <h2>${login ? '📥 다른 기기 저장 불러오기' : '📧 이메일로 저장 지키기'}</h2>
-          <p class="muted">${login ? '저장을 지켜 둔 이메일을 넣으면 6자리 코드를 보내 드려요. 지금 이 기기의 진행은 그 저장으로 바뀌어요.' : '이메일을 연결해 두면 브라우저 기록을 지워도, 다른 기기에서도 이어 할 수 있어요. 메일로 온 6자리 코드를 넣어 주세요.'}</p>
+          <p class="muted">${login ? '저장을 지켜 둔 이메일을 넣으면 6자리 코드를 보내 드려요. 지금 이 기기의 진행은 그 저장으로 바뀌어요.' : '이메일을 연결해 두면 브라우저 기록을 지워도, 다른 기기에서도 이어 할 수 있어요. 메일로 온 6자리 코드를 넣거나, 메일 속 링크를 누른 뒤 게임을 다시 열어 주세요.'}</p>
           <input class="hp-name cloud-email" type="email" placeholder="이메일 주소" autocomplete="email">
           <div class="row center"><button class="btn gold" data-act="${login ? 'cloud-login-send' : 'cloud-link-send'}">코드 받기</button></div>
           <div class="cloud-code" hidden>
