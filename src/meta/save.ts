@@ -32,7 +32,8 @@ export interface SaveData {
   tutorialDone?: boolean; // 첫 판 안내를 끝냈는지
   hardMode?: boolean;  // 로비에서 어려움 모드 선택
   ch2Seen?: boolean;   // 2장 컷씬을 봤는지
-  cloudAsked?: boolean; // 첫 승리 뒤 '이메일로 저장 지키기'를 권했는지
+  cloudAsked?: boolean;
+  guide?: number;      // 첫 승리 뒤 로비 안내 단계 (0=끝) // 첫 승리 뒤 '이메일로 저장 지키기'를 권했는지
   heroId?: string;     // 대장 고양이 (없으면 치즈)
   heroName?: string;   // 대장 고양이에게 붙인 이름
   savedAt?: number;    // 마지막 저장 시각 (클라우드와 비교용)

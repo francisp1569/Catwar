@@ -61,7 +61,8 @@ function wantsCloudAsk(g: Game): boolean {
 }
 
 function afterResult(g: Game): void {
-  if (wantsCloudAsk(g)) { endBattle(); return; }
+  // 첫 승리 뒤엔 로비로: 이메일 저장 권유 + 입양 안내
+  if (wantsCloudAsk(g) || (g.result?.victory && save.guide === undefined)) { endBattle(); return; }
   const lv = reward && (reward as { levelUp?: [number, number] | null }).levelUp;
   const target = (g.result?.victory && g.nextId ? getStage(g.nextId) : null) ?? g.stage;
   pressed = null;
@@ -77,8 +78,10 @@ function endBattle(): void {
   menu.show(save);
   sound.music('lobby');
   // 로비로 돌아오는 터치가 모달 바깥 클릭으로 이어져 바로 닫히지 않게 조금 뒤에 띄운다
+  const won = Object.keys(save.stages).length > 0;
+  if (won) menu.startGuide();
   if (lv) setTimeout(() => menu.celebrateLevel(lv[1], lt), 400);
-  else if (Object.keys(save.stages).length) setTimeout(() => menu.askCloudAfterWin(), 400);
+  else if (won) setTimeout(() => menu.askCloudAfterWin(), 400);
 }
 
 // ───────────── 화면 스케일 (세로 540x960을 화면에 맞춤) ─────────────

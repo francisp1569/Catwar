@@ -149,6 +149,7 @@ export class Menu {
   hide(): void {
     this.root.hidden = true;
     this.closeModal();
+    document.querySelectorAll('.guide-ring, .guide-tip').forEach((n) => n.remove());
     cancelAnimationFrame(this.raf);
   }
 
@@ -182,6 +183,7 @@ export class Menu {
     const arg = el.dataset.arg ?? '';
     const s = this.save;
     sound.play('click');
+    this.guideStep(act, arg);
     switch (act) {
       case 'toggle-sfx': sound.setSfx(!sound.sfxOn); this.openSettings(); break;
       case 'toggle-music': sound.setMusic(!sound.musicOn); this.openSettings(); break;
@@ -538,6 +540,7 @@ export class Menu {
       </nav>`;
     this.paintPortraits(this.root);
     this.root.querySelectorAll<HTMLCanvasElement>('canvas[data-anim]').forEach((c) => this.drawAnim(c, performance.now() / 1000));
+    requestAnimationFrame(() => this.drawGuide());
   }
 
   private anyGrowable(): boolean {
@@ -819,11 +822,67 @@ export class Menu {
     this.modal.innerHTML = `<div class="sheet ${cls}">${html}</div>`;
     this.modal.hidden = false;
     this.paintPortraits(this.modal);
+    this.drawGuide();
   }
 
   private closeModal(): void {
     this.modal.hidden = true;
     this.modal.innerHTML = '';
+    this.drawGuide();
+  }
+
+  // ───────────── 첫 승리 뒤 로비 안내 (입양 → 성장 → 다시 전투) ─────────────
+
+  /** 첫 승리 뒤 한 번 시작 */
+  startGuide(): void {
+    if (this.save.guide !== undefined) return;
+    this.save.guide = 1;
+    // 첫 입양 비용이 모자라면 채워 준다 (안내용 선물)
+    if (this.save.tuna < PULL_COST) this.save.tuna = PULL_COST;
+    writeSave(this.save);
+    this.render();
+  }
+
+  private guideStep(act: string, arg: string): void {
+    const g = this.save.guide;
+    if (!g) return;
+    let next = g;
+    if (g === 1 && act === 'tab' && arg === 'shop') next = 2;
+    else if (g === 2 && act === 'pull') next = 3;
+    else if (g === 3 && act === 'tab' && arg === 'cats') { next = 4; this.catIdx = Math.max(0, CATS.findIndex((c) => c.id === HERO_ID)); }
+    else if (g === 4 && (act === 'levelup' || act === 'tab')) next = 5;
+    else if (g === 5 && act === 'tab' && arg === 'battle') next = 0;
+    else if (act === 'guide-skip') next = 0;
+    if (next !== g) { this.save.guide = next; writeSave(this.save); }
+  }
+
+  private drawGuide(): void {
+    document.querySelectorAll('.guide-ring, .guide-tip').forEach((n) => n.remove());
+    const g = this.save.guide;
+    if (!g || this.root.hidden || !this.modal.hidden) return;
+    const steps: Record<number, [string, string]> = {
+      1: ['nav.tabs5 [data-arg="shop"]', '🐱 새 고양이 친구를 <b>입양</b>할 수 있어요!<br>아래 <b>상점</b>을 눌러 보세요'],
+      2: ['[data-act="pull"][data-arg="1"]', '참치캔으로 <b>골판지 상자</b>를 열면<br>새 고양이가 나와요. <b>1회</b>를 눌러 보세요!'],
+      3: ['nav.tabs5 [data-arg="cats"]', '입양한 고양이는 전투 중 <b>NEW 카드</b>로 합류해요.<br>이제 <b>고양이</b> 탭에서 키워 볼까요?'],
+      4: ['[data-act="levelup"]', '코인으로 <b>레벨 업</b>! 조각이 모이면 <b>승급</b>,<br><b>가방</b>에서 장비도 꼭 끼워 주세요'],
+      5: ['nav.tabs5 [data-arg="battle"]', '강해졌으면 다시 <b>전투</b>로!<br>적은 갈수록 세지니 틈틈이 키워 주세요'],
+    };
+    const st = steps[g];
+    if (!st) return;
+    const el = this.root.querySelector<HTMLElement>(st[0]);
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const ring = document.createElement('div');
+    ring.className = 'guide-ring';
+    Object.assign(ring.style, { left: `${r.left - 6}px`, top: `${r.top - 6}px`, width: `${r.width + 12}px`, height: `${r.height + 12}px` });
+    const tip = document.createElement('div');
+    tip.className = 'guide-tip';
+    tip.innerHTML = `${st[1]}<button data-gskip>안내 끄기</button>`;
+    const below = r.top < window.innerHeight / 2;
+    tip.style[below ? 'top' : 'bottom'] = below ? `${r.bottom + 16}px` : `${window.innerHeight - r.top + 16}px`;
+    tip.classList.add(below ? 'below' : 'above');
+    tip.querySelector('[data-gskip]')!.addEventListener('click', () => { this.guideStep('guide-skip', ''); this.drawGuide(); });
+    document.body.append(ring, tip);
   }
 
   private openSkills(id: string): void {
