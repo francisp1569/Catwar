@@ -638,11 +638,29 @@ function drawBarricade(ctx: Ctx, game: Game, t: number): void {
 
 // 적 그림을 애니메이션 프레임별로 한 번만 만화 스타일로 그려두고 재사용한다
 const enemySprites = new Map<string, { c: HTMLCanvasElement; box: { x: number; y: number; w: number; h: number } }>();
+/**
+ * 적 그림을 구워 둘 해상도. 화면 배율에서 한 번만 정한다.
+ * (예전엔 그리는 순간의 확대율로 정해서, 맞고 찌그러질 때마다 새 그림을 굽느라 버벅였다)
+ */
+let spriteK = 2;
+export function setSpriteScale(pxPerUnit: number): void {
+  const k = Math.min(4, Math.max(1, Math.round(pxPerUnit * 2) / 2));
+  if (k !== spriteK) { spriteK = k; enemySprites.clear(); }
+}
+
+/** 전투 시작 전에 이번 판 적 그림을 미리 구워 둔다 (시작하자마자 버벅이지 않게) */
+export function prewarmEnemies(ctx: Ctx, defs: EnemyDef[]): void {
+  for (const d of defs) {
+    for (let f = 0; f < 6; f++) { enemySprite(ctx, d, f); enemySprite(ctx, d, f, true); }
+    if (getWorld(`enemy-${d.id}-b`)) { enemySprite(ctx, d, 6, false, 'b'); enemySprite(ctx, d, 6, true, 'b'); }
+    if (getWorld(`enemy-${d.id}-ko`)) enemySprite(ctx, d, 6, false, 'ko');
+    enemySprite(ctx, d, 0, 'white');
+  }
+}
 
 /** tint: false/true(맞음, 붉게) 또는 'white'(쓰러지는 순간 하얗게). variant: 걷기 2번째 동작('b'), 쓰러짐('ko') */
-function enemySprite(ctx: Ctx, d: EnemyDef, frame: number, tint: boolean | 'white' = false, variant: '' | 'b' | 'ko' = '') {
-  const tr = ctx.getTransform();
-  const k = Math.min(4, Math.max(1, Math.round(Math.hypot(tr.a, tr.b) * 2) / 2));
+function enemySprite(_ctx: Ctx, d: EnemyDef, frame: number, tint: boolean | 'white' = false, variant: '' | 'b' | 'ko' = '') {
+  const k = spriteK;
   const art = (variant && getWorld(`enemy-${d.id}-${variant}`)) || getWorld(`enemy-${d.id}`);
   const key = `${d.id}:${frame}:${k}:${tint === 'white' ? 2 : tint ? 1 : 0}:${art ? 1 : 0}:${variant}`;
   let sp = enemySprites.get(key);

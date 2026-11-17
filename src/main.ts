@@ -8,7 +8,8 @@ import { Menu } from './menu';
 import { bonuses } from './meta/items';
 import { applyResult, isUnlocked } from './meta/rewards';
 import { loadSave, writeSave, type SaveData } from './meta/save';
-import { chipAt, render, type RewardView } from './render';
+import { chipAt, prewarmEnemies, render, setSpriteScale, type RewardView } from './render';
+import { ENEMIES } from './data/enemies';
 import { ch2Cuts, story } from './story';
 import { adLeft, adUse, showRewarded } from './ads';
 import { cloud, cloudEnabled, cloudFlush, cloudInit, cloudPush } from './cloud';
@@ -54,6 +55,14 @@ function startBattle(stageId: string): void {
   menu.hide();
   canvas.hidden = false;
   resize();
+  graceT = 4;
+  avgDt = 1 / 60;
+  slowT = 0;
+  // 이번 판에 나올 적 그림을 미리 구워 둔다
+  const kinds = new Set<string>([...Object.keys(stage.early), ...Object.keys(stage.late), ...stage.bursts.map((b) => b.kind)]);
+  if (stage.boss) { kinds.add(stage.boss.kind); if (stage.boss.with) kinds.add(stage.boss.with); }
+  for (const k of [...kinds]) { const sm = ENEMIES[k as keyof typeof ENEMIES]?.summon; if (sm) kinds.add(sm.kind); }
+  prewarmEnemies(ctx, [...kinds].map((k) => ENEMIES[k as keyof typeof ENEMIES]).filter(Boolean));
   sound.music('battle');
 }
 
@@ -159,22 +168,26 @@ let dpr = 1;
  * 화면 선명도 상한: 처음엔 최대 2배, 프레임이 버벅이면 스스로 낮춘다 (1.25까지).
  * 폰 화면은 픽셀이 아주 많아서(아이폰 3배) 그대로 그리면 GPU가 힘들어한다.
  */
-let dprCap = (() => { try { return Number(localStorage.getItem('catwar.dprCap')) || 2; } catch { return 2; } })();
+let dprCap = 2;
+let avgDt = 1 / 60;
 let slowT = 0;
 let fastT = 0;
+/** 전투 시작 직후(그림 준비 등)는 원래 잠깐 느리니 판단하지 않는다 */
+let graceT = 4;
 function adaptQuality(dt: number): void {
   if (dt > 0.25) return; // 탭 전환 등으로 생긴 큰 간격은 무시
-  if (dt > 1 / 40) { slowT += dt; fastT = 0; } else { fastT += dt; slowT = Math.max(0, slowT - dt * 0.5); }
-  if (slowT > 1.5 && dprCap > 1.25) {
-    dprCap = Math.max(1.25, dprCap - 0.25);
+  if (graceT > 0) { graceT -= dt; return; }
+  avgDt += (dt - avgDt) * 0.05; // 순간 튐이 아니라 평균으로 판단
+  if (avgDt > 1 / 36) { slowT += dt; fastT = 0; } else { fastT += dt; slowT = Math.max(0, slowT - dt); }
+  if (slowT > 3 && dprCap > 1.5) {
+    dprCap -= 0.25;
     slowT = 0;
-    try { localStorage.setItem('catwar.dprCap', String(dprCap)); } catch { /* noop */ }
+    graceT = 2;
     resize();
-  } else if (fastT > 20 && dprCap < 2) {
-    // 오래 매끄러우면 조금 되돌린다
+  } else if (fastT > 15 && dprCap < 2) {
     dprCap = Math.min(2, dprCap + 0.25);
     fastT = 0;
-    try { localStorage.setItem('catwar.dprCap', String(dprCap)); } catch { /* noop */ }
+    graceT = 2;
     resize();
   }
 }
@@ -186,6 +199,7 @@ function resize(): void {
   canvas.width = Math.round(w * dpr);
   canvas.height = Math.round(h * dpr);
   scale = Math.min(w / CONFIG.width, h / CONFIG.height);
+  setSpriteScale(dpr * scale);
   offX = (w - CONFIG.width * scale) / 2;
   offY = (h - CONFIG.height * scale) / 2;
 }
