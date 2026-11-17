@@ -256,6 +256,23 @@ function layoutFor(area: Area, own: boolean): BgLayout {
   return (own && BG_LAYOUT[area]) || BG_DEFAULT;
 }
 
+const tintCache = new Map<string, HTMLCanvasElement>();
+/** 필터를 미리 입혀 둔 그림 (한 번만 만든다) */
+function tinted(img: HTMLImageElement | HTMLCanvasElement, filter: string): HTMLCanvasElement {
+  const key = `${(img as HTMLImageElement).src ?? ''}|${filter}`;
+  let c = tintCache.get(key);
+  if (!c) {
+    c = document.createElement('canvas');
+    c.width = (img as HTMLImageElement).naturalWidth || img.width;
+    c.height = (img as HTMLImageElement).naturalHeight || img.height;
+    const cc = c.getContext('2d')!;
+    cc.filter = filter;
+    cc.drawImage(img, 0, 0);
+    tintCache.set(key, c);
+  }
+  return c;
+}
+
 function drawBgArt(ctx: Ctx, img: HTMLImageElement, h: number, L: BgLayout): void {
   ctx.imageSmoothingQuality = 'high';
   const iw = img.naturalWidth;
@@ -1240,9 +1257,8 @@ function drawShots(ctx: Ctx, game: Game): void {
     if (sideImg) {
       // 지원 고양이 보조 공격: 음표 / 쿠션 / 털뭉치
       ctx.rotate(-a + (s.style === 'cushion' ? s.spin * 2 : Math.sin(s.spin * 3) * 0.3));
-      if (s.style === 'hairball') ctx.filter = 'sepia(0.6) brightness(0.9)';
-      drawContain(ctx, sideImg, 0, 0, s.style === 'cushion' ? 34 : 30);
-      ctx.filter = 'none';
+      // ctx.filter는 매 프레임 쓰면 아주 느려서(특히 아이폰) 색을 입힌 그림을 한 번만 만들어 둔다
+      drawContain(ctx, s.style === 'hairball' ? tinted(sideImg, 'sepia(0.6) brightness(0.9)') : sideImg, 0, 0, s.style === 'cushion' ? 34 : 30);
     } else if (s.style === 'paw') {
       // 젤리 발바닥
       ctx.rotate(Math.PI / 2);
@@ -1903,10 +1919,12 @@ function drawBossIntro(ctx: Ctx, game: Game): void {
 }
 
 /** 그림을 (cx, cy) 중심, 긴 변 size 크기로 비율 유지해서 그린다 */
-function drawContain(ctx: Ctx, img: HTMLImageElement, cx: number, cy: number, size: number): void {
-  const k = size / Math.max(img.naturalWidth, img.naturalHeight);
-  const w = img.naturalWidth * k;
-  const h = img.naturalHeight * k;
+function drawContain(ctx: Ctx, img: HTMLImageElement | HTMLCanvasElement, cx: number, cy: number, size: number): void {
+  const iw = (img as HTMLImageElement).naturalWidth || img.width;
+  const ih = (img as HTMLImageElement).naturalHeight || img.height;
+  const k = size / Math.max(iw, ih);
+  const w = iw * k;
+  const h = ih * k;
   ctx.drawImage(img, cx - w / 2, cy - h / 2, w, h);
 }
 
@@ -1935,7 +1953,9 @@ function drawSkillChip(ctx: Ctx, m: Member, x: number, y: number, t: number): vo
   } else {
     const pulse = 0.6 + Math.sin(t * 6) * 0.4;
     ctx.save();
-    ctx.shadowColor = '#ffd84d'; ctx.shadowBlur = 14 * pulse;
+    // 그림자 흐림(shadowBlur) 대신 반투명 굵은 선으로 빛나는 느낌
+    ctx.strokeStyle = `rgba(255,216,77,${0.25 * pulse})`; ctx.lineWidth = 12;
+    ctx.beginPath(); ctx.arc(cx, cy, 26, 0, Math.PI * 2); ctx.stroke();
     ctx.strokeStyle = '#ffd84d'; ctx.lineWidth = 3.5;
     ctx.beginPath(); ctx.arc(cx, cy, 26, 0, Math.PI * 2); ctx.stroke();
     ctx.restore();

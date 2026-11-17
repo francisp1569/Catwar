@@ -155,9 +155,32 @@ let scale = 1;
 let offX = 0;
 let offY = 0;
 let dpr = 1;
+/**
+ * 화면 선명도 상한: 처음엔 최대 2배, 프레임이 버벅이면 스스로 낮춘다 (1.25까지).
+ * 폰 화면은 픽셀이 아주 많아서(아이폰 3배) 그대로 그리면 GPU가 힘들어한다.
+ */
+let dprCap = (() => { try { return Number(localStorage.getItem('catwar.dprCap')) || 2; } catch { return 2; } })();
+let slowT = 0;
+let fastT = 0;
+function adaptQuality(dt: number): void {
+  if (dt > 0.25) return; // 탭 전환 등으로 생긴 큰 간격은 무시
+  if (dt > 1 / 40) { slowT += dt; fastT = 0; } else { fastT += dt; slowT = Math.max(0, slowT - dt * 0.5); }
+  if (slowT > 1.5 && dprCap > 1.25) {
+    dprCap = Math.max(1.25, dprCap - 0.25);
+    slowT = 0;
+    try { localStorage.setItem('catwar.dprCap', String(dprCap)); } catch { /* noop */ }
+    resize();
+  } else if (fastT > 20 && dprCap < 2) {
+    // 오래 매끄러우면 조금 되돌린다
+    dprCap = Math.min(2, dprCap + 0.25);
+    fastT = 0;
+    try { localStorage.setItem('catwar.dprCap', String(dprCap)); } catch { /* noop */ }
+    resize();
+  }
+}
 
 function resize(): void {
-  dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+  dpr = Math.min(window.devicePixelRatio || 1, dprCap);
   const w = window.innerWidth;
   const h = window.innerHeight;
   canvas.width = Math.round(w * dpr);
@@ -271,6 +294,7 @@ function frame(now: number): void {
   elapsed += Math.min(dt, 0.1);
   const g = game;
   if (g) {
+    if (g.phase === 'playing' && !g.paused) adaptQuality(dt);
     g.update(dt);
     for (const ev of g.events) sound.play(ev);
     g.events.length = 0;

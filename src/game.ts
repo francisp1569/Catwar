@@ -1279,12 +1279,14 @@ export class Game {
   // ───────────── 연출 ─────────────
 
   addFloat(x: number, y: number, text: string, color: string, size: number): void {
-    if (this.floats.length > 140) this.floats.shift();
+    // 글자(테두리 글씨)는 그리기 비싸서 개수를 제한: 작은 숫자는 많으면 그냥 생략
+    if (this.floats.length > 28 && size < 16) return;
+    if (this.floats.length > 40) this.floats.shift();
     this.floats.push({ x, y, text, color, t: 0.8, size });
   }
 
   private burst(x: number, y: number, color: string, n: number): void {
-    if (this.particles.length > 300) return;
+    if (this.particles.length > 120) return;
     for (let i = 0; i < n; i++) {
       const a = Math.random() * Math.PI * 2;
       const s = 40 + Math.random() * 100;
