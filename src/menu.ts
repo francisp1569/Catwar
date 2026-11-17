@@ -3,6 +3,7 @@ import { drawFaceArtCircle, drawFaceArtSquare, getArt, iconHtml } from './art';
 import { sound } from './audio';
 import { story } from './story';
 import { openHeroPicker } from './heroPick';
+import { adLeft, adUse, showRewarded } from './ads';
 import { cloud, cloudEnabled, linkEmailStart, linkEmailVerify, loginEmailStart, loginEmailVerify } from './cloud';
 import { drawCatLookToon, drawCatPortrait, IDLE_POSE } from './catdraw';
 import { CATS, CAT_BY_ID, HERO_ID, RARITY_COLOR, originalName, setHero, type CatDef, type CatLook } from './data/cats';
@@ -248,6 +249,16 @@ export class Menu {
         break;
       }
       case 'pull': this.doPull(arg === '10' ? 10 : 1); break;
+      case 'ad-cat':
+      case 'ad-item': {
+        const kind = act === 'ad-cat' ? 'cat' : 'item';
+        if (adLeft(s, kind) <= 0) { this.toast('오늘은 다 받았어요. 내일 또 와요!'); break; }
+        if (!(await showRewarded(kind))) break;
+        adUse(s, kind);
+        // 광고 보상 = 그 뽑기 1회 비용만큼 참치를 주고 바로 뽑는다
+        if (kind === 'cat') { s.tuna += PULL_COST; this.doPull(1); } else { s.tuna += ITEM_BOX_COST; this.doPullItems(1); }
+        break;
+      }
       case 'pull-item': this.doPullItems(arg === '10' ? 10 : 1); break;
       case 'free': {
         const r = claimFree(s);
@@ -769,6 +780,14 @@ export class Menu {
         <div class="sc-ico">${iconHtml('chest-open', '🎁')}</div>
         <div class="sc-body"><b>오늘의 무료 상자</b><small>매일 고양이 뽑기 1회 + 장비 1개</small></div>
         <button class="btn ${freeReady ? 'gold' : 'off'}" data-act="free">${freeReady ? '받기' : '내일 또!'}</button>
+      </section>
+      <section class="shop-card ad">
+        <div class="sc-ico">📺</div>
+        <div class="sc-body"><b>광고 보고 무료 뽑기</b><small>광고를 끝까지 보면 바로 열어 드려요 (매일 초기화)</small></div>
+        <div class="ad-btns">
+          <button class="btn ${adLeft(s, 'cat') ? 'pink' : 'off'}" data-act="ad-cat">🐱 고양이 1회<small>${adLeft(s, 'cat')}/3</small></button>
+          <button class="btn ${adLeft(s, 'item') ? 'blue' : 'off'}" data-act="ad-item">🎒 장비 1개<small>${adLeft(s, 'item')}/3</small></button>
+        </div>
       </section>
       <section class="shop-card big">
         ${iconHtml('box', '<div class="box"><div class="box-lid"></div><div class="box-body">📦<span>FRAGILE · 냥</span></div><div class="ears"><i></i><i></i></div></div>', 'box-img')}

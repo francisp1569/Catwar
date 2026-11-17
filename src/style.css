@@ -644,3 +644,24 @@ canvas#game { display: block; position: fixed; inset: 0; width: 100vw; height: 1
 .guide-tip b { color: #e0567a; }
 .guide-tip button { display: block; margin: 6px auto 0; background: none; border: 0; color: #8a7270; font: inherit; font-size: 12px; text-decoration: underline; }
 @keyframes guideBob { 50% { margin-top: 4px; } }
+
+/* 보상형 광고 */
+.btn.pink { background: linear-gradient(#ff9ac0, #e0567a); box-shadow: 0 4px 0 #9c3152; }
+.shop-card.ad { flex-wrap: wrap; }
+.shop-card.ad .ad-btns { display: flex; gap: 8px; width: 100%; }
+.shop-card.ad .ad-btns .btn { flex: 1; font-size: 15px; display: flex; flex-direction: column; align-items: center; }
+.shop-card.ad .ad-btns small { font-size: 11px; opacity: 0.9; }
+.adoffer.revive { position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center; padding: 16px; background: #0009; }
+.ao-card { max-width: 400px; width: 100%; text-align: center; background: #3a2540; color: #fff; border: 3px solid #ff7a6b; border-radius: 20px; padding: 18px 16px; }
+.ao-card h2 { margin: 0 0 8px; font-weight: normal; color: #ffcf5a; font-size: 24px; text-shadow: var(--outline); }
+.ao-card p { margin: 0 0 14px; line-height: 1.5; }
+.ao-card b { color: #7dff9a; }
+.adoffer.double { position: fixed; left: 50%; z-index: 150; transform-origin: center top; font-size: 18px; padding: 10px 20px; white-space: nowrap;
+  display: flex; flex-direction: column; align-items: center; animation: guidePulseBtn 1.2s ease-in-out infinite; }
+.adoffer.double small { font-size: 11px; opacity: 0.85; }
+@keyframes guidePulseBtn { 50% { filter: brightness(1.15); } }
+#adtest { position: fixed; inset: 0; z-index: 300; display: flex; align-items: center; justify-content: center; background: #000d; }
+#adtest .ad-box { width: min(86vw, 360px); background: #fff; color: #333; border-radius: 16px; padding: 20px; text-align: center; display: flex; flex-direction: column; gap: 10px; }
+#adtest .ad-box b { font-size: 22px; }
+#adtest .ad-box p { margin: 0; font-size: 13px; color: #777; }
+#adtest .ad-skip { background: none; border: 0; color: #999; font: inherit; font-size: 12px; text-decoration: underline; }

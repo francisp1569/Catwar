@@ -329,6 +329,27 @@ export class Game {
 
   canRally(): boolean { return this.active && this.rallyCd <= 0; }
 
+  /** 광고 부활을 이미 썼는지 (한 판에 한 번) */
+  revived = false;
+
+  /** 패배 직후 부활: 바리케이드 60% 회복 + 가까운 적을 뒤로 날려 보냄 */
+  revive(): void {
+    if (this.phase !== 'defeat' || this.revived) return;
+    this.revived = true;
+    this.phase = 'playing';
+    this.result = null;
+    this.hp = this.maxHp * 0.6;
+    for (const e of this.enemies) {
+      if (e.dead) continue;
+      if (e.y > CONFIG.barricadeY - 260) { e.kbV = 900; e.stunT = Math.max(e.stunT, 1.5); }
+    }
+    this.banner = { text: '💖 다시 일어났다냥!', t: 1.6 };
+    this.fx.push({ kind: 'heal', x: W / 2, y: CONFIG.barricadeY + 20, r: W / 2, t: 0, life: 0.8, color: '#ff9ac0' });
+    this.sfx('heal');
+    this.sfx('meow-hi');
+    this.shake = 0.3;
+  }
+
   useRally(): boolean {
     if (!this.canRally()) return false;
     if (this.tutorial && this.tutStep === 1) this.tutStep = 2;

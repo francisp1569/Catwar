@@ -10,6 +10,7 @@ import { applyResult, isUnlocked } from './meta/rewards';
 import { loadSave, writeSave, type SaveData } from './meta/save';
 import { chipAt, render, type RewardView } from './render';
 import { ch2Cuts, story } from './story';
+import { adLeft, adUse, showRewarded } from './ads';
 import { cloud, cloudEnabled, cloudFlush, cloudInit, cloudPush } from './cloud';
 import * as gacha from './meta/gacha';
 import * as items from './meta/items';
@@ -47,6 +48,9 @@ function startBattle(stageId: string): void {
   game = new Game(stage, buildSquad(save.cats), bonuses(save), save.seen);
   game.tutorial = !save.tutorialDone;
   reward = null;
+  adPending = false;
+  reviveAsked = false;
+  clearAdUi();
   menu.hide();
   canvas.hidden = false;
   resize();
@@ -61,6 +65,7 @@ function wantsCloudAsk(g: Game): boolean {
 }
 
 function afterResult(g: Game): void {
+  clearAdUi();
   // 첫 승리 뒤엔 로비로: 이메일 저장 권유 + 입양 안내
   if (wantsCloudAsk(g) || (g.result?.victory && save.guide === undefined)) { endBattle(); return; }
   const lv = reward && (reward as { levelUp?: [number, number] | null }).levelUp;
@@ -70,7 +75,68 @@ function afterResult(g: Game): void {
   if (lv) setTimeout(() => sound.play('levelup'), 200);
 }
 
+// ───────────── 보상형 광고: 패배 시 부활, 승리 시 보상 2배 ─────────────
+let adPending = false;
+let reviveAsked = false;
+
+function clearAdUi(): void {
+  document.querySelectorAll('.adoffer').forEach((n) => n.remove());
+}
+
+/** 바리케이드가 무너졌을 때: 광고 보고 부활할지 묻는다 (한 판에 한 번) */
+function offerRevive(g: Game): void {
+  adPending = true;
+  const el = document.createElement('div');
+  el.className = 'adoffer revive';
+  el.innerHTML = `<div class="ao-card">
+      <h2>💥 바리케이드가 무너졌어요!</h2>
+      <p>광고를 끝까지 보면 <b>바리케이드 60% 회복</b>,<br>가까이 온 적은 멀리 날려 보내요.</p>
+      <div class="row center gap">
+        <button class="btn off" data-ao="no">포기하기</button>
+        <button class="btn gold" data-ao="yes">📺 광고 보고 부활</button>
+      </div></div>`;
+  document.body.appendChild(el);
+  el.addEventListener('click', async (e) => {
+    const a = (e.target as HTMLElement).closest<HTMLElement>('[data-ao]')?.dataset.ao;
+    if (!a) return;
+    sound.play('click');
+    el.remove();
+    if (a === 'yes' && (await showRewarded('revive')) && game === g) {
+      adUse(save, 'revive');
+      g.revive();
+    }
+    adPending = false;
+  });
+}
+
+/** 승리 결과 화면: 광고 보고 보상 2배 (하루 몇 번) */
+function offerDouble(g: Game, r: { coins: number; tuna: number; yarn: number }): void {
+  if (!(r.coins || r.tuna || r.yarn) || adLeft(save, 'double') <= 0) return;
+  const el = document.createElement('button');
+  el.className = 'adoffer double btn gold';
+  el.innerHTML = `📺 광고 보고 보상 2배 <small>오늘 ${adLeft(save, 'double')}회 남음</small>`;
+  // 결과 화면 버튼 바로 위에 놓는다
+  const y = offY + (RESULT_BUTTONS[0].rect.y - 74) * scale;
+  Object.assign(el.style, { top: `${y}px`, transform: `translateX(-50%) scale(${Math.min(1.2, scale)})` });
+  document.body.appendChild(el);
+  el.addEventListener('click', async () => {
+    sound.play('click');
+    el.disabled = true;
+    const ok = await showRewarded('double');
+    el.remove();
+    if (!ok || game !== g) return;
+    adUse(save, 'double');
+    save.coins += r.coins;
+    save.tuna += r.tuna;
+    save.yarn += r.yarn;
+    r.coins *= 2; r.tuna *= 2; r.yarn *= 2;
+    writeSave(save);
+    sound.play('levelup');
+  });
+}
+
 function endBattle(): void {
+  clearAdUi();
   const lv = reward && (reward as { levelUp?: [number, number] | null }).levelUp;
   const lt = reward ? (reward as { levelTuna?: number }).levelTuna ?? 0 : 0;
   game = null;
@@ -208,8 +274,10 @@ function frame(now: number): void {
     g.update(dt);
     for (const ev of g.events) sound.play(ev);
     g.events.length = 0;
-    if (g.phase !== 'playing' && !reward) {
+    if (g.phase === 'defeat' && !reward && !adPending && !reviveAsked && !g.tutorial) { reviveAsked = true; offerRevive(g); }
+    if (g.phase !== 'playing' && !reward && !adPending) {
       reward = applyResult(save, g.stage, g.result!);
+      if (g.result!.victory) offerDouble(g, reward as unknown as { coins: number; tuna: number; yarn: number });
       if (g.tutorial && g.tutStep >= 1) save.tutorialDone = true;
       // 승리하면 로비에서도 다음 스테이지가 선택되어 있게
       if (g.result!.victory) {
