@@ -623,3 +623,13 @@ canvas#game { display: block; position: fixed; inset: 0; width: 100vw; height: 1
 .cloud-box small { font-size: 12px; opacity: 0.85; }
 .cloud-code { margin-top: 8px; }
 .cloud-otp { letter-spacing: 6px; text-align: center; margin-bottom: 8px; }
+
+/* 첫 화면: 새로 시작 / 저장 불러오기 */
+#welcome { position: fixed; inset: 0; z-index: 250; display: flex; align-items: center; justify-content: center; padding: 16px;
+  background: linear-gradient(#2b1d2ef2, #1a0f1cf8); color: #fff; }
+.wl-card { max-width: 420px; width: 100%; display: flex; flex-direction: column; gap: 12px; text-align: center;
+  background: #0006; border: 3px solid #ffcf5a; border-radius: 20px; padding: 22px 18px; }
+.wl-card h2 { margin: 0; font-weight: normal; font-size: 24px; color: #ffcf5a; text-shadow: var(--outline); }
+.wl-card p { margin: 0 0 4px; font-size: 15px; line-height: 1.5; }
+.wl-card .btn { font-size: 18px; }
+.wl-card small { font-size: 12px; opacity: 0.75; }

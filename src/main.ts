@@ -10,7 +10,7 @@ import { applyResult, isUnlocked } from './meta/rewards';
 import { loadSave, writeSave, type SaveData } from './meta/save';
 import { chipAt, render, type RewardView } from './render';
 import { ch2Cuts, story } from './story';
-import { cloud, cloudFlush, cloudInit, cloudPush } from './cloud';
+import { cloud, cloudEnabled, cloudFlush, cloudInit, cloudPush } from './cloud';
 import * as gacha from './meta/gacha';
 import * as items from './meta/items';
 import * as progression from './meta/progression';
@@ -54,7 +54,14 @@ function startBattle(stageId: string): void {
 }
 
 /** 승리 → 다음 스테이지, 패배 → 같은 스테이지 다시 */
+/** 첫 승리 뒤 한 번은 로비로 돌아가 이메일 저장을 권한다 */
+function wantsCloudAsk(g: Game): boolean {
+  const lv = reward && (reward as { levelUp?: [number, number] | null }).levelUp;
+  return !lv && !!g.result?.victory && cloudEnabled() && cloud.status === 'on' && !cloud.email && !save.cloudAsked;
+}
+
 function afterResult(g: Game): void {
+  if (wantsCloudAsk(g)) { endBattle(); return; }
   const lv = reward && (reward as { levelUp?: [number, number] | null }).levelUp;
   const target = (g.result?.victory && g.nextId ? getStage(g.nextId) : null) ?? g.stage;
   pressed = null;
@@ -71,6 +78,7 @@ function endBattle(): void {
   sound.music('lobby');
   // 로비로 돌아오는 터치가 모달 바깥 클릭으로 이어져 바로 닫히지 않게 조금 뒤에 띄운다
   if (lv) setTimeout(() => menu.celebrateLevel(lv[1], lt), 400);
+  else if (Object.keys(save.stages).length) setTimeout(() => menu.askCloudAfterWin(), 400);
 }
 
 // ───────────── 화면 스케일 (세로 540x960을 화면에 맞춤) ─────────────
@@ -266,6 +274,50 @@ function enterGame(): void {
     });
   };
   if (!save.introSeen && !save.heroId && !Object.keys(save.stages).length) {
+    if (cloudEnabled() && cloud.status === 'on') openWelcome(pickHero);
+    else pickHero();
+  } else if (!save.introSeen) playIntro();
+}
+
+/** 맨 처음: 새로 시작할지, 다른 기기에서 하던 저장을 불러올지 */
+function openWelcome(onNew: () => void): void {
+  const el = document.createElement('div');
+  el.id = 'welcome';
+  el.innerHTML = `
+    <div class="wl-card">
+      <h2>냥냥 방위대에 온 걸 환영해요!</h2>
+      <p>진행은 자동으로 저장돼요.<br><b>첫 판을 깬 뒤</b> 이메일을 연결하면<br>폰을 바꿔도 이어 할 수 있어요.</p>
+      <button class="btn gold" data-w="new">🐾 처음부터 시작할래요</button>
+      <button class="btn" data-w="load">📥 다른 기기에서 하던 저장이 있어요</button>
+      <small class="muted">비밀번호 없이 이메일로 받은 6자리 코드만 있으면 돼요.</small>
+    </div>`;
+  document.body.appendChild(el);
+  el.addEventListener('click', (e) => {
+    const w = (e.target as HTMLElement).closest<HTMLElement>('[data-w]')?.dataset.w;
+    if (!w) return;
+    sound.play('click');
+    el.remove();
+    if (w === 'new') onNew();
+    else {
+      // 불러오기 창을 닫으면(취소) 다시 이 화면으로
+      menu.show(save);
+      menu.openCloud('login');
+      const back = (): void => { if (!document.querySelector('#modal:not([hidden])')) { obs.disconnect(); if (!save.heroId) openWelcome(onNew); } };
+      const obs = new MutationObserver(back);
+      obs.observe(document.getElementById('modal')!, { attributes: true, attributeFilter: ['hidden'] });
+    }
+  });
+}
+
+function pickHero(): void {
+  const playIntro = (): void => {
+    story.play(() => {
+      save.introSeen = true;
+      writeSave(save);
+      if (!Object.keys(save.stages).length) startBattle('s1');
+    });
+  };
+  {
     openHeroPicker({
       onPick: (id, name) => {
         saveMod.chooseHero(save, id, name);
@@ -275,7 +327,7 @@ function enterGame(): void {
         playIntro();
       },
     });
-  } else if (!save.introSeen) playIntro();
+  }
 }
 // 브라우저 정책: 첫 터치/키 입력 때 소리를 켠다
 // 브라우저마다 '사용자 동작'으로 인정하는 이벤트가 달라서 여러 개에 건다 (구형 iOS는 touchend/click만 인정)

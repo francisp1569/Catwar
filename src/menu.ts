@@ -124,6 +124,28 @@ export class Menu {
     this.startAnim();
   }
 
+  /** 이메일 저장 창 바로 열기 (첫 화면의 '불러오기' 등) */
+  openCloud(mode: 'link' | 'login'): void {
+    const b = document.createElement('button');
+    b.dataset.act = mode === 'link' ? 'cloud-link' : 'cloud-login';
+    void this.onClick({ target: b } as unknown as MouseEvent);
+  }
+
+  /** 첫 승리 뒤 한 번: 진행을 이메일로 지켜 두라고 권한다 */
+  askCloudAfterWin(): void {
+    if (!cloudEnabled() || cloud.email || this.save.cloudAsked) return;
+    this.save.cloudAsked = true;
+    this.commit();
+    this.openModal(`
+      <h2>🎉 첫 승리 축하해요!</h2>
+      <p>지금 진행은 <b>이 브라우저</b>에만 묶여 있어요.<br>브라우저 기록을 지우거나 폰을 바꾸면 사라질 수 있어요.</p>
+      <p class="muted">이메일을 연결해 두면 어느 기기에서든 6자리 코드로 이어 할 수 있어요. (비밀번호 없음)</p>
+      <div class="row center gap">
+        <button class="btn off" data-act="cloud-later">나중에</button>
+        <button class="btn gold" data-act="cloud-link">📧 이메일로 저장 지키기</button>
+      </div>`);
+  }
+
   hide(): void {
     this.root.hidden = true;
     this.closeModal();
@@ -386,6 +408,10 @@ export class Menu {
         this.toast('처음부터 다시 시작해요');
         break;
       case 'close': this.closeModal(); break;
+      case 'cloud-later':
+        this.closeModal();
+        this.toast('설정 ⚙️ 에서 언제든 연결할 수 있어요');
+        break;
     }
   }
 
