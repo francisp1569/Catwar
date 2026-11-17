@@ -38,6 +38,8 @@ export interface Enemy {
   burrowed?: boolean;
   /** 맞고 뒤로 밀려나는 속도 (px/s, 점점 줄어듦) */
   kbV?: number;
+  /** 몇 마리 몫인지 (후반엔 1보다 큼: 경험치·처치 수도 그만큼) */
+  worth?: number;
 }
 
 export interface Member {
@@ -507,15 +509,28 @@ export class Game {
     return entries[0][0];
   }
 
-  private spawn(kind: EnemyKind, x = 30 + Math.random() * (W - 60), y = CONFIG.fieldTop - 20): Enemy {
+  /**
+   * 한 마리에 몇 마리 몫을 담을지: 적이 너무 많으면 폰이 멈추니,
+   * 후반 스테이지는 숫자를 줄이고 그만큼 한 마리를 튼튼하게 만든다.
+   */
+  private get pack(): number {
+    return Math.max(1, this.stage.rate[1] / 6);
+  }
+  /** 화면에 동시에 있을 수 있는 최대 적 수 (넘치면 다음 적에 체력을 몰아준다) */
+  private static readonly MAX_ALIVE = 60;
+  private overflow = 0;
+
+  private spawn(kind: EnemyKind, x = 30 + Math.random() * (W - 60), y = CONFIG.fieldTop - 20, worth = this.pack): Enemy {
     const def = ENEMIES[kind];
     const mul = this.stage.mul * (1 + this.progress * 1.1); // 시간이 갈수록 조금씩 강해짐
+    const w = def.boss ? 1 : worth;
     const e: Enemy = {
       uid: this.nextUid++, def, x, y, baseX: x,
-      hp: def.hp * mul * HORDE.hp, maxHp: def.hp * mul * HORDE.hp, atk: def.atk * this.stage.mul * HORDE.atk,
+      hp: def.hp * mul * HORDE.hp * Math.pow(w, 0.75), maxHp: def.hp * mul * HORDE.hp * Math.pow(w, 0.75), atk: def.atk * this.stage.mul * HORDE.atk * Math.pow(w, 0.7),
       atkTimer: 0, attacking: false, slowT: 0, slowAmt: 0, stunT: 0, hitFlash: 0,
       animT: Math.random() * 10, dead: false, deathT: 0,
     };
+    e.worth = w;
     if (def.boss) { e.hp /= HORDE.hp; e.maxHp /= HORDE.hp; e.atk /= HORDE.atk; }
     if (!this.seen.has(kind)) {
       this.seen.add(kind);
@@ -527,23 +542,34 @@ export class Game {
     return e;
   }
 
+  /** 최대 수를 넘으면 지금 나올 적의 몫을 쌓아 두었다가 다음 적에 얹는다 */
+  private spawnCapped(kind: EnemyKind, x?: number, y?: number, worth = this.pack): void {
+    let alive = 0;
+    for (const e of this.enemies) if (!e.dead) alive++;
+    if (alive >= Game.MAX_ALIVE) { this.overflow += worth * 0.4; return; }
+    const extra = Math.min(this.overflow, worth * 2);
+    this.overflow -= extra;
+    this.spawn(kind, x, y, worth + extra);
+  }
+
   private updateSpawns(dt: number): void {
     const st = this.stage;
     if (this.time < st.duration) {
       const k = this.progress;
       // 레퍼런스처럼: 처음엔 한두 마리씩, 후반엔 폭발적으로
       const rate = st.rate[1] * (0.05 + Math.pow(k, 1.8) * 1.35) + st.rate[0] * 0.15;
-      this.spawnAcc += rate * dt;
+      this.spawnAcc += (rate / this.pack) * dt;
       while (this.spawnAcc >= 1) {
         this.spawnAcc -= 1;
-        this.spawn(this.pickKind(k < 0.5 ? st.early : st.late));
+        this.spawnCapped(this.pickKind(k < 0.5 ? st.early : st.late));
       }
       st.bursts.forEach((bu, i) => {
         if (this.burstsDone.has(i) || this.time < bu.t) return;
         this.burstsDone.add(i);
         this.banner = { text: `⚠ ${ENEMIES[bu.kind].name} 떼가 몰려온다!`, t: 1.8 };
-        for (let j = 0; j < bu.count; j++) {
-          this.spawn(bu.kind, 30 + ((j + 0.5) / bu.count) * (W - 60), CONFIG.fieldTop - 20 - (j % 3) * 22);
+        const n = Math.max(1, Math.round(bu.count / this.pack));
+        for (let j = 0; j < n; j++) {
+          this.spawnCapped(bu.kind, 30 + ((j + 0.5) / n) * (W - 60), CONFIG.fieldTop - 20 - (j % 3) * 22, (bu.count / n) * this.pack);
         }
       });
     } else if (!this.bossSpawned) {
@@ -723,7 +749,7 @@ export class Game {
       e.hp = 0;
       e.dead = true;
       e.deathT = 0;
-      this.kills++;
+      this.kills += Math.round(e.worth ?? 1);
       this.burst(e.x, e.y, e.def.color, e.def.boss ? 24 : 4);
       this.fx.push({ kind: 'poof', x: e.x, y: e.y, r: e.def.size * 1.5, t: 0, life: 0.45, color: '#ffffff' });
       this.sfx(e.def.boss ? 'boom' : 'kill');
@@ -740,7 +766,7 @@ export class Game {
       const goo = e.def.id === 'mouse' || e.def.id === 'ratking' ? 'rgba(200,195,210,0.55)' : e.def.id === 'spider' ? 'rgba(150,110,200,0.45)' : 'rgba(150,190,60,0.42)';
       this.decals.push({ x: e.x, y: e.y, r: e.def.size * (e.def.boss ? 2.2 : 1.4), color: goo, t: 0, seed: Math.random() * 10 });
       if (this.decals.length > 70) this.decals.shift();
-      this.gainXp(e.def.xp);
+      this.gainXp(e.def.xp * (e.worth ?? 1));
       if (e.def.boss) { this.hitStop = 0.18; this.shake = 0.6; this.banner = { text: `${e.def.name} 격파!`, t: 1.8 }; }
     }
   }

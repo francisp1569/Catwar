@@ -839,6 +839,9 @@ function drawEnemy(ctx: Ctx, e: Enemy): void {
   const moving = !e.attacking && e.stunT <= 0;
   ctx.save();
   ctx.translate(e.x, e.y);
+  // 여러 마리 몫을 담은 적은 조금 더 크게 (최대 1.3배)
+  const big = d.boss ? 1 : Math.min(1.3, Math.pow(e.worth ?? 1, 0.2));
+  if (big > 1.01) ctx.scale(big, big);
   ellipse(ctx, d.flying ? 6 : 0, d.flying ? s * 1.4 : s * 0.4, s * 0.9, s * 0.45, 'rgba(40,20,10,0.22)');
   if (e.dead) {
     // 쓰러짐: 하얗게 번쩍 → 톡 부풀었다가 납작해지며 사라짐
