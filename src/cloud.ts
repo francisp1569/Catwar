@@ -31,6 +31,11 @@ async function ensureUser(): Promise<string> {
   const c = client();
   const { data } = await c.auth.getSession();
   let user = data.session?.user ?? null;
+  if (user) {
+    // 메일 속 링크로 이메일 연결을 끝낸 경우 등: 서버에서 최신 정보를 다시 받아 온다
+    const fresh = await c.auth.getUser();
+    if (fresh.data.user) user = fresh.data.user;
+  }
   if (!user) {
     const r = await c.auth.signInAnonymously();
     if (r.error) throw r.error;
