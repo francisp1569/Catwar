@@ -141,7 +141,7 @@ const CH2_BASE: Cut[] = [
     sfx: ['hurt'], shake: true,
   },
   {
-    bg: `${S}c2-3.jpg`, bgCls: 'kb-out panel', layers: [],
+    bg: `${S}c2-3.jpg`, bgCls: 'kb-out wide', layers: [],
     speaker: '치즈',
     text: '놈들이 밖에서 다시 모였다냥. 이번엔 우리가 먼저 나간다냥! 냥냥 방위대, 출동!',
     sfx: ['meow', 'win'],

@@ -998,7 +998,7 @@ function drawSquad(ctx: Ctx, game: Game, t: number): void {
     ctx.save();
     ctx.translate(m.x, m.y + (enter > 0 ? -Math.sin((1 - enter) * Math.PI) * 60 + enter * enter * 70 : 0));
     if (enter > 0) ctx.scale(1 - enter * 0.3, 1 + enter * 0.2);
-    const atkArt = m.swing > 0.35 || m.ultT > 0 && m.swing > 0.1 ? getWorld(`atk-${m.def.id}`) ?? (m.slot === 0 ? getWorld('cheese-attack') : null) : null;
+    const atkArt = m.swing > 0.35 || m.ultT > 0 && m.swing > 0.1 ? getWorld(`atk-${m.def.id}`) : null;
     const art = getArt(m.def.id, 'back');
     // 크기는 '키' 기준으로 통일 (모든 뒷모습이 귀~발끝 전신이라 키가 같으면 몸집도 같아 보임)
     const backH = s * BACK_H;
@@ -2219,13 +2219,19 @@ function drawResult(ctx: Ctx, game: Game, t: number, reward: RewardView | null):
   ctx.save();
   ctx.translate(0, (CONFIG.height - 960) / 2);
   const res = game.result!;
-  const pose = getWorld(res.victory ? 'cheese-win' : 'cheese-lose');
+  // 대장 고양이 앞모습: 이기면 콩콩 뛰고, 지면 기울어져 축 처진다
+  const pose = getWorld(`front-${game.squad[0].def.id}`);
   if (pose) {
     const ph = res.victory ? 175 : 150;
     const pw = (pose.naturalWidth / pose.naturalHeight) * ph;
     const hop = res.victory ? Math.abs(Math.sin(t * 4)) * 10 : 0;
-    ellipse(ctx, W / 2, res.victory ? 214 : 240, pw * 0.35, 10, 'rgba(0,0,0,0.3)');
-    ctx.drawImage(pose, W / 2 - pw / 2, (res.victory ? 212 : 242) - ph - hop, pw, ph);
+    const footY = res.victory ? 212 : 242;
+    ellipse(ctx, W / 2, footY + 2, pw * 0.35, 10, 'rgba(0,0,0,0.3)');
+    ctx.save();
+    ctx.translate(W / 2, footY - hop);
+    if (!res.victory) { ctx.rotate(-0.12); ctx.scale(1.04, 0.92); ctx.filter = 'grayscale(0.6) brightness(0.8)'; }
+    ctx.drawImage(pose, -pw / 2, -ph, pw, ph);
+    ctx.restore();
   }
   if (res.victory) {
     text(ctx, '승리! 🎉', W / 2, 250, 56, '#ffe98a');

@@ -101,10 +101,12 @@ for (const id of ENEMY_ART) {
 for (const id of ['cheese', 'godeungeo', 'huindungi', 'chaos', 'cheesetabby', 'tuxedo', 'samsaek', 'russianblue', 'scottish', 'munchkin',
   'persian', 'mainecoon', 'siamese', 'cow', 'americanshort', 'abyssinian', 'norwegian', 'ragdoll', 'bengal', 'sphynx']) WORLD_FILES[`atk-${id}`] = `attack/${id}.webp`;
 for (const id of ['vacuum', 'web', 'girl-happy', 'girl-worried', 'girl-cry', 'barricade', 'barricade-0', 'barricade-1', 'barricade-2',
-  'cheese-attack', 'cheese-win', 'cheese-lose', 'box', 'box-open', 'boss-ratking', 'boss-roachgen', 'boss-spiderqueen',
+  'box', 'box-open', 'boss-ratking', 'boss-roachgen', 'boss-spiderqueen',
   'boss-toadking', 'boss-crowboss', 'boss-ratemperor', 'badge-ch2']) WORLD_FILES[id] = `props/${id}.webp`;
 for (const id of ['claw', 'spark', 'boom', 'poof', 'splash', 'zap', 'heal', 'notes', 'slime', 'sting', 'tongue', 'feather', 'dirt', 'coins', 'ring', 'meteor']) WORLD_FILES[`fx-${id}`] = `fx/${id}.webp`;
 for (const id of ['lobby', 'map', 'bathroom', 'balcony', 'garden']) WORLD_FILES[`bg-${id}`] = `bg/${id}.jpg`;
+for (const id of ['cheese', 'godeungeo', 'huindungi', 'chaos', 'cheesetabby', 'tuxedo', 'samsaek', 'russianblue', 'scottish', 'munchkin',
+  'persian', 'mainecoon', 'siamese', 'cow', 'americanshort', 'abyssinian', 'norwegian', 'ragdoll', 'bengal', 'sphynx']) WORLD_FILES[`front-${id}`] = `front/${id}.webp`;
 for (const id of ['1', '2', '3', '4', '5', '6', '7', 'title', 'c2-1', 'c2-2', 'c2-3', 'title-ch2']) WORLD_FILES[`story-${id}`] = `story/${id}.jpg`;
 for (const id of ['entrance', 'living', 'kitchen', 'attic']) WORLD_FILES[`bg-${id}`] = `bg/${id}.jpg`;
 export const ICON_IDS = [
