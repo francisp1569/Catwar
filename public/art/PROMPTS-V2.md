@@ -123,3 +123,21 @@ Panel 10 (bottom row, 5th): Cheese front-view attack pose, firing both toy dart 
 - **대장 고르기 화면**: 앞모습이 털 무늬 위주로 바뀌면 "닮은 고양이 고르기"가 훨씬 쉬워진다. 품종 설명 옆에 소품 이름을 같이 보여 주면 좋다.
 - **치즈 외 대장의 승리/패배 포즈**: 지금은 치즈만 전용 포즈가 있다. 다른 대장은 앞모습으로 대신한다. 나중에 여유가 되면 20마리 승리 포즈 시트(5×4)를 같은 방식으로 뽑으면 된다.
 - **장비 아이콘**: 목걸이·모자 장비가 고양이 소품과 겹쳐 보일 수 있다. 소품은 캐릭터 고유, 장비는 능력치용이라 지금 그대로 두되, 색이 너무 비슷하면 알려 달라.
+
+---
+
+## 🅴 시트 E: 집사 누나 통일 + 치즈 무기 아이콘 (원샷)
+새 그림의 누나(긴 갈색 생머리 + 노란 고양이 귀 후드)와 전투 화면·스토리 4컷의 누나(양갈래 머리)가 달라서 맞추고, 스킬 아이콘의 진짜 권총을 장난감 블래스터로 바꾼다.
+- 비율 **3:2 가로**. 참고 이미지: **누나가 치즈를 안은 스토리 그림(새 1컷)**, **시트 A**, 지금 누나 표정 3장(포즈 참고용).
+- 왼쪽 1/3은 세로로 긴 스토리 컷, 오른쪽 2/3은 정사각형 4칸.
+
+```
+ONE single image, landscape 3:2, highest resolution, split into 5 separate areas by straight pure white gutters:
+LEFT AREA (left third of the image, full height, one tall portrait panel): a full-bleed story illustration for a cute mobile game. Night, a dim bedroom: the girl owner from the attached reference (about 10 years old, long straight brown hair, brown eyes, oversized yellow hoodie with cat ears on the hood) sitting on the floor hugging a pillow, crying with big tears, scared; on the wall behind her, big creepy shadows of rats and bugs. Keep her face and the shadows in the upper 70% of the panel; the bottom 25% is calm simple floor (a dialogue box covers it).
+RIGHT AREA (right two thirds, a 2 x 2 grid of equal square cells, each with a plain flat light grey background #DEDEDE, no shadows, subject centered and fully inside the cell, upper body from the waist up for the girl):
+Top-left cell: the same girl, happy, laughing with eyes closed, hugging an orange cushion.
+Top-right cell: the same girl, worried, biting her fingers nervously, hugging a pink cushion.
+Bottom-left cell: the same girl, crying with tears streaming, hugging a mint cushion.
+Bottom-right cell: a game skill icon: two chunky colorful toy foam-dart blasters (orange and white, with small paw-print stickers) crossed in an X, a few foam darts, bold outline, no background other than the grey.
+Match the attached references exactly for the girl's design and the art style: thick clean black line art, cel shading with soft highlights, vivid colors, cute anime game style. No text, no letters, no numbers, no watermark anywhere.
+```
