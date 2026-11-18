@@ -1,5 +1,5 @@
 // 처음 시작할 때 보여주는 스토리 컷씬 (터치로 넘기기, 건너뛰기 가능)
-import { getArt } from './art';
+import { ART_V, getArt } from './art';
 import { sound } from './audio';
 import { CAT_BY_ID, HERO_ID } from './data/cats';
 
@@ -192,7 +192,7 @@ export class Story {
     const last = this.idx === this.cuts.length - 1;
     this.root.innerHTML = `
       <div class="st-stage ${c.shake ? 'shake' : ''}">
-        <div class="st-bg ${c.bgCls ?? ''}" style="${c.bg ? `background-image:url(${c.bg})` : ''}"></div>
+        <div class="st-bg ${c.bgCls ?? ''}" style="${c.bg ? `background-image:url(${c.bg}${c.bg.includes('?') ? '' : `?v=${ART_V}`})` : ''}"></div>
         ${c.layers.map((l) => {
           const st = `animation-delay:${l.delay ?? 0}s;${l.style ?? ''}`;
           return l.src ? `<img class="st-layer ${l.cls}" src="${l.src}" style="${st}" alt="">` : `<div class="st-layer ${l.cls}" style="${st}">${l.html}</div>`;

@@ -10,6 +10,7 @@ import { applyResult, isUnlocked } from './meta/rewards';
 import { loadSave, writeSave, type SaveData } from './meta/save';
 import { chipAt, prewarmEnemies, render, setSpriteScale, type RewardView } from './render';
 import { ENEMIES } from './data/enemies';
+import { ART_V } from './art';
 import { ch2Cuts, story } from './story';
 import { adLeft, adUse, showRewarded } from './ads';
 import { cloud, cloudEnabled, cloudFlush, cloudInit, cloudPush } from './cloud';
@@ -360,7 +361,7 @@ loading.innerHTML = `
 document.body.appendChild(loading);
 const titleImg = new Image();
 titleImg.onload = () => { (loading.querySelector('.ld-art') as HTMLElement).style.backgroundImage = `url(${titleImg.src})`; loading.classList.add('has-art'); };
-titleImg.src = 'art/world/story/title.jpg';
+titleImg.src = `art/world/story/title.jpg?v=${ART_V}`;
 const bar = loading.querySelector('.ld-bar i') as HTMLElement;
 let loaded = false;
 const tickLoad = (): void => {

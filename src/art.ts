@@ -1,3 +1,6 @@
+declare const __ART_V__: string;
+/** 그림 캐시 꼬리표 (빌드마다 바뀜) */
+export const ART_V = __ART_V__;
 // 외부 그림(PNG/JPG) 교체 시스템.
 // public/art/manifest.json 예시:
 //   { "godeungeo": ["back", "face"],                              → godeungeo-back.png, godeungeo-face.png
@@ -33,7 +36,7 @@ export async function loadArt(): Promise<void> {
       for (const [kind, file] of files) {
         const img = new Image();
         loads.push(track(new Promise((ok) => { img.onload = () => ok(); img.onerror = () => ok(); })));
-        img.src = `art/cats/${file}`;
+        img.src = `art/cats/${file}?v=${ART_V}`;
         images.set(`${id}-${kind}`, img);
       }
     }
@@ -128,7 +131,7 @@ export async function loadWorldArt(): Promise<void> {
     const img = new Image();
     img.onload = () => { world.set(id, img); ok(); };
     img.onerror = () => ok();
-    img.src = `art/world/${file}`;
+    img.src = `art/world/${file}?v=${ART_V}`;
   }))));
 }
 
@@ -138,5 +141,5 @@ export function getWorld(id: string): HTMLImageElement | null {
 
 /** DOM용 아이콘 태그 (그림이 없으면 대신 쓸 이모지) */
 export function iconHtml(id: string, fallback: string, cls = 'ico-img'): string {
-  return world.has(id) ? `<img class="${cls}" src="art/world/${WORLD_FILES[id]}" alt="">` : fallback;
+  return world.has(id) ? `<img class="${cls}" src="art/world/${WORLD_FILES[id]}?v=${ART_V}" alt="">` : fallback;
 }
