@@ -1,5 +1,5 @@
 // 로비 (DOM): 하단 5탭 — 상점 · 가방 · 전투 · 고양이 · 지도
-import { drawFaceArtCircle, drawFaceArtSquare, getArt, iconHtml } from './art';
+import { drawFaceArtCircle, drawFaceArtSquare, getArt, getWorld, iconHtml } from './art';
 import { sound } from './audio';
 import { story } from './story';
 import { openHeroPicker } from './heroPick';
@@ -499,6 +499,28 @@ export class Menu {
         ctx.roundRect(-dw / 2, -dh, dw, dh, 16);
         ctx.clip();
         ctx.drawImage(full, -dw / 2, -dh, dw, dh);
+        ctx.restore();
+        return;
+      }
+      // 아직 못 만난 고양이: 새 그림의 실루엣(그림자) + 물음표
+      const front = owned ? null : getWorld(`front-${id}`);
+      if (front) {
+        const sil = silhouette(front);
+        const sc = Math.min((h * 0.9) / sil.height, (w * 0.8) / sil.width);
+        const dw = sil.width * sc;
+        const dh = sil.height * sc;
+        ctx.save();
+        ctx.translate(w / 2, h * 0.97 + Math.sin(t * 2) * 2);
+        ellipse(ctx, 0, 0, dw * 0.4, dh * 0.04, 'rgba(60,20,40,0.18)');
+        ctx.drawImage(sil, -dw / 2, -dh, dw, dh);
+        ctx.font = `bold ${Math.round(dh * 0.22)}px Jua, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.lineWidth = 6;
+        ctx.strokeStyle = '#3b2a3f';
+        ctx.fillStyle = '#ffffff';
+        ctx.strokeText('?', 0, -dh * 0.62);
+        ctx.fillText('?', 0, -dh * 0.62);
         ctx.restore();
         return;
       }
@@ -1025,4 +1047,22 @@ function ellipse(ctx: CanvasRenderingContext2D, x: number, y: number, rx: number
   ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
   ctx.fillStyle = fill;
   ctx.fill();
+}
+
+const silCache = new Map<HTMLImageElement, HTMLCanvasElement>();
+/** 그림을 한 가지 어두운 색으로 칠한 그림자 (한 번만 만든다) */
+function silhouette(img: HTMLImageElement): HTMLCanvasElement {
+  let c = silCache.get(img);
+  if (!c) {
+    c = document.createElement('canvas');
+    c.width = img.naturalWidth;
+    c.height = img.naturalHeight;
+    const cc = c.getContext('2d')!;
+    cc.drawImage(img, 0, 0);
+    cc.globalCompositeOperation = 'source-in';
+    cc.fillStyle = '#4a3550';
+    cc.fillRect(0, 0, c.width, c.height);
+    silCache.set(img, c);
+  }
+  return c;
 }
