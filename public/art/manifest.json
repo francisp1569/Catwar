@@ -3,30 +3,30 @@
   "face": "cheese-face.jpg",
   "faceFocus": [
    0.5,
-   0.48,
-   0.47
+   0.5,
+   0.4
   ],
   "full": "cheese-full.jpg",
   "fullFocus": [
-   0.476,
-   0.27,
-   0.16
+   0.507,
+   0.339,
+   0.327
   ],
-  "back": "cheese-back.png"
+  "back": "cheese-back.webp"
  },
  "godeungeo": {
   "full": "godeungeo-full.jpg",
   "face": "godeungeo-face.jpg",
   "faceFocus": [
    0.5,
-   0.48,
-   0.47
+   0.5,
+   0.4
   ],
   "back": "godeungeo-back.webp",
   "fullFocus": [
-   0.59,
-   0.17,
-   0.15
+   0.464,
+   0.317,
+   0.327
   ]
  },
  "huindungi": {
@@ -34,14 +34,14 @@
   "face": "huindungi-face.jpg",
   "faceFocus": [
    0.5,
-   0.48,
-   0.47
+   0.5,
+   0.4
   ],
   "back": "huindungi-back.webp",
   "fullFocus": [
-   0.69,
-   0.165,
-   0.16
+   0.519,
+   0.289,
+   0.327
   ]
  },
  "chaos": {
@@ -49,14 +49,14 @@
   "face": "chaos-face.jpg",
   "faceFocus": [
    0.5,
-   0.48,
-   0.47
+   0.5,
+   0.4
   ],
   "back": "chaos-back.webp",
   "fullFocus": [
-   0.52,
-   0.2,
-   0.15
+   0.503,
+   0.338,
+   0.327
   ]
  },
  "cheesetabby": {
@@ -64,14 +64,14 @@
   "face": "cheesetabby-face.jpg",
   "faceFocus": [
    0.5,
-   0.48,
-   0.47
+   0.5,
+   0.4
   ],
   "back": "cheesetabby-back.webp",
   "fullFocus": [
-   0.55,
-   0.15,
-   0.15
+   0.529,
+   0.266,
+   0.327
   ]
  },
  "tuxedo": {
@@ -79,14 +79,14 @@
   "face": "tuxedo-face.jpg",
   "faceFocus": [
    0.5,
-   0.48,
-   0.47
+   0.5,
+   0.4
   ],
   "back": "tuxedo-back.webp",
   "fullFocus": [
-   0.57,
-   0.15,
-   0.15
+   0.472,
+   0.285,
+   0.327
   ]
  },
  "samsaek": {
@@ -94,14 +94,14 @@
   "face": "samsaek-face.jpg",
   "faceFocus": [
    0.5,
-   0.48,
-   0.47
+   0.5,
+   0.4
   ],
   "back": "samsaek-back.webp",
   "fullFocus": [
-   0.57,
-   0.17,
-   0.15
+   0.492,
+   0.281,
+   0.327
   ]
  },
  "russianblue": {
@@ -109,14 +109,14 @@
   "face": "russianblue-face.jpg",
   "faceFocus": [
    0.5,
-   0.48,
-   0.47
+   0.5,
+   0.4
   ],
   "back": "russianblue-back.webp",
   "fullFocus": [
-   0.6,
-   0.18,
-   0.15
+   0.513,
+   0.36,
+   0.327
   ]
  },
  "scottish": {
@@ -124,14 +124,14 @@
   "face": "scottish-face.jpg",
   "faceFocus": [
    0.5,
-   0.48,
-   0.47
+   0.5,
+   0.4
   ],
   "back": "scottish-back.webp",
   "fullFocus": [
-   0.6,
-   0.15,
-   0.15
+   0.529,
+   0.33,
+   0.327
   ]
  },
  "munchkin": {
@@ -139,14 +139,14 @@
   "face": "munchkin-face.jpg",
   "faceFocus": [
    0.5,
-   0.48,
-   0.47
+   0.5,
+   0.4
   ],
   "back": "munchkin-back.webp",
   "fullFocus": [
-   0.55,
-   0.23,
-   0.15
+   0.501,
+   0.349,
+   0.327
   ]
  },
  "persian": {
@@ -154,14 +154,14 @@
   "face": "persian-face.jpg",
   "faceFocus": [
    0.5,
-   0.48,
-   0.47
+   0.5,
+   0.4
   ],
   "back": "persian-back.webp",
   "fullFocus": [
-   0.58,
-   0.16,
-   0.16
+   0.512,
+   0.32,
+   0.327
   ]
  },
  "mainecoon": {
@@ -169,14 +169,14 @@
   "face": "mainecoon-face.jpg",
   "faceFocus": [
    0.5,
-   0.48,
-   0.47
+   0.5,
+   0.4
   ],
   "back": "mainecoon-back.webp",
   "fullFocus": [
-   0.6,
-   0.17,
-   0.15
+   0.532,
+   0.266,
+   0.326
   ]
  },
  "siamese": {
@@ -184,14 +184,14 @@
   "face": "siamese-face.jpg",
   "faceFocus": [
    0.5,
-   0.48,
-   0.47
+   0.5,
+   0.4
   ],
   "back": "siamese-back.webp",
   "fullFocus": [
-   0.62,
-   0.16,
-   0.15
+   0.501,
+   0.322,
+   0.327
   ]
  },
  "cow": {
@@ -199,14 +199,14 @@
   "face": "cow-face.jpg",
   "faceFocus": [
    0.5,
-   0.48,
-   0.47
+   0.5,
+   0.4
   ],
   "back": "cow-back.webp",
   "fullFocus": [
-   0.7,
-   0.16,
-   0.15
+   0.497,
+   0.301,
+   0.327
   ]
  },
  "americanshort": {
@@ -214,14 +214,14 @@
   "face": "americanshort-face.jpg",
   "faceFocus": [
    0.5,
-   0.48,
-   0.47
+   0.5,
+   0.4
   ],
   "back": "americanshort-back.webp",
   "fullFocus": [
-   0.57,
-   0.16,
-   0.15
+   0.507,
+   0.281,
+   0.327
   ]
  },
  "abyssinian": {
@@ -229,14 +229,14 @@
   "face": "abyssinian-face.jpg",
   "faceFocus": [
    0.5,
-   0.48,
-   0.47
+   0.5,
+   0.4
   ],
   "back": "abyssinian-back.webp",
   "fullFocus": [
-   0.57,
-   0.14,
-   0.15
+   0.49,
+   0.266,
+   0.312
   ]
  },
  "norwegian": {
@@ -244,14 +244,14 @@
   "face": "norwegian-face.jpg",
   "faceFocus": [
    0.5,
-   0.48,
-   0.47
+   0.5,
+   0.4
   ],
   "back": "norwegian-back.webp",
   "fullFocus": [
-   0.6,
-   0.16,
-   0.15
+   0.516,
+   0.274,
+   0.327
   ]
  },
  "ragdoll": {
@@ -259,14 +259,14 @@
   "face": "ragdoll-face.jpg",
   "faceFocus": [
    0.5,
-   0.48,
-   0.47
+   0.5,
+   0.4
   ],
   "back": "ragdoll-back.webp",
   "fullFocus": [
-   0.57,
-   0.16,
-   0.15
+   0.505,
+   0.34,
+   0.327
   ]
  },
  "bengal": {
@@ -274,14 +274,14 @@
   "face": "bengal-face.jpg",
   "faceFocus": [
    0.5,
-   0.48,
-   0.47
+   0.5,
+   0.4
   ],
   "back": "bengal-back.webp",
   "fullFocus": [
-   0.6,
-   0.16,
-   0.15
+   0.591,
+   0.506,
+   0.327
   ]
  },
  "sphynx": {
@@ -289,14 +289,14 @@
   "face": "sphynx-face.jpg",
   "faceFocus": [
    0.5,
-   0.48,
-   0.47
+   0.5,
+   0.4
   ],
   "back": "sphynx-back.webp",
   "fullFocus": [
-   0.57,
-   0.14,
-   0.15
+   0.541,
+   0.239,
+   0.3
   ]
  }
 }

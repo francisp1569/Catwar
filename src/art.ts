@@ -99,7 +99,7 @@ for (const id of ENEMY_ART) {
   WORLD_FILES[`enemy-${id}-ko`] = `enemies/${id}-ko.webp`; // 쓰러진 모습
 }
 for (const id of ['cheese', 'godeungeo', 'huindungi', 'chaos', 'cheesetabby', 'tuxedo', 'samsaek', 'russianblue', 'scottish', 'munchkin',
-  'persian', 'mainecoon', 'siamese', 'cow', 'americanshort', 'abyssinian', 'norwegian', 'ragdoll', 'sphynx']) WORLD_FILES[`atk-${id}`] = `attack/${id}.webp`;
+  'persian', 'mainecoon', 'siamese', 'cow', 'americanshort', 'abyssinian', 'norwegian', 'ragdoll', 'bengal', 'sphynx']) WORLD_FILES[`atk-${id}`] = `attack/${id}.webp`;
 for (const id of ['vacuum', 'web', 'girl-happy', 'girl-worried', 'girl-cry', 'barricade', 'barricade-0', 'barricade-1', 'barricade-2',
   'cheese-attack', 'cheese-win', 'cheese-lose', 'box', 'box-open', 'boss-ratking', 'boss-roachgen', 'boss-spiderqueen',
   'boss-toadking', 'boss-crowboss', 'boss-ratemperor', 'badge-ch2']) WORLD_FILES[id] = `props/${id}.webp`;

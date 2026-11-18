@@ -951,11 +951,9 @@ function drawEnemy(ctx: Ctx, e: Enemy): void {
 
 /** 전투 뒷모습 키 (고양이 크기 s 대비) */
 const BACK_H = 4.2;
-/** 공격 포즈 몸집 보정 (같은 키로 그렸을 때 머리 크기를 뒷모습과 맞춘 값) */
+/** 공격 포즈 몸집 보정 (같은 시트에서 같은 축척으로 그린 공격 포즈 키 ÷ 뒷모습 키) */
 const ATK_SCALE: Record<string, number> = {
-  cheese: 0.93, godeungeo: 1, huindungi: 1, chaos: 1.06, cheesetabby: 1, tuxedo: 1, samsaek: 1.06, russianblue: 1.32,
-  scottish: 0.85, munchkin: 1.04, persian: 1, mainecoon: 0.9, siamese: 1, cow: 1.15, americanshort: 1.15,
-  abyssinian: 0.94, norwegian: 0.95, ragdoll: 1, sphynx: 1.12,
+  cheese: 1.02, godeungeo: 0.989, huindungi: 0.916, chaos: 1.012, cheesetabby: 1.045, tuxedo: 0.98, samsaek: 1.064, russianblue: 1.18, scottish: 1.056, munchkin: 1.155, persian: 1.091, mainecoon: 0.992, siamese: 1.01, cow: 1.042, americanshort: 1.002, abyssinian: 1.006, norwegian: 1.031, ragdoll: 0.992, bengal: 1.012, sphynx: 1.054,
 };
 
 function drawSquad(ctx: Ctx, game: Game, t: number): void {
