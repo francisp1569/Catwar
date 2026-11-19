@@ -1900,10 +1900,10 @@ function drawHud(ctx: Ctx, game: Game, t: number, pressed: string | null): void 
   ctx.clip();
   const girl = getWorld(ratio > 0.6 ? 'girl-happy' : ratio > 0.3 ? 'girl-worried' : 'girl-cry');
   if (girl) {
-    const gw = 62;
+    const gw = 54;
     const gh = (gw * girl.naturalHeight) / girl.naturalWidth;
     const bob = Math.sin(t * 2) * 1;
-    ctx.drawImage(girl, 34 - gw / 2, CONFIG.height - 28 - 26 + bob, gw, gh);
+    ctx.drawImage(girl, 34 - gw / 2, CONFIG.height - 28 - 23 + bob, gw, gh);
   } else {
     ctx.translate(34, CONFIG.height - 24);
     ctx.scale(0.7, 0.7);
