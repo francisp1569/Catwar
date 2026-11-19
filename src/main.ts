@@ -304,6 +304,31 @@ document.addEventListener('visibilitychange', () => {
 let last = performance.now();
 let elapsed = 0;
 function frame(now: number): void {
+  // 어떤 오류가 나도 다음 프레임은 꼭 예약한다 (오류 한 번에 게임 전체가 멈추지 않게)
+  requestAnimationFrame(frame);
+  try {
+    frameBody(now);
+  } catch (err) {
+    reportError(err);
+  }
+}
+
+/** 최근 오류 기록 (설정 화면에서 복사해 보낼 수 있게) */
+function reportError(err: unknown): void {
+  const e = err as Error;
+  const line = `${new Date().toISOString()} ${e?.message ?? String(err)} | ${(e?.stack ?? '').split('\n').slice(0, 3).join(' / ')}`;
+  console.error(err);
+  try {
+    const list: string[] = JSON.parse(localStorage.getItem('catwar.errors') ?? '[]');
+    if (list[list.length - 1]?.slice(25) === line.slice(25)) return;
+    list.push(line);
+    localStorage.setItem('catwar.errors', JSON.stringify(list.slice(-20)));
+  } catch { /* noop */ }
+}
+window.addEventListener('error', (ev) => reportError(ev.error ?? ev.message));
+window.addEventListener('unhandledrejection', (ev) => reportError(ev.reason));
+
+function frameBody(now: number): void {
   const dt = (now - last) / 1000;
   last = now;
   elapsed += Math.min(dt, 0.1);
@@ -341,8 +366,7 @@ function frame(now: number): void {
     render(ctx, g, elapsed, pressed, reward);
     ctx.restore();
   }
-  requestAnimationFrame(frame);
-}
+  }
 requestAnimationFrame(frame);
 
 canvas.hidden = true;

@@ -461,7 +461,9 @@ export class Game {
   // ───────────── 메인 업데이트 ─────────────
 
   update(rawDt: number): void {
-    if (this.pickAnim && !this.paused) {
+    // 카드 고르는 연출은 일시정지와 상관없이 끝까지 흘러가야 한다
+    // (예전엔 연출 중에 앱을 전환하면 '일시정지 + 연출 중'에 갇혀 화면이 멈췄다)
+    if (this.pickAnim) {
       this.pickAnim.t -= Math.min(rawDt, 0.05);
       if (this.pickAnim.t <= 0) this.pickAnim = null;
       return;

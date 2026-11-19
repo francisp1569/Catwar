@@ -421,6 +421,11 @@ export class Menu {
         this.toast('처음부터 다시 시작해요');
         break;
       case 'close': this.closeModal(); break;
+      case 'copy-errors': {
+        const txt = `${navigator.userAgent}\n${errorLog().join('\n')}`;
+        try { await navigator.clipboard.writeText(txt); this.toast('오류 기록을 복사했어요. 그대로 보내 주세요!'); } catch { this.toast('복사하지 못했어요'); }
+        break;
+      }
       case 'cloud-later':
         this.closeModal();
         this.toast('설정 ⚙️ 에서 언제든 연결할 수 있어요');
@@ -969,6 +974,7 @@ export class Menu {
         </div>
       </div>` : ''}
       <div class="row center gap"><button class="btn small" data-act="save-export">💾 저장 코드 복사</button><button class="btn small" data-act="save-import">📥 저장 코드 불러오기</button></div>
+      ${errorLog().length ? `<div class="row center gap"><button class="btn small" data-act="copy-errors">🐞 오류 기록 복사 (${errorLog().length})</button></div>` : ''}
       <p class="muted">진행 상황은 이 브라우저에 자동 저장돼요.</p>
       <p class="muted">낮잠 보상: 시간당 ${COIN()}${napRate(this.save)} (최대 ${NAP_MAX_HOURS}시간 쌓임)</p>
       <button class="btn ${this.resetArmed ? 'danger' : 'off'}" data-act="reset">${this.resetArmed ? '정말 초기화할까요? 한 번 더 누르면 삭제돼요' : '진행 상황 초기화'}</button>`);
@@ -1065,4 +1071,9 @@ function silhouette(img: HTMLImageElement): HTMLCanvasElement {
     silCache.set(img, c);
   }
   return c;
+}
+
+/** main.ts가 모아 둔 최근 오류 기록 */
+function errorLog(): string[] {
+  try { return JSON.parse(localStorage.getItem('catwar.errors') ?? '[]'); } catch { return []; }
 }
