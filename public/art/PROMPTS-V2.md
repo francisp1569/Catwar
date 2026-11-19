@@ -141,3 +141,39 @@ Bottom-left cell: the same girl, crying with tears streaming, hugging a mint cus
 Bottom-right cell: a game skill icon: two chunky colorful toy foam-dart blasters (orange and white, with small paw-print stickers) crossed in an X, a few foam darts, bold outline, no background other than the grey.
 Match the attached references exactly for the girl's design and the art style: thick clean black line art, cel shading with soft highlights, vivid colors, cute anime game style. No text, no letters, no numbers, no watermark anywhere.
 ```
+
+---
+
+> 아래 시트 F·G가 위 시트 E를 대신합니다 (E 내용을 모두 포함).
+
+## 🅵 시트 F: 옛 화풍 스토리 5컷 다시 그리기
+새 그림(스티커 느낌의 귀여운 화풍)과 옛 그림(반실사 느낌)이 컷씬 안에서 섞여 있어서, 옛 컷 5장을 새 화풍으로 맞춘다.
+- 비율 **45:16 가로** (세로 9:16 칸 5개가 한 줄). 참고 이미지: **새 스토리 1컷(누나+치즈)**, **시트 A**, **대왕쥐·쥐 도적 그림**.
+
+```
+ONE single image, aspect ratio 45:16, highest resolution: 5 separate tall portrait story panels (each 9:16) in one row, separated by straight pure white gutters, for a cute mobile tower-defense game.
+Art style: match the attached new illustrations exactly: cute chibi sticker style, thick clean black line art with a thin white outer outline on characters, cel shading, bright vivid colors, big expressive eyes. The villains are the "Squeak Bandits": a fat grey rat king with a crooked gold crown, red royal cape and a giant fork; bandit mice with black eye masks and loot sacks; cockroaches with goggles and red scarves; ants with red bandanas. The girl owner: about 10 years old, long straight brown hair, brown eyes, oversized yellow hoodie with cat ears on the hood.
+Keep important subjects in the upper 70% of every panel; the bottom 25% is calm simple background (a dialogue box covers it). No text, no letters, no speech bubbles, no numbers, no watermark.
+
+Panel 1: night, a cozy house entrance hall in dark blue moonlight, a cream wall with three arched mouse holes along the baseboard, glowing yellow eyes peeking out of every hole, suspenseful but cute.
+Panel 2: the Squeak Bandits bursting out of the mouse holes: the rat king in front pointing his giant fork with an evil grin, bandit mice, goggled cockroaches and bandana ants behind him, dust clouds, dramatic low angle.
+Panel 3: the girl owner sitting on her bedroom floor at night hugging a pillow, crying with big tears, scared; big creepy shadows of rats and bugs on the wall behind her.
+Panel 4: night outside the house by a drain pipe under a full moon, the rat king (now with a bandage on his head) and the bandit mice regrouping around a map, plotting, sneaky.
+Panel 5: the Squeak Bandits army marching out of a bathroom drain and over a balcony railing toward a backyard garden, many masked mice and bugs, cheeky confident faces.
+```
+
+## 🅶 시트 G: 누나 표정 3장 + 바뀐 무기 아이콘 4개 + 앱 아이콘
+- 비율 **2:1 가로** (정사각형 칸 4×2). 참고 이미지: **새 스토리 1컷(누나)**, **시트 A**.
+
+```
+ONE single image, landscape 2:1, highest resolution: a precise even grid of 4 columns x 2 rows of equal square cells separated by straight pure white gutters. Every cell has a plain flat light grey background (#DEDEDE), no shadows; each subject centered and fully inside its cell.
+Art style: match the attached new illustrations exactly: cute chibi sticker style, thick clean black line art, cel shading, vivid colors. No text, no letters, no numbers, no watermark.
+Row 1, cell 1: the girl owner (about 10 years old, long straight brown hair, brown eyes, oversized yellow cat-ear hoodie), waist up, happy and laughing with eyes closed, hugging an orange cushion.
+Row 1, cell 2: the same girl, waist up, worried, biting her fingers nervously, hugging a pink cushion.
+Row 1, cell 3: the same girl, waist up, crying with tears streaming, hugging a mint cushion.
+Row 1, cell 4: game skill icon: two chunky orange-and-white toy foam-dart blasters with small paw-print stickers, crossed in an X, a few foam darts.
+Row 2, cell 1: game skill icon: a wooden slingshot loaded with a golden jingle bell ball.
+Row 2, cell 2: game skill icon: one giant red quilted oven mitt shaped like a cat paw, punching.
+Row 2, cell 3: game skill icon: a fluffy white cloud-shaped cushion with a blue outline, used as a shield.
+Row 2, cell 4: mobile app icon: the orange-and-white bicolor cat with a red bandana (from the attached sheet), face and shoulders, winking and smiling, filling a rounded square with a warm orange-to-yellow gradient background and a small white paw print in a corner.
+```
