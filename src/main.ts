@@ -482,6 +482,17 @@ Object.assign(window as object, {
     start: startBattle,
     sound,
     hero: () => HERO_ID,
+    /** 성능 측정용: 지금 화면을 n번 그리는 데 걸린 시간(ms) */
+    bench(n = 30) {
+      if (!game) return -1;
+      const t0 = performance.now();
+      for (let i = 0; i < n; i++) {
+        ctx.setTransform(dpr * scale, 0, 0, dpr * scale, dpr * offX, dpr * offY);
+        render(ctx, game, elapsed, null, reward);
+      }
+      ctx.getImageData(0, 0, 1, 1); // 그리기를 실제로 끝내게 한다
+      return (performance.now() - t0) / n;
+    },
     cloud,
     meta: { gacha, items, progression, rewards, save: saveMod, stages: stagesMod, cats: CAT_BY_ID },
   },

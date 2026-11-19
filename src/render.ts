@@ -27,12 +27,58 @@ function roundRect(ctx: Ctx, x: number, y: number, w: number, h: number, r: numb
   ctx.closePath();
 }
 
+// ───── 글자 그림 캐시 ─────
+// 테두리 글씨(strokeText)는 매 프레임 그리면 아주 비싸다. 같은 글자·크기·색은 한 번만 그려 두고 그림처럼 찍는다.
+const textCache = new Map<string, { c: HTMLCanvasElement; w: number; h: number }>();
+let textK = 2;
+if (typeof document !== 'undefined' && document.fonts) document.fonts.addEventListener?.('loadingdone', () => textCache.clear());
+
+function bakedText(font: string, s: string, size: number, color: string, stroke: string | null, lw: number) {
+  const key = `${font}|${s}|${color}|${stroke ?? ''}|${lw}|${textK}`;
+  let e = textCache.get(key);
+  if (e) { textCache.delete(key); textCache.set(key, e); return e; } // 최근 사용 순서 유지
+  // 글꼴이 아직 안 받아졌으면 굽지 않는다 (엉뚱한 글꼴이 굳어 버리지 않게)
+  if (document.fonts && !document.fonts.check(font)) return null;
+  const m = measureCtx().measureText((measureCtx().font = font, s));
+  const pad = Math.ceil(lw / 2 + 2);
+  const w = Math.ceil(m.width) + pad * 2;
+  const h = Math.ceil(size * 1.35) + pad * 2;
+  const c = document.createElement('canvas');
+  c.width = Math.ceil(w * textK);
+  c.height = Math.ceil(h * textK);
+  const cc = c.getContext('2d')!;
+  cc.scale(textK, textK);
+  cc.font = font;
+  cc.textAlign = 'center';
+  cc.textBaseline = 'middle';
+  if (stroke) { cc.lineJoin = 'round'; cc.lineWidth = lw; cc.strokeStyle = stroke; cc.strokeText(s, w / 2, h / 2); }
+  cc.fillStyle = color;
+  cc.fillText(s, w / 2, h / 2);
+  e = { c, w, h };
+  textCache.set(key, e);
+  if (textCache.size > 500) textCache.delete(textCache.keys().next().value!);
+  return e;
+}
+let _mctx: CanvasRenderingContext2D | null = null;
+function measureCtx(): CanvasRenderingContext2D {
+  if (!_mctx) _mctx = document.createElement('canvas').getContext('2d')!;
+  return _mctx;
+}
+
 function text(ctx: Ctx, s: string, x: number, y: number, size: number, color: string, align: CanvasTextAlign = 'center', outline = true): void {
-  ctx.font = `bold ${size}px ${FONT}`;
+  const font = `bold ${size}px ${FONT}`;
+  const lw = outline ? Math.max(3, size / 4.5) : 0;
+  const b = bakedText(font, s, size, color, outline ? 'rgba(40,20,40,0.85)' : null, lw);
+  if (b) {
+    const dx = align === 'center' ? x - b.w / 2 : align === 'right' || align === 'end' ? x - b.w + (lw / 2 + 2) : x - (lw / 2 + 2);
+    ctx.drawImage(b.c, dx, y - b.h / 2, b.w, b.h);
+    return;
+  }
+  ctx.font = font;
   ctx.textAlign = align;
   ctx.textBaseline = 'middle';
   if (outline) {
-    ctx.lineWidth = Math.max(3, size / 4.5);
+    ctx.lineWidth = lw;
     ctx.strokeStyle = 'rgba(40,20,40,0.85)';
     ctx.lineJoin = 'round';
     ctx.strokeText(s, x, y);
@@ -108,11 +154,15 @@ function drawGirl(ctx: Ctx, cx: number, cy: number, mood: number, t: number): vo
 
 /** 데미지 숫자: 굵은 기울임 + 두꺼운 외곽선 */
 function numText(ctx: Ctx, s: string, size: number, color: string): void {
-  ctx.font = `italic 900 ${size}px ${FONT}`;
+  const font = `italic 900 ${size}px ${FONT}`;
+  const lw = Math.max(4, size / 3.2);
+  const b = bakedText(font, s, size, color, '#2a1018', lw);
+  if (b) { ctx.drawImage(b.c, -b.w / 2, -b.h / 2, b.w, b.h); return; }
+  ctx.font = font;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.lineJoin = 'round';
-  ctx.lineWidth = Math.max(4, size / 3.2);
+  ctx.lineWidth = lw;
   ctx.strokeStyle = '#2a1018';
   ctx.strokeText(s, 0, 0);
   ctx.fillStyle = color;
@@ -134,10 +184,21 @@ function wrap(ctx: Ctx, s: string, maxW: number, size: number): string[] {
 }
 
 /** 얼굴 그림(사진)이 있으면 원 안에 그리고, 없으면 코드로 그린 얼굴 */
+const faceCache = new Map<string, HTMLCanvasElement>();
 function iconFace(ctx: Ctx, id: string, cx: number, cy: number, r: number, fallback: () => void): void {
   const art = getArt(id, 'face');
-  if (art) drawFaceArtCircle(ctx, id, art, cx, cy, r);
-  else fallback();
+  if (!art) { fallback(); return; }
+  // 동그랗게 자른 얼굴을 크기별로 한 번만 만들어 둔다 (큰 사진을 매 프레임 줄이고 자르면 느림)
+  const key = `${id}|${Math.round(r * 2)}|${textK}`;
+  let c = faceCache.get(key);
+  if (!c) {
+    c = document.createElement('canvas');
+    const px = Math.ceil(r * 2 * textK);
+    c.width = c.height = px;
+    drawFaceArtCircle(c.getContext('2d')!, id, art, px / 2, px / 2, px / 2);
+    faceCache.set(key, c);
+  }
+  ctx.drawImage(c, cx - r, cy - r, r * 2, r * 2);
 }
 
 function drawFaceAt(ctx: Ctx, look: CatLook, x: number, y: number, R: number, t: number): void {
@@ -512,27 +573,40 @@ function drawField(ctx: Ctx, area: Area, t: number): void {
   }
 }
 
+const decalCache = new WeakMap<Decal, HTMLCanvasElement>();
+/** 바닥 얼룩: 모양을 한 번만 그려 두고 투명도만 바꿔 찍는다 */
 function drawDecals(ctx: Ctx, decals: Decal[]): void {
   for (const d of decals) {
-    ctx.save();
+    let c = decalCache.get(d);
+    if (!c) {
+      const R = d.r * 1.65;
+      c = document.createElement('canvas');
+      c.width = c.height = Math.ceil(R * 2 * textK);
+      const cc = c.getContext('2d')!;
+      cc.scale(textK, textK);
+      cc.translate(R, R);
+      cc.fillStyle = d.color;
+      cc.beginPath();
+      for (let i = 0; i < 9; i++) {
+        const a = (i / 9) * Math.PI * 2;
+        const rr = d.r * (0.7 + 0.35 * Math.sin(d.seed + i * 2.3));
+        const px = Math.cos(a) * rr;
+        const py = Math.sin(a) * rr * 0.75;
+        if (i === 0) cc.moveTo(px, py); else cc.lineTo(px, py);
+      }
+      cc.closePath();
+      cc.fill();
+      for (let i = 0; i < 3; i++) {
+        const a = d.seed + i * 2.1;
+        cc.beginPath(); cc.arc(Math.cos(a) * d.r * 1.4, Math.sin(a) * d.r, d.r * 0.18, 0, Math.PI * 2); cc.fill();
+      }
+      decalCache.set(d, c);
+    }
+    const R = d.r * 1.65;
     ctx.globalAlpha = Math.min(1, (12 - d.t) / 3);
-    ctx.fillStyle = d.color;
-    ctx.beginPath();
-    for (let i = 0; i < 9; i++) {
-      const a = (i / 9) * Math.PI * 2;
-      const rr = d.r * (0.7 + 0.35 * Math.sin(d.seed + i * 2.3));
-      const px = d.x + Math.cos(a) * rr;
-      const py = d.y + Math.sin(a) * rr * 0.75;
-      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
-    }
-    ctx.closePath();
-    ctx.fill();
-    for (let i = 0; i < 3; i++) {
-      const a = d.seed + i * 2.1;
-      circle(ctx, d.x + Math.cos(a) * d.r * 1.4, d.y + Math.sin(a) * d.r, d.r * 0.18, d.color);
-    }
-    ctx.restore();
+    ctx.drawImage(c, d.x - R, d.y - R, R * 2, R * 2);
   }
+  ctx.globalAlpha = 1;
 }
 
 function drawBarricade(ctx: Ctx, game: Game, t: number): void {
@@ -646,6 +720,7 @@ let spriteK = 2;
 export function setSpriteScale(pxPerUnit: number): void {
   const k = Math.min(4, Math.max(1, Math.round(pxPerUnit * 2) / 2));
   if (k !== spriteK) { spriteK = k; enemySprites.clear(); }
+  if (k !== textK) { textK = k; textCache.clear(); faceCache.clear(); scaledCache.clear(); shadowCache.clear(); }
 }
 
 /** 전투 시작 전에 이번 판 적 그림을 미리 구워 둔다 (시작하자마자 버벅이지 않게) */
@@ -867,6 +942,23 @@ function drawEnemyBody(ctx: Ctx, d: EnemyDef, t: number, moving: boolean): void 
 }
 
 
+const shadowCache = new Map<number, HTMLCanvasElement>();
+/** 발밑 그림자 (크기별로 한 번만) */
+function shadowSprite(s: number): HTMLCanvasElement {
+  const key = Math.round(s * textK);
+  let c = shadowCache.get(key);
+  if (!c) {
+    c = document.createElement('canvas');
+    c.width = Math.ceil(s * 1.8 * textK) + 2;
+    c.height = Math.ceil(s * 0.9 * textK) + 2;
+    const cc = c.getContext('2d')!;
+    cc.fillStyle = 'rgba(40,20,10,0.22)';
+    cc.beginPath(); cc.ellipse(c.width / 2, c.height / 2, c.width / 2 - 1, c.height / 2 - 1, 0, 0, Math.PI * 2); cc.fill();
+    shadowCache.set(key, c);
+  }
+  return c;
+}
+
 function drawEnemy(ctx: Ctx, e: Enemy): void {
   const d = e.def;
   const s = d.size;
@@ -877,7 +969,8 @@ function drawEnemy(ctx: Ctx, e: Enemy): void {
   // 여러 마리 몫을 담은 적은 조금 더 크게 (최대 1.3배)
   const big = d.boss ? 1 : Math.min(1.3, Math.pow(e.worth ?? 1, 0.2));
   if (big > 1.01) ctx.scale(big, big);
-  ellipse(ctx, d.flying ? 6 : 0, d.flying ? s * 1.4 : s * 0.4, s * 0.9, s * 0.45, 'rgba(40,20,10,0.22)');
+  const sh = shadowSprite(s);
+  ctx.drawImage(sh, (d.flying ? 6 : 0) - s * 0.9, (d.flying ? s * 1.4 : s * 0.4) - s * 0.45, s * 1.8, s * 0.9);
   if (e.dead) {
     // 쓰러짐: 하얗게 번쩍 → 톡 부풀었다가 납작해지며 사라짐
     const k = e.deathT / 0.45;
@@ -1935,13 +2028,37 @@ function drawBossIntro(ctx: Ctx, game: Game): void {
 }
 
 /** 그림을 (cx, cy) 중심, 긴 변 size 크기로 비율 유지해서 그린다 */
+const scaledCache = new Map<HTMLImageElement | HTMLCanvasElement, Map<number, HTMLCanvasElement>>();
+/** 큰 그림을 작게 그릴 때: 그 크기로 줄인 그림을 한 번만 만들어 둔다 */
+function scaledTo(img: HTMLImageElement | HTMLCanvasElement, w: number, h: number): HTMLCanvasElement | HTMLImageElement {
+  const px = Math.ceil(Math.max(w, h) * textK);
+  const iw = (img as HTMLImageElement).naturalWidth || img.width;
+  if (px * 1.5 >= iw) return img; // 원본이 이미 작으면 그대로
+  let m = scaledCache.get(img);
+  if (!m) { m = new Map(); scaledCache.set(img, m); }
+  const bucket = Math.ceil(px / 8) * 8;
+  let c = m.get(bucket);
+  if (!c) {
+    const ih = (img as HTMLImageElement).naturalHeight || img.height;
+    const k = bucket / Math.max(iw, ih);
+    c = document.createElement('canvas');
+    c.width = Math.max(1, Math.round(iw * k));
+    c.height = Math.max(1, Math.round(ih * k));
+    const cc = c.getContext('2d')!;
+    cc.imageSmoothingQuality = 'high';
+    cc.drawImage(img, 0, 0, c.width, c.height);
+    m.set(bucket, c);
+  }
+  return c;
+}
+
 function drawContain(ctx: Ctx, img: HTMLImageElement | HTMLCanvasElement, cx: number, cy: number, size: number): void {
   const iw = (img as HTMLImageElement).naturalWidth || img.width;
   const ih = (img as HTMLImageElement).naturalHeight || img.height;
   const k = size / Math.max(iw, ih);
   const w = iw * k;
   const h = ih * k;
-  ctx.drawImage(img, cx - w / 2, cy - h / 2, w, h);
+  ctx.drawImage(scaledTo(img, w, h), cx - w / 2, cy - h / 2, w, h);
 }
 
 function drawSkillChip(ctx: Ctx, m: Member, x: number, y: number, t: number): void {
