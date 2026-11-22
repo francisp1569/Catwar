@@ -406,8 +406,11 @@ export class Game {
     this.shake = 0.3;
   }
 
+  /** 이번 판 응원 사용 횟수 (패배 조언용) */
+  rallyUses = 0;
   useRally(): boolean {
     if (!this.canRally()) return false;
+    this.rallyUses++;
     if (this.tutorial && this.tutStep === 1) this.tutStep = 2;
     const r = this.heroRally;
     this.rallyCd = r.cd;

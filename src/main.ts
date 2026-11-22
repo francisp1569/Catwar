@@ -19,6 +19,7 @@ import * as items from './meta/items';
 import * as progression from './meta/progression';
 import { playerLevel } from './meta/items';
 import { bump } from './meta/daily';
+import { defeatAdvice } from './meta/advice';
 import * as rewards from './meta/rewards';
 import * as saveMod from './meta/save';
 import * as stagesMod from './data/stages';
@@ -366,6 +367,8 @@ function frameBody(now: number): void {
     if (g.phase !== 'playing' && !reward && !adPending) {
       reward = applyResult(save, g.stage, g.result!);
       if (g.aimUsed) save.aimLearned = true;
+      // 졌을 때 다음에 해 볼 것 (결과 화면에 표시)
+      if (!g.result!.victory && !g.stage.endless) (reward as { tips?: string[] }).tips = defeatAdvice(save, { ultUses: g.ultUses, rallyUses: g.rallyUses, aimUsed: g.aimUsed, progress: g.result!.progress });
       bump(save, 'battle');
       if (g.result!.victory) bump(save, 'win');
       bump(save, 'kill', g.result!.kills);

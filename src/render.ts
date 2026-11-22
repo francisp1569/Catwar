@@ -2413,8 +2413,12 @@ function drawResult(ctx: Ctx, game: Game, t: number, reward: RewardView | null):
     text(ctx, `🌊 WAVE ${res.wave ?? game.wave}`, W / 2, 270, 52, '#9fe3ff');
     text(ctx, rv?.newBest ? '🏆 최고 기록 갱신!' : `이번에 버틴 웨이브`, W / 2, 335, 20, rv?.newBest ? '#ffd84d' : '#fff');
   } else {
-    text(ctx, '패배...', W / 2, 280, 56, '#ff8a8a');
-    text(ctx, '고양이를 키우고 새 고양이를 모아서 다시 도전!', W / 2, 345, 17, '#fff');
+    text(ctx, '패배...', W / 2, 268, 52, '#ff8a8a');
+    const tips = (reward as { tips?: string[] } | null)?.tips ?? [];
+    if (tips.length) {
+      text(ctx, '💡 다음엔 이렇게 해 봐요', W / 2, 318, 16, '#ffe98a');
+      tips.forEach((tp, i) => text(ctx, `· ${tp}`, W / 2, 344 + i * 24, 15, '#fff'));
+    } else text(ctx, '고양이를 키우고 새 고양이를 모아서 다시 도전!', W / 2, 345, 17, '#fff');
   }
   text(ctx, `처치 ${res.kills} · 레벨 ${game.level} · ${Math.round(res.progress * 100)}% 진행`, W / 2, 400, 16, '#ffd6e4');
   if (reward) {

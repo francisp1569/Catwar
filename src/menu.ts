@@ -5,6 +5,27 @@ import { story } from './story';
 import { openHeroPicker } from './heroPick';
 import { adLeft, adUse, showRewarded } from './ads';
 import { track } from './cloud';
+import { lobbyAdvice } from './meta/advice';
+import { synergiesOf } from './data/synergy';
+
+/** 역할별 아이콘과 전투에서 하는 일 */
+const ROLE_INFO: Record<string, [string, string]> = {
+  리더: ['👑', '팀의 대장이에요. 화면을 꾹 누른 곳을 집중 공격하고, 「대장의 발도장」으로 적이 몰린 곳을 쾅 내리쳐요. 응원으로 바리케이드도 고쳐요.'],
+  탱커: ['🛡️', '바리케이드 앞에서 버티는 수비수예요. 받는 피해를 줄이고, 바짝 붙은 적을 밀쳐 내요. 적이 많이 몰려오는 판에서 든든해요.'],
+  '광역 탱커': ['🛡️', '커다란 몸으로 넓은 범위를 한꺼번에 막아요. 몰려오는 떼를 상대로 강해요.'],
+  보호막: ['🫧', '바리케이드에 보호막을 씌워 피해를 막아 주고, 쿠션을 던져 반격해요. 오래 버텨야 하는 보스전에 좋아요.'],
+  지원: ['💚', '바리케이드를 고치거나 팀 전체 공격력을 올려요. 직접 공격도 하지만, 같이 있으면 팀 전체가 강해져요.'],
+  원거리: ['🏹', '멀리 있는 적부터 차근차근 맞혀요. 꾸준한 피해로 어떤 판에서나 무난해요.'],
+  저격: ['🎯', '체력이 가장 많은 적을 골라 강하게 한 방! 보스와 단단한 적에게 특히 강해요.'],
+  돌격: ['⚡', '앞으로 돌진하며 줄지어 선 적을 한꺼번에 할퀴어요. 적이 줄지어 올 때 시원해요.'],
+  근접: ['🐾', '가까이 온 적을 묵직하게 공격해요. 바리케이드 앞을 지키는 데 좋아요.'],
+  암살: ['🗡️', '약해진 적을 빠르게 마무리하고 치명타가 잘 터져요.'],
+  폭격: ['💥', '적이 가장 많이 모인 곳에 터지는 공격을 던져요. 떼로 몰려오는 판에서 최고예요.'],
+  함정: ['🪤', '바닥에 덫을 깔아 지나가는 적을 묶고 다치게 해요. 길목을 막아 줘요.'],
+  연쇄: ['🔗', '맞은 적 옆으로 전기가 튀어 여러 마리를 한꺼번에 공격해요.'],
+  사냥꾼: ['🐆', '가장 위험한 적에게 몸을 날려 덮쳐요. 빠르고 강한 적을 잡는 데 좋아요.'],
+  물대포: ['💦', '물을 뿌려 적을 밀어내고 느리게 만들어요. 바리케이드에 붙은 적을 떼어 내요.'],
+};
 import { ATTEND, ALL_CLEAR_TUNA, MISSION_BY_ID, attend, bump, canAttend, canClaimBonus, canClaimMission, claimBonus, claimMission, daily, dailyPending } from './meta/daily';
 import { cloud, cloudEnabled, linkEmailStart, linkEmailVerify, loginEmailStart, loginEmailVerify } from './cloud';
 import { drawCatLookToon, drawCatPortrait, IDLE_POSE } from './catdraw';
@@ -472,6 +493,20 @@ export class Menu {
         break;
       case 'close': this.closeModal(); break;
       case 'daily': this.openDaily(); break;
+      case 'role-info': {
+        const d = CAT_BY_ID[arg];
+        const ri = ROLE_INFO[d.role];
+        const syn = synergiesOf(d.id).map((x) => `<div class="syn-row" style="--sc:${x.color}"><b>${x.icon} ${x.name}</b>${x.tiers.map(([n, , t]) => `<small>${n}마리: ${t}</small>`).join('')}<em>${x.members.map((m) => esc(CAT_BY_ID[m].name)).join(' · ')}</em></div>`).join('');
+        this.openModal(`
+          <button class="x" data-act="close">✕</button>
+          <h2>${ri?.[0] ?? '🐾'} ${esc(d.name)} · ${esc(d.role)}</h2>
+          <p>${ri?.[1] ?? ''}</p>
+          <p class="muted">스킬 「${esc(d.skillName)}」: ${esc(d.weapon.intro)}</p>
+          <h3>함께 출전하면 좋은 조합</h3>
+          ${syn || '<p class="muted">특별한 조합은 없지만 어떤 팀과도 잘 어울려요.</p>'}
+          <p class="muted">조합은 전투 중 같은 무리 고양이가 함께 합류하면 켜져요. 레벨업 카드의 NEW 고양이 아래에 표시돼요.</p>`);
+        break;
+      }
       case 'attend': {
         const i = attend(s);
         if (i === null) break;
@@ -756,6 +791,7 @@ export class Menu {
         <div class="chest-line"></div>
         ${chest(3, `${TUNA()}20 · 장비+1`)}
       </section>`}
+ ${(() => { const a = lobbyAdvice(s)[0]; return a ? `<button class="next-step" data-act="${a.act}" data-arg="${a.arg ?? ''}"><span>다음 할 일</span>${a.text}<b>›</b></button>` : ''; })()}
       <button class="start-btn" data-act="start" data-arg="${inf ? 'inf' : st.id}" ${unlocked || inf ? '' : 'disabled'}>
         <span>START</span><small>팀 전투력 ${fmt(teamPower(s))}</small>
       </button>
@@ -797,6 +833,7 @@ export class Menu {
           <div>${rarityBadge(def.rarity)} <span class="breed">${esc(def.breed)}</span></div>
           <h2>${esc(def.name)}${def.hero ? ' <button class="rename-btn" data-act="rename">✏️ 이름</button>' : ''}</h2>
           <div class="lv">Lv.${o.level}<small>/${cap}</small> ${stars(o.stars)}</div>
+          <button class="role-chip" data-act="role-info" data-arg="${def.id}">${ROLE_INFO[def.role]?.[0] ?? '🐾'} ${esc(def.role)} <small>${synergiesOf(def.id).map((x) => x.icon).join('')} ⓘ</small></button>
         </div>
         <canvas class="bigcat" data-anim="cat" data-id="${def.id}"></canvas>
         <div class="side left">
