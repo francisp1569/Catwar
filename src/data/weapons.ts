@@ -115,12 +115,12 @@ export const WEAPONS: Record<string, WeaponDef> = {
   },
   cheesetabby: {
     kind: 'roll', fx: 'wheel', icon: '🎡', color: '#f4a24c',
-    base: { interval: 5, dmg: 0.77, radius: 36, speed: 160, count: 1 },
-    intro: '캣휠을 굴려 보내 닿는 적을 계속 깔아뭉갠다.',
+    base: { interval: 3.4, dmg: 0.4, radius: 36, speed: 150, count: 1 },
+    intro: '적이 몰린 줄로 캣휠을 굴린다. 멀리 갈수록 빨라지고 커져서 최대 3배로 깔아뭉갠다!',
     mods: [
       m('big', '대형 캣휠', '캣휠 크기 증가', 2, { radius: 12 }),
       m('heavy', '묵직한 캣휠', '캣휠 피해 +40%', 2, undefined, { dmg: 1.4 }),
-      m('twin', '캣휠 두 개', '캣휠 +1개', 1, { count: 1 }),
+      m('twin', '캣휠 두 개', '적이 많은 두 줄로 캣휠 +1개', 1, { count: 1 }),
       m('often', '쉬지 않고 굴리기', '굴리는 간격 -25%', 2, undefined, { interval: 0.75 }),
     ],
   },

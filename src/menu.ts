@@ -658,6 +658,24 @@ export class Menu {
   // ───────────── 렌더링 ─────────────
 
   private render(): void {
+    // 다시 그려도 스크롤 위치가 맨 처음으로 돌아가지 않게
+    const keepScroll = new Map<string, number>();
+    this.root.querySelectorAll<HTMLElement>('.prow, .view').forEach((el) => keepScroll.set(el.className, el.scrollLeft * 1e6 + el.scrollTop));
+    this.renderInner();
+    this.root.querySelectorAll<HTMLElement>('.prow, .view').forEach((el) => {
+      const v = keepScroll.get(el.className);
+      if (v !== undefined) { el.scrollLeft = Math.floor(v / 1e6); el.scrollTop = v % 1e6; }
+    });
+    // 고른 고양이 얼굴이 화면 밖이면 보이게 (가운데 쪽으로)
+    const sel = this.root.querySelector<HTMLElement>('.prow .pchip.sel');
+    const row = sel?.parentElement;
+    if (sel && row) {
+      const l = sel.offsetLeft - row.offsetLeft;
+      if (l < row.scrollLeft || l + sel.offsetWidth > row.scrollLeft + row.clientWidth) row.scrollLeft = l - (row.clientWidth - sel.offsetWidth) / 2;
+    }
+  }
+
+  private renderInner(): void {
     const s = this.save;
     const pl = playerLevel(s.exp);
     const tabs: [Tab, string, string][] = [['shop', iconHtml('tab-shop', '🏪', 'tab-img'), '상점'], ['bag', iconHtml('tab-bag', '🎒', 'tab-img'), '가방'], ['battle', iconHtml('tab-battle', '⚔️', 'tab-img'), '전투'], ['cats', iconHtml('tab-cats', '🐱', 'tab-img'), '고양이'], ['map', iconHtml('tab-map', '🗺️', 'tab-img'), '지도']];

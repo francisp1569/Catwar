@@ -78,6 +78,8 @@ export interface Member {
 
 export interface Shot {
   kind: 'bolt' | 'roll' | 'web' | 'lob' | 'boomer' | 'vacuum';
+  /** 캣휠: 굴러간 거리(차징), 처음 크기 */
+  travel?: number; r0?: number;
   sx?: number; sy?: number; tx?: number; ty?: number; age?: number; dur?: number; back?: boolean; range?: number;
   x: number; y: number; vx: number; vy: number;
   dmg: number; radius: number; pierce: number;
@@ -1003,7 +1005,7 @@ export class Game {
     m.sideT = (m.sideT ?? 0) + dt * this.speedMul;
     if (m.sideT < sd.every) return;
     const grow = (1 + 0.12 * (m.level - 1)) * (m.evolved ? 1.6 : 1);
-    const dmg = m.power * sd.dmg * grow * this.dmgMul;
+    const dmg = m.power * sd.dmg * grow * this.dmgMul * (Game.DMG_TUNE[m.def.id] ?? 1);
     const list = this.alive();
     if (sd.style === 'bash') {
       // 스크래처 방패로 앞에 붙은 적들을 밀쳐낸다
@@ -1037,12 +1039,23 @@ export class Game {
     return ok;
   }
 
+  /**
+   * 고양이별 피해 보정 (등급마다 비슷한 세기가 되도록 시뮬레이션으로 맞춘 값)
+   * 목표: N 650 · R 950 · SR 1350 · SSR 2100 (St.18, Lv.15 기준 초당 피해). 지원형은 낮게 대신 효과가 있다.
+   */
+  static readonly DMG_TUNE: Record<string, number> = {
+    huindungi: 1.28, chaos: 1.15, godeungeo: 0.64,
+    tuxedo: 1.9, cow: 1.4, americanshort: 0.78, abyssinian: 5.63, samsaek: 17.25,
+    russianblue: 1.45, scottish: 1.04, munchkin: 2.6, norwegian: 2.37, persian: 4.02, ragdoll: 11.19,
+    mainecoon: 0.41, siamese: 0.65, bengal: 1.01, sphynx: 3.79,
+  };
+
   private fireInner(m: Member, p: WeaponParams): boolean {
     const all = this.alive();
     // 대장은 조준점 근처 적을 우선 노리고, 조준 중엔 더 세게 친다
     const aimedList = m.slot === 0 ? this.aimed(all) : null;
     const list = aimedList ?? all;
-    const dmg = m.power * p.dmg * this.dmgMul * (m.ultT > 0 ? ULT_DMG : 1) * (aimedList ? Game.AIM_BONUS : 1);
+    const dmg = m.power * p.dmg * this.dmgMul * (m.ultT > 0 ? ULT_DMG : 1) * (aimedList ? Game.AIM_BONUS : 1) * (Game.DMG_TUNE[m.def.id] ?? 1);
     const ox = m.x;
     const oy = m.y - 46;
     const color = m.weapon.color;
@@ -1061,10 +1074,13 @@ export class Game {
       }
       case 'roll': {
         if (!list.length) return false;
+        // 적이 가장 많은 줄부터 차례로 (2개면 서로 다른 줄)
         const n = p.count ?? 1;
+        let prev: number | undefined;
         for (let i = 0; i < n; i++) {
-          const x = n === 1 ? (this.bestColumn(list, 80) ?? W / 2) : 90 + i * (W - 180);
-          this.shots.push({ kind: 'roll', x, y: CONFIG.barricadeY - 20, vx: 0, vy: -(p.speed ?? 90), dmg, radius: p.radius ?? 40, pierce: 999, color, crit: false, hit: new Set(), tick: 0, done: false, spin: 0, style: m.weapon.fx, src: m.slot });
+          const x = this.bestColumn(list, (p.radius ?? 40) * 1.6, prev) ?? (prev !== undefined ? W - prev : W / 2);
+          prev = x;
+          this.shots.push({ kind: 'roll', x, y: CONFIG.barricadeY - 20, vx: 0, vy: -(p.speed ?? 90), dmg, radius: p.radius ?? 40, r0: p.radius ?? 40, travel: 0, pierce: 999, color, crit: false, hit: new Set(), tick: 0, done: false, spin: 0, style: m.weapon.fx, src: m.slot });
         }
         return true;
       }
@@ -1304,10 +1320,17 @@ export class Game {
       }
       if (s.y < CONFIG.fieldTop - 60 || s.x < -40 || s.x > W + 40) { s.done = true; continue; }
       if (s.kind === 'roll') {
+        // 차징: 굴러갈수록 빨라지고 커지고 세진다 (최대 피해 3배)
+        s.travel = (s.travel ?? 0) + Math.abs(s.vy) * dt;
+        const charge = Math.min(1, s.travel / 520);
+        s.vy *= 1 + dt * 0.9;
+        if (s.vy < -520) s.vy = -520;
+        s.radius = (s.r0 ?? s.radius) * (1 + 0.4 * charge);
         s.tick -= dt;
         if (s.tick <= 0) {
-          s.tick = 0.25;
-          for (const e of list) if (!e.dead && Math.hypot(e.x - s.x, e.y - s.y) <= s.radius + e.def.size * 0.5) this.damageEnemy(e, s.dmg, { quiet: true, src: s.src });
+          s.tick = 0.2;
+          const mul = 1 + 2 * charge;
+          for (const e of list) if (!e.dead && Math.hypot(e.x - s.x, e.y - s.y) <= s.radius + e.def.size * 0.5) this.damageEnemy(e, s.dmg * mul, { quiet: charge < 0.6, src: s.src, knock: 10 + 18 * charge, crit: charge >= 1 && Math.random() < 0.15 });
         }
         continue;
       }

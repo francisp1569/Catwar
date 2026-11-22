@@ -1274,10 +1274,16 @@ function drawShots(ctx: Ctx, game: Game): void {
       continue;
     }
     if (s.kind === 'roll') {
-      // 캣휠
+      // 캣휠 (차징될수록 뒤로 불꽃 꼬리 + 주황빛)
       const R = s.radius;
+      const charge = Math.min(1, (s.travel ?? 0) / 520);
       ctx.save();
       ctx.translate(s.x, s.y);
+      if (charge > 0.25) {
+        ctx.globalAlpha = charge * 0.55;
+        for (let i = 1; i <= 3; i++) circle(ctx, 0, R * 0.55 * i, R * (1 - i * 0.22), i === 1 ? '#ffd84d' : '#ff9f43');
+        ctx.globalAlpha = 1;
+      }
       ellipse(ctx, 0, R * 0.95, R * 0.9, R * 0.22, 'rgba(60,30,10,0.25)');
       ctx.lineWidth = R * 0.2;
       ctx.strokeStyle = '#3b2228';
