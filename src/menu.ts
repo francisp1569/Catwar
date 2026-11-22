@@ -4,6 +4,7 @@ import { sound } from './audio';
 import { story } from './story';
 import { openHeroPicker } from './heroPick';
 import { adLeft, adUse, showRewarded } from './ads';
+import { track } from './cloud';
 import { cloud, cloudEnabled, linkEmailStart, linkEmailVerify, loginEmailStart, loginEmailVerify } from './cloud';
 import { drawCatLookToon, drawCatPortrait, IDLE_POSE } from './catdraw';
 import { CATS, CAT_BY_ID, HERO_ID, RARITY_COLOR, originalName, setHero, type CatDef, type CatLook } from './data/cats';
@@ -248,18 +249,20 @@ export class Menu {
         this.toast(`이제부터 「${CAT_BY_ID[HERO_ID].name}」라고 불러요!`);
         break;
       }
-      case 'pull': this.doPull(arg === '10' ? 10 : 1); break;
+      case 'pull': track('gacha', { type: 'cat', n: Number(arg) }); this.doPull(arg === '10' ? 10 : 1); break;
       case 'ad-cat':
       case 'ad-item': {
         const kind = act === 'ad-cat' ? 'cat' : 'item';
         if (adLeft(s, kind) <= 0) { this.toast('오늘은 다 받았어요. 내일 또 와요!'); break; }
-        if (!(await showRewarded(kind))) break;
+        const ok = await showRewarded(kind);
+        track('ad', { kind, ok });
+        if (!ok) break;
         adUse(s, kind);
         // 광고 보상 = 그 뽑기 1회 비용만큼 참치를 주고 바로 뽑는다
         if (kind === 'cat') { s.tuna += PULL_COST; this.doPull(1); } else { s.tuna += ITEM_BOX_COST; this.doPullItems(1); }
         break;
       }
-      case 'pull-item': this.doPullItems(arg === '10' ? 10 : 1); break;
+      case 'pull-item': track('gacha', { type: 'item', n: Number(arg) }); this.doPullItems(arg === '10' ? 10 : 1); break;
       case 'free': {
         const r = claimFree(s);
         if (!r) { this.toast('오늘은 이미 받았어요. 내일 또 와요!'); break; }
@@ -390,6 +393,7 @@ export class Menu {
         const err = await linkEmailVerify(email, code);
         if (err) { this.toast(`코드가 맞지 않아요: ${err}`); break; }
         this.toast('이메일로 저장을 지켰어요!');
+        track('cloud_link');
         this.commit();
         this.openSettings();
         break;
@@ -899,7 +903,7 @@ export class Menu {
     else if (g === 4 && (act === 'levelup' || act === 'tab')) next = 5;
     else if (g === 5 && act === 'tab' && arg === 'battle') next = 0;
     else if (act === 'guide-skip') next = 0;
-    if (next !== g) { this.save.guide = next; writeSave(this.save); }
+    if (next !== g) { this.save.guide = next; writeSave(this.save); track('guide', { step: next, skip: act === 'guide-skip' }); }
   }
 
   private drawGuide(): void {

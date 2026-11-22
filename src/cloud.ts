@@ -107,6 +107,7 @@ export function cloudPush(s: SaveData): void {
 
 /** 창을 닫기 직전 등: 모아 둔 저장을 바로 올림 */
 export function cloudFlush(): void {
+  void flushEvents();
   if (pending) { const p = pending; pending = null; window.clearTimeout(pushTimer); void pushNow(p); }
 }
 
@@ -158,4 +159,32 @@ export async function loginEmailVerify(email: string, code: string): Promise<{ s
   } catch (e) {
     return { save: null, error: (e as Error).message };
   }
+}
+
+// ───────────── 플레이 기록 (어디서 그만두는지, 광고를 얼마나 보는지 등) ─────────────
+// Supabase 'events' 표에 쌓는다. 표가 없거나 실패해도 게임에는 아무 영향 없음.
+type EventRow = { name: string; data: Record<string, unknown>; at: string };
+let evQueue: EventRow[] = [];
+let evTimer = 0;
+let evBroken = false;
+
+export function track(name: string, data: Record<string, unknown> = {}): void {
+  if (!cloudEnabled() || evBroken) return;
+  evQueue.push({ name, data, at: new Date().toISOString() });
+  if (evQueue.length > 200) evQueue = evQueue.slice(-200);
+  window.clearTimeout(evTimer);
+  evTimer = window.setTimeout(() => void flushEvents(), 8000);
+}
+
+export async function flushEvents(): Promise<void> {
+  if (!uid || !evQueue.length || evBroken) return;
+  const rows = evQueue.splice(0, 50).map((e) => ({ user_id: uid, name: e.name, data: e.data, created_at: e.at }));
+  const { error } = await client().from('events').insert(rows);
+  if (error) {
+    // 표가 아직 없으면(관리자가 SQL을 안 돌렸으면) 조용히 끈다
+    if (/relation|does not exist|schema cache/i.test(error.message)) evBroken = true;
+    else evQueue.unshift(...rows.map((r) => ({ name: r.name, data: r.data, at: r.created_at })));
+    return;
+  }
+  if (evQueue.length) void flushEvents();
 }

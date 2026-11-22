@@ -13,10 +13,11 @@ import { ENEMIES } from './data/enemies';
 import { ART_V } from './art';
 import { ch2Cuts, story } from './story';
 import { adLeft, adUse, showRewarded } from './ads';
-import { cloud, cloudEnabled, cloudFlush, cloudInit, cloudPush } from './cloud';
+import { cloud, cloudEnabled, cloudFlush, cloudInit, cloudPush, track } from './cloud';
 import * as gacha from './meta/gacha';
 import * as items from './meta/items';
 import * as progression from './meta/progression';
+import { playerLevel } from './meta/items';
 import * as rewards from './meta/rewards';
 import * as saveMod from './meta/save';
 import * as stagesMod from './data/stages';
@@ -49,6 +50,7 @@ function startBattle(stageId: string): void {
   save.selectedStage = stage.id.replace(/h$/, '');
   game = new Game(stage, buildSquad(save.cats), bonuses(save), save.seen);
   game.tutorial = !save.tutorialDone;
+  track('stage_start', { stage: stage.id, lv: playerLevel(save.exp).level });
   reward = null;
   adPending = false;
   reviveAsked = false;
@@ -111,7 +113,9 @@ function offerRevive(g: Game): void {
     if (!a) return;
     sound.play('click');
     el.remove();
-    if (a === 'yes' && (await showRewarded('revive')) && game === g) {
+    const ok = a === 'yes' && (await showRewarded('revive'));
+    track('ad', { kind: 'revive', asked: a === 'yes', ok, stage: g.stage.id });
+    if (ok && game === g) {
       adUse(save, 'revive');
       g.revive();
     }
@@ -133,6 +137,7 @@ function offerDouble(g: Game, r: { coins: number; tuna: number; yarn: number }):
     sound.play('click');
     el.disabled = true;
     const ok = await showRewarded('double');
+    track('ad', { kind: 'double', ok, stage: g.stage.id });
     el.remove();
     if (!ok || game !== g) return;
     adUse(save, 'double');
@@ -341,6 +346,7 @@ function frameBody(now: number): void {
     if (g.phase === 'defeat' && !reward && !adPending && !reviveAsked && !g.tutorial) { reviveAsked = true; offerRevive(g); }
     if (g.phase !== 'playing' && !reward && !adPending) {
       reward = applyResult(save, g.stage, g.result!);
+      track('stage_end', { stage: g.stage.id, win: g.result!.victory, stars: g.result!.stars, prog: Math.round(g.result!.progress * 100) / 100, time: Math.round(g.time), lv: g.level, revived: g.revived, minHp: Math.round(g.minHpRatio * 100) / 100 });
       if (g.result!.victory) offerDouble(g, reward as unknown as { coins: number; tuna: number; yarn: number });
       if (g.tutorial && g.tutStep >= 1) save.tutorialDone = true;
       // 승리하면 로비에서도 다음 스테이지가 선택되어 있게
@@ -477,6 +483,8 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) cloud
 // 로딩하는 동안 게스트 로그인 + 서버 저장 확인 (최대 5초만 기다림)
 const cloudReady = Promise.race([
   cloudInit(save).then((remote) => {
+    const sv = remote ?? save;
+    track('session', { hero: sv.heroId ?? 'cheese', lv: playerLevel(sv.exp).level, cleared: Object.keys(sv.stages ?? {}).length, cats: Object.keys(sv.cats ?? {}).length, mobile: /Mobi|Android|iPhone/i.test(navigator.userAgent), standalone: matchMedia('(display-mode: standalone)').matches });
     if (remote) {
       // 서버 저장이 더 최근: 이 기기 저장을 바꾼다
       save = remote;
