@@ -11,6 +11,7 @@ import { loadSave, writeSave, type SaveData } from './meta/save';
 import { chipAt, prewarmEnemies, render, setSpriteScale, type RewardView } from './render';
 import { ENEMIES } from './data/enemies';
 import { ART_V } from './art';
+import { powerSave } from './perf';
 import { ch2Cuts, story } from './story';
 import { adLeft, adUse, showRewarded } from './ads';
 import { cloud, cloudEnabled, cloudFlush, cloudInit, cloudPush, track } from './cloud';
@@ -190,7 +191,8 @@ function adaptQuality(dt: number): void {
   if (dt > 0.25) return; // 탭 전환 등으로 생긴 큰 간격은 무시
   if (graceT > 0) { graceT -= dt; return; }
   avgDt += (dt - avgDt) * 0.05; // 순간 튐이 아니라 평균으로 판단
-  if (avgDt > 1 / 36) { slowT += dt; fastT = 0; } else { fastT += dt; slowT = Math.max(0, slowT - dt); }
+  const fps = targetFps() || 60;
+  if (avgDt > 1.45 / fps) { slowT += dt; fastT = 0; } else { fastT += dt; slowT = Math.max(0, slowT - dt); }
   if (slowT > 3 && dprCap > 1.5) {
     dprCap -= 0.25;
     slowT = 0;
@@ -205,7 +207,7 @@ function adaptQuality(dt: number): void {
 }
 
 function resize(): void {
-  dpr = Math.min(window.devicePixelRatio || 1, dprCap);
+  dpr = Math.min(window.devicePixelRatio || 1, dprCap, powerSave() ? 1.5 : 9);
   const w = window.innerWidth;
   const h = window.innerHeight;
   canvas.width = Math.round(w * dpr);
@@ -328,9 +330,26 @@ document.addEventListener('visibilitychange', () => {
 // ───────────── 루프 ─────────────
 let last = performance.now();
 let elapsed = 0;
+/**
+ * 배터리·발열: 120Hz 화면에서도 초당 최대 60번만 그린다.
+ * 절전 모드면 30번, 일시정지·카드 선택·결과 화면처럼 거의 안 움직일 땐 20번.
+ */
+let lastDraw = 0;
+function targetFps(): number {
+  const g = game;
+  if (!g) return 0; // 로비는 메뉴가 따로 그린다
+  if (g.paused || g.phase !== 'playing') return 20;
+  if (g.choice) return 30;
+  return powerSave() ? 30 : 60;
+}
+
 function frame(now: number): void {
   // 어떤 오류가 나도 다음 프레임은 꼭 예약한다 (오류 한 번에 게임 전체가 멈추지 않게)
   requestAnimationFrame(frame);
+  const fps = targetFps();
+  if (!fps) { last = now; return; }
+  if (now - lastDraw < 1000 / fps - 2) return;
+  lastDraw = now;
   try {
     frameBody(now);
   } catch (err) {

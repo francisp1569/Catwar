@@ -5,6 +5,7 @@ import { story } from './story';
 import { openHeroPicker } from './heroPick';
 import { adLeft, adUse, showRewarded } from './ads';
 import { track } from './cloud';
+import { powerSave, setPowerSave } from './perf';
 import { lobbyAdvice } from './meta/advice';
 import { synergiesOf } from './data/synergy';
 
@@ -493,6 +494,7 @@ export class Menu {
         break;
       case 'close': this.closeModal(); break;
       case 'daily': this.openDaily(); break;
+      case 'toggle-power': setPowerSave(!powerSave()); window.dispatchEvent(new Event('resize')); this.openSettings(); break;
       case 'role-info': {
         const d = CAT_BY_ID[arg];
         const ri = ROLE_INFO[d.role];
@@ -568,7 +570,7 @@ export class Menu {
     let last = 0;
     const loop = (now: number) => {
       this.raf = requestAnimationFrame(loop);
-      if (this.root.hidden || now - last < 33) return;
+      if (this.root.hidden || now - last < (powerSave() ? 66 : 33)) return;
       last = now;
       const t = now / 1000;
       this.root.querySelectorAll<HTMLCanvasElement>('canvas[data-anim]').forEach((c) => this.drawAnim(c, t));
@@ -1087,6 +1089,8 @@ export class Menu {
         <button class="btn ${sound.sfxOn ? 'blue' : 'off'}" data-act="toggle-sfx">${sound.sfxOn ? '🔊 효과음 켜짐' : '🔇 효과음 꺼짐'}</button>
         <button class="btn ${sound.musicOn ? 'blue' : 'off'}" data-act="toggle-music">${sound.musicOn ? '🎵 배경음악 켜짐' : '🎵 배경음악 꺼짐'}</button>
       </div>
+      <div class="row center gap"><button class="btn ${powerSave() ? 'gold' : 'off'}" data-act="toggle-power">${powerSave() ? '🔋 절전 모드 켜짐' : '🔋 절전 모드 꺼짐'}</button></div>
+      <p class="muted" style="margin-top:-4px">폰이 뜨겁거나 배터리가 빨리 닳으면 켜 주세요. 화면 움직임이 조금 덜 부드러워져요.</p>
       <div class="row center gap"><button class="btn" data-act="story">📖 스토리 다시 보기</button><button class="btn" data-act="hero">👑 대장 바꾸기·이름</button></div>
       ${cloudEnabled() ? `<div class="cloud-box">
         <b>☁️ 클라우드 저장 ${cloud.status === 'on' ? '<em class="ok">켜짐</em>' : cloud.status === 'connecting' ? '<em>연결 중…</em>' : '<em class="bad">연결 안 됨</em>'}</b>
