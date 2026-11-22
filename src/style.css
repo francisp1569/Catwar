@@ -706,3 +706,17 @@ canvas#game { display: block; position: fixed; inset: 0; width: 100vw; height: 1
 .syn-row b { font-weight: normal; color: var(--sc); }
 .syn-row small { font-size: 13px; }
 .syn-row em { font-style: normal; font-size: 12px; opacity: 0.7; }
+
+/* 로비 미니 전장: 높이가 짧아도 양옆 버튼 3개가 다 들어가게 (버튼이 전장 높이에 맞춰 줄어든다) */
+.diorama { container-type: size; }
+.diorama .side { top: 6px; bottom: 6px; gap: 4px; justify-content: flex-start; }
+.diorama .side-btn { height: min(66px, calc((100cqh - 20px) / 3)); width: min(56px, calc((100cqh - 20px) / 3 * 0.9)); padding: 0; justify-content: center; }
+.diorama .side-btn span { font-size: min(22px, 9cqh); line-height: 1; }
+.diorama .side-btn span .ico-img { width: min(28px, 11cqh); height: min(28px, 11cqh); }
+.diorama .side-btn .emo { font-size: min(24px, 9cqh); }
+@container (max-height: 240px) {
+  .diorama .side-btn small { font-size: 9px; }
+}
+@container (max-height: 190px) {
+  .diorama .side-btn small { display: none; }
+}
