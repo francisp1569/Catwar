@@ -8,6 +8,7 @@ import { ENEMIES, type EnemyDef, type EnemyKind } from './data/enemies';
 import { STAGES, type Area, type StageDef } from './data/stages';
 const STAGE_COUNT = STAGES.length;
 import { GENERIC } from './data/weapons';
+import { synergiesOf } from './data/synergy';
 import { ULT_CD, ULT_DUR, fmtDmg, type Card, type Decal, type Enemy, Game, type Member } from './game';
 import { CHOICE_BUTTONS, HUD_BUTTONS, PAUSE_BUTTONS, RESULT_BUTTONS, buttonKey, type Rect } from './ui';
 
@@ -2326,7 +2327,40 @@ function drawCard(ctx: Ctx, game: Game, c: Card, r: Rect, t: number, _glow: numb
   text(ctx, info.title, r.x + r.w / 2, r.y + 131, 17, '#fff', 'center', false);
   text(ctx, info.sub, r.x + r.w / 2, r.y + 151, 11, '#ffd9a8', 'center', false);
   const lines = wrap(ctx, info.desc, r.w - 18, 14);
-  lines.slice(0, 5).forEach((ln, i) => text(ctx, ln, r.x + r.w / 2, r.y + 186 + i * 21, 14, '#4a3a40', 'center', false));
+  const tags = c.type === 'new' ? synergiesOf(game.squad[c.slot].def.id) : [];
+  lines.slice(0, tags.length ? 3 : 5).forEach((ln, i) => text(ctx, ln, r.x + r.w / 2, r.y + 186 + i * 21, 14, '#4a3a40', 'center', false));
+  // 새 고양이가 합류하면 채워지는 조합
+  tags.forEach((def, i) => {
+    const st = game.synergies.find((x) => x.def.id === def.id)!;
+    const next = st.count + 1;
+    const need = def.tiers.find(([n]) => n > st.count)?.[0] ?? def.tiers[def.tiers.length - 1][0];
+    const reach = def.tiers.some(([n]) => n === next);
+    const y = r.y + r.h - 20 - (tags.length - 1 - i) * 24;
+    ctx.fillStyle = reach ? '#ffe9a8' : '#efe6dc';
+    roundRect(ctx, r.x + 8, y - 10, r.w - 16, 20, 10);
+    ctx.fill();
+    text(ctx, `${def.icon} ${def.name} ${next}/${need}${reach ? ' 달성!' : ''}`, r.x + r.w / 2, y, 12, reach ? '#c25a00' : '#6b5560', 'center', false);
+  });
+}
+
+/** 전투 중 오른쪽: 지금 팀의 조합 (달성한 것은 진하게) */
+function drawSynergyHud(ctx: Ctx, game: Game): void {
+  const list = game.synergies.filter((s) => s.count > 0).sort((a, b) => b.tier - a.tier || b.count - a.count).slice(0, 5);
+  let y = 132;
+  for (const st of list) {
+    const need = st.def.tiers.find(([n]) => n > st.count)?.[0] ?? st.def.tiers[st.def.tiers.length - 1][0];
+    const on = st.tier >= 0;
+    ctx.save();
+    ctx.globalAlpha = on ? 0.95 : 0.55;
+    ctx.fillStyle = on ? '#2a1420dd' : '#2a142088';
+    roundRect(ctx, W - 74, y - 15, 66, 30, 15);
+    ctx.fill();
+    if (on) { ctx.strokeStyle = st.def.color; ctx.lineWidth = 2; ctx.stroke(); }
+    text(ctx, st.def.icon, W - 58, y, 15, '#fff', 'center', false);
+    text(ctx, `${st.count}/${need}`, W - 30, y, 13, on ? st.def.color : '#d9c9d6', 'center', false);
+    ctx.restore();
+    y += 36;
+  }
 }
 
 function drawPause(ctx: Ctx, pressed: string | null): void {
@@ -2524,6 +2558,7 @@ export function render(ctx: Ctx, game: Game, t: number, pressed: string | null, 
 
   drawAim(ctx, game, t);
   drawHud(ctx, game, t, pressed);
+  if (!game.choice && !game.pickAnim) drawSynergyHud(ctx, game);
   if (game.bossIntro && game.phase === 'playing') drawBossIntro(ctx, game);
   pressedKey = pressed;
   if (game.phase !== 'playing') drawResult(ctx, game, t, reward);

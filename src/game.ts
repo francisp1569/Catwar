@@ -1,5 +1,6 @@
 // 세로형 서바이버 디펜스 전투 시뮬레이션 (렌더링과 분리)
 import { CAT_BY_ID, HERO_ID, type CatDef } from './data/cats';
+import { synergyState, type ActiveSynergy, type SynergyId } from './data/synergy';
 import { CONFIG } from './data/config';
 import { BATTLE_LINES, JOIN_LINES, RALLY_LINE } from './data/lines';
 import { ENEMIES, type EnemyDef, type EnemyKind } from './data/enemies';
@@ -238,6 +239,7 @@ export class Game {
     this.hp = this.maxHp;
     this.banner = { text: `${stage.hard ? "🔥 어려움 · " : ""}STAGE ${stage.no} · ${stage.name}`, t: 2.5 };
     this.layout(true);
+    this.refreshSynergy();
   }
 
   /** 합류한 고양이를 바리케이드 뒤에 고르게 배치 (치즈는 가운데) */
@@ -268,13 +270,27 @@ export class Game {
   get timeLeft(): number { return Math.max(0, this.stage.duration - this.time); }
   private get active(): boolean { return this.phase === 'playing' && !this.paused && !this.choice && !this.pickAnim; }
 
+  /** 지금 출전 중인 고양이들의 조합 효과 (합류할 때마다 다시 계산) */
+  synergies: ActiveSynergy[] = [];
+  private syn(id: SynergyId): number { return this.synergies.find((s) => s.def.id === id)?.value ?? 0; }
+  refreshSynergy(): void {
+    const before = new Map(this.synergies.map((s) => [s.def.id, s.tier]));
+    this.synergies = synergyState(this.squad.filter((m) => m.level > 0).map((m) => m.def.id));
+    for (const s of this.synergies) {
+      if (s.tier > (before.get(s.def.id) ?? -1) && this.time > 0) {
+        this.banner = { text: `${s.def.icon} 조합 「${s.def.name}」 ${s.def.tiers[s.tier][2]}`, t: 2.2 };
+        this.sfx('discover');
+      }
+    }
+  }
+
   get dmgMul(): number {
-    let m = 1 + 0.12 * this.generic.tuna + this.bonus.atk + this.bonus.collection;
+    let m = 1 + 0.12 * this.generic.tuna + this.bonus.atk + this.bonus.collection + this.syn('kosho');
     for (const s of this.squad) if (s.level > 0 && s.weapon.kind === 'aura') m += (this.params(s).buff ?? 0) * (s.ultT > 0 ? 2.5 : 1);
     return m;
   }
   get speedMul(): number {
-    return (1 + 0.12 * this.generic.catnip + this.bonus.speed) * (1 + (this.rallyT > 0 ? this.heroRally.speed : 0));
+    return (1 + 0.12 * this.generic.catnip + this.bonus.speed + this.syn('hunter')) * (1 + (this.rallyT > 0 ? this.heroRally.speed : 0));
   }
   private get guard(): { reduce: number; thorns: number; power: number; slot: number } {
     const g = this.squad.find((s) => s.level > 0 && s.weapon.kind === 'guard');
@@ -407,6 +423,7 @@ export class Game {
       const m = this.squad[c.slot];
       m.level = 1;
       m.joinOrder = ++this.joinCount;
+      this.refreshSynergy();
       const add = Math.round(catStats(m.def, m.owned).hp * (1 + this.bonus.hp));
       this.maxHp += add;
       this.hp += add;
@@ -507,6 +524,8 @@ export class Game {
     this.rallyCd = Math.max(0, this.rallyCd - dt);
     this.rallyT = Math.max(0, this.rallyT - dt);
     this.hitFlash = Math.max(0, this.hitFlash - dt);
+    const regen = this.syn('fluffy');
+    if (regen > 0 && this.hp < this.maxHp) this.hp = Math.min(this.maxHp, this.hp + this.maxHp * regen * dt);
     this.shake = Math.max(0, this.shake - dt);
 
     this.updateSpawns(dt);
@@ -732,7 +751,7 @@ export class Game {
 
   private damageBarricade(dmg: number, x: number): void {
     this.sfx('hurt');
-    let real = dmg * (1 - this.guard.reduce) * (1 - this.bonus.reduce);
+    let real = dmg * (1 - this.guard.reduce) * (1 - this.bonus.reduce) * (1 - this.syn('guard'));
     if (this.shield > 0) {
       const absorbed = Math.min(this.shield, real);
       this.shield -= absorbed;
@@ -892,7 +911,7 @@ export class Game {
       m.swing = Math.max(0, m.swing - dt * 3);
       m.wakeFx = Math.max(0, m.wakeFx - dt);
       if (m.level <= 0) continue;
-      m.ultCd = Math.max(0, m.ultCd - dt);
+      m.ultCd = Math.max(0, m.ultCd - dt / (1 - this.syn('rush')));
       m.ultT = Math.max(0, m.ultT - dt);
       const frenzy = m.ultT > 0 ? ULT_RATE : 1;
       this.sideAttack(m, dt * frenzy);
