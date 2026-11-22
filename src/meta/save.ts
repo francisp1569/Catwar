@@ -45,6 +45,7 @@ export interface SaveData {
   guide?: number;       // 첫 승리 뒤 로비 안내 단계 (0=끝)
   ads?: { day: string; n: Record<string, number> }; // 오늘 광고로 받은 횟수
   daily?: DailyState;   // 출석·일일 미션
+  aimLearned?: boolean; // 대장 조준을 한 번이라도 써 봤는지
   heroId?: string;     // 대장 고양이 (없으면 치즈)
   heroName?: string;   // 대장 고양이에게 붙인 이름
   savedAt?: number;    // 마지막 저장 시각 (클라우드와 비교용)

@@ -332,6 +332,34 @@ export class Game {
 
   canRally(): boolean { return this.active && this.rallyCd <= 0; }
 
+  /**
+   * 조준: 화면을 누르고 있는 곳. 대장의 기본 공격과 발도장이 그 근처 적을 노린다.
+   * 손을 떼면 잠깐(hold) 유지되다 자동 조준으로 돌아간다.
+   */
+  aim: { x: number; y: number; hold: number; down: boolean } | null = null;
+  /** 조준해서 쏠 때 대장 공격력 보너스 */
+  static readonly AIM_BONUS = 1.25;
+  static readonly AIM_R = 150;
+
+  /** 이미 튜토리얼을 끝낸 플레이어에게 조준을 한 번 알려 줄지 */
+  aimHint = false;
+  aimUsed = false;
+
+  setAim(x: number, y: number, down: boolean): void {
+    this.aimUsed = true;
+    const yy = Math.max(CONFIG.fieldTop, Math.min(CONFIG.barricadeY - 30, y));
+    this.aim = { x, y: yy, hold: 1.4, down };
+    if (this.tutorial && this.tutStep === 3) this.tutStep = 4;
+  }
+  releaseAim(): void { if (this.aim) this.aim.down = false; }
+  /** 조준점 근처 적 (없으면 null) */
+  private aimed(list: Enemy[]): Enemy[] | null {
+    if (!this.aim) return null;
+    const a = this.aim;
+    const near = list.filter((e) => Math.hypot(e.x - a.x, e.y - a.y) < Game.AIM_R + e.def.size);
+    return near.length ? near : null;
+  }
+
   /** 이번 판 필살기 사용 횟수 (일일 미션용) */
   ultUses = 0;
   /** 광고 부활을 이미 썼는지 (한 판에 한 번) */
@@ -475,6 +503,7 @@ export class Game {
     if (this.hitStop > 0) { this.hitStop -= Math.min(rawDt, 0.05); return; }
     const dt = Math.min(rawDt, 0.05) * this.speed;
     this.time += dt;
+    if (this.aim && !this.aim.down) { this.aim.hold -= dt; if (this.aim.hold <= 0) this.aim = null; }
     this.rallyCd = Math.max(0, this.rallyCd - dt);
     this.rallyT = Math.max(0, this.rallyT - dt);
     this.hitFlash = Math.max(0, this.hitFlash - dt);
@@ -896,7 +925,8 @@ export class Game {
     m.stampT = (m.stampT ?? 0) + dt * this.speedMul * freqK;
     if (m.stampT < Game.STAMP_EVERY) return;
     const list = this.alive().filter((e) => e.y > CONFIG.fieldTop + 20);
-    const c = this.densest(list, 70);
+    const near = this.aimed(list);
+    const c = this.densest(near ?? list, 70);
     if (!c) return;
     m.stampT = 0;
     const grow = (1 + 0.12 * (m.level - 1)) * (m.evolved ? 1.6 : 1);
@@ -951,8 +981,11 @@ export class Game {
   }
 
   private fireInner(m: Member, p: WeaponParams): boolean {
-    const dmg = m.power * p.dmg * this.dmgMul * (m.ultT > 0 ? ULT_DMG : 1);
-    const list = this.alive();
+    const all = this.alive();
+    // 대장은 조준점 근처 적을 우선 노리고, 조준 중엔 더 세게 친다
+    const aimedList = m.slot === 0 ? this.aimed(all) : null;
+    const list = aimedList ?? all;
+    const dmg = m.power * p.dmg * this.dmgMul * (m.ultT > 0 ? ULT_DMG : 1) * (aimedList ? Game.AIM_BONUS : 1);
     const ox = m.x;
     const oy = m.y - 46;
     const color = m.weapon.color;

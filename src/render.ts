@@ -8,7 +8,7 @@ import { ENEMIES, type EnemyDef, type EnemyKind } from './data/enemies';
 import { STAGES, type Area, type StageDef } from './data/stages';
 const STAGE_COUNT = STAGES.length;
 import { GENERIC } from './data/weapons';
-import { ULT_CD, ULT_DUR, fmtDmg, type Card, type Decal, type Enemy, type Game, type Member } from './game';
+import { ULT_CD, ULT_DUR, fmtDmg, type Card, type Decal, type Enemy, Game, type Member } from './game';
 import { CHOICE_BUTTONS, HUD_BUTTONS, PAUSE_BUTTONS, RESULT_BUTTONS, buttonKey, type Rect } from './ui';
 
 type Ctx = CanvasRenderingContext2D;
@@ -1959,8 +1959,25 @@ function drawTutorial(ctx: Ctx, game: Game, t: number): void {
     tutFinger(ctx, r.x + r.w / 2, r.y + r.h + 4, t);
     return;
   }
-  if (game.tutStep === 0 && !game.choice && game.time < 9) {
+  if (game.tutStep === 0 && !game.choice && game.time < 5) {
+    tutBubble(ctx, 40, CONFIG.height * 0.4, W - 80, ['🎯 목표: 시간이 끝날 때까지', '바리케이드(아래 초록 막대)를 지켜요!'], t);
+    return;
+  }
+  if (game.tutStep === 0 && !game.choice && game.time < 11) {
     tutBubble(ctx, 50, CONFIG.height * 0.42, W - 100, ['고양이들은 자동으로 공격해요!', '적을 물리치면 경험치가 쌓여 레벨업해요'], t);
+    return;
+  }
+  if (game.tutStep === 3 && !game.choice) {
+    // 조준 배우기: 손가락이 전장 위를 좌우로 끄는 시늉
+    const fx = W / 2 + Math.sin(t * 1.6) * 120;
+    const fy = CONFIG.height * 0.45;
+    tutBubble(ctx, 40, CONFIG.height * 0.25, W - 80, ['화면을 꾹 누르고 끌어 봐요!', '대장이 그곳을 집중 공격해요 (공격력 UP)'], t);
+    ctx.save();
+    ctx.globalAlpha = 0.5;
+    ctx.strokeStyle = '#ffd84d'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(fx, fy, 30, 0, Math.PI * 2); ctx.stroke();
+    ctx.restore();
+    tutFinger(ctx, fx, fy + 10, t);
     return;
   }
   if (game.tutStep === 2 && !game.choice) {
@@ -2430,6 +2447,44 @@ function drawResult(ctx: Ctx, game: Game, t: number, reward: RewardView | null):
   }
 }
 
+/** 대장 조준 표시: 누르고 있는 곳에 과녁 + 대장에서 이어지는 점선 */
+function drawAim(ctx: Ctx, game: Game, t: number): void {
+  const a = game.aim;
+  if (!a || game.phase !== 'playing') return;
+  const alpha = a.down ? 1 : Math.max(0, a.hold / 1.4);
+  const R = 34 + Math.sin(t * 8) * 3;
+  const hero = game.squad[0];
+  ctx.save();
+  ctx.globalAlpha = alpha * 0.5;
+  ctx.strokeStyle = '#ffd84d';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([6, 8]);
+  ctx.lineDashOffset = -t * 40;
+  ctx.beginPath(); ctx.moveTo(hero.x, hero.y - 60); ctx.lineTo(a.x, a.y); ctx.stroke();
+  ctx.setLineDash([]);
+  // 노리는 범위 (은은하게)
+  ctx.globalAlpha = alpha * 0.12;
+  ctx.fillStyle = '#ffd84d';
+  ctx.beginPath(); ctx.arc(a.x, a.y, Game.AIM_R, 0, Math.PI * 2); ctx.fill();
+  // 과녁
+  ctx.globalAlpha = alpha;
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = '#2a1018';
+  ctx.beginPath(); ctx.arc(a.x, a.y, R, 0, Math.PI * 2); ctx.stroke();
+  ctx.strokeStyle = '#ffd84d';
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(a.x, a.y, R, 0, Math.PI * 2); ctx.stroke();
+  for (let i = 0; i < 4; i++) {
+    const ang = (i * Math.PI) / 2 + t * 1.5;
+    ctx.beginPath();
+    ctx.moveTo(a.x + Math.cos(ang) * (R - 10), a.y + Math.sin(ang) * (R - 10));
+    ctx.lineTo(a.x + Math.cos(ang) * (R + 10), a.y + Math.sin(ang) * (R + 10));
+    ctx.stroke();
+  }
+  text(ctx, '🐾', a.x, a.y, 18, '#fff', 'center', false);
+  ctx.restore();
+}
+
 /** 다음 스테이지 번호 (없으면 null) */
 export function nextStageNo(game: Game): number | null {
   return game.stage.no < STAGE_COUNT ? game.stage.no + 1 : null;
@@ -2467,6 +2522,7 @@ export function render(ctx: Ctx, game: Game, t: number, pressed: string | null, 
   ctx.globalAlpha = 1;
   ctx.restore();
 
+  drawAim(ctx, game, t);
   drawHud(ctx, game, t, pressed);
   if (game.bossIntro && game.phase === 'playing') drawBossIntro(ctx, game);
   pressedKey = pressed;
@@ -2474,6 +2530,10 @@ export function render(ctx: Ctx, game: Game, t: number, pressed: string | null, 
   else if (game.choice || game.pickAnim) drawChoice(ctx, game, t, pressed);
   else if (game.paused) drawPause(ctx, pressed);
   if (game.tutorial && game.phase === 'playing' && !game.paused) drawTutorial(ctx, game, t);
+  else if (game.aimHint && !game.aimUsed && game.phase === 'playing' && !game.paused && !game.choice && game.time > 3 && game.time < 14) {
+    tutBubble(ctx, 40, CONFIG.height * 0.3, W - 80, ['✨ 새 기능: 화면을 꾹 누르고 끌어 봐요!', '대장이 그곳을 집중 공격해요 (공격력 UP)'], t);
+    tutFinger(ctx, W / 2 + Math.sin(t * 1.6) * 120, CONFIG.height * 0.48, t);
+  }
 }
 
 /** 로비용 스테이지 미리보기: 그 스테이지 바닥과 몰려오는 적들 */

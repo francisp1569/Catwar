@@ -51,6 +51,7 @@ function startBattle(stageId: string): void {
   save.selectedStage = stage.id.replace(/h$/, '');
   game = new Game(stage, buildSquad(save.cats), bonuses(save), save.seen);
   game.tutorial = !save.tutorialDone;
+  game.aimHint = !!save.tutorialDone && !save.aimLearned;
   track('stage_start', { stage: stage.id, lv: playerLevel(save.exp).level });
   reward = null;
   adPending = false;
@@ -273,10 +274,24 @@ canvas.addEventListener('pointerdown', (e) => {
   // 왼쪽 고양이 얼굴 = 필살기
   if (!g.choice && !g.paused) {
     const slot = chipAt(g, x, y);
-    if (slot !== null) g.useUlt(slot);
+    if (slot !== null) { g.useUlt(slot); return; }
+    // 그 밖의 전장 = 대장 조준 (누르고 끌면 따라온다)
+    if (y > CONFIG.fieldTop - 40 && y < CONFIG.barricadeY + 10) {
+      aiming = e.pointerId;
+      g.setAim(x, y, true);
+    }
   }
 });
-const release = (): void => { pressed = null; };
+let aiming: number | null = null;
+canvas.addEventListener('pointermove', (e) => {
+  if (aiming !== e.pointerId || !game || game.phase !== 'playing' || game.choice || game.paused) return;
+  const p = toLogical(e);
+  game.setAim(p.x, p.y, true);
+});
+const release = (e?: PointerEvent): void => {
+  pressed = null;
+  if (e && aiming === e.pointerId) { aiming = null; game?.releaseAim(); }
+};
 canvas.addEventListener('pointerup', release);
 canvas.addEventListener('pointercancel', release);
 canvas.addEventListener('contextmenu', (e) => e.preventDefault());
@@ -349,6 +364,7 @@ function frameBody(now: number): void {
     if (g.phase === 'defeat' && !reward && !adPending && !reviveAsked && !g.tutorial) { reviveAsked = true; offerRevive(g); }
     if (g.phase !== 'playing' && !reward && !adPending) {
       reward = applyResult(save, g.stage, g.result!);
+      if (g.aimUsed) save.aimLearned = true;
       bump(save, 'battle');
       if (g.result!.victory) bump(save, 'win');
       bump(save, 'kill', g.result!.kills);
