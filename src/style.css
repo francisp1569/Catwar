@@ -668,3 +668,23 @@ canvas#game { display: block; position: fixed; inset: 0; width: 100vw; height: 1
 
 #loading .ld-links { position: absolute; bottom: max(10px, env(safe-area-inset-bottom)); left: 0; right: 0; margin: 0; text-align: center; z-index: 2; font-size: 13px; color: #fff9; }
 #loading .ld-links a { color: #fffc; }
+
+/* 출석·일일 미션 */
+.side-btn .emo { font-size: 26px; line-height: 1; }
+.sheet.daily h2 { margin: 6px 0 8px; }
+.att-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 10px; }
+.att { position: relative; background: #fff1; border: 2px solid #fff3; border-radius: 12px; padding: 6px 4px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.att small { font-size: 11px; opacity: 0.8; }
+.att b { font-size: 22px; font-weight: normal; }
+.att span { font-size: 11px; line-height: 1.2; }
+.att.big { grid-column: span 2; background: linear-gradient(#ffcf5a33, #ff9f4333); border-color: #ffcf5a; }
+.att.next { border-color: #ffcf5a; box-shadow: 0 0 0 2px #ffcf5a66; animation: guidePulseBtn 1.2s ease-in-out infinite; }
+.att.done { opacity: 0.55; }
+.att.done::after { content: '✓'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 34px; color: #7dff9a; text-shadow: var(--outline); }
+.mission { display: flex; align-items: center; gap: 10px; background: #fff1; border-radius: 12px; padding: 8px 10px; margin-bottom: 6px; }
+.mission.done { opacity: 0.55; }
+.mission .m-body { flex: 1; min-width: 0; }
+.mission .m-body b { font-weight: normal; font-size: 15px; }
+.mission .m-body small { font-size: 12px; opacity: 0.85; }
+.m-bar { height: 8px; background: #0005; border-radius: 99px; overflow: hidden; margin: 4px 0 2px; }
+.m-bar i { display: block; height: 100%; background: linear-gradient(90deg, #ffcf5a, #ff9f43); }

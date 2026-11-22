@@ -5,6 +5,7 @@ import { story } from './story';
 import { openHeroPicker } from './heroPick';
 import { adLeft, adUse, showRewarded } from './ads';
 import { track } from './cloud';
+import { ATTEND, ALL_CLEAR_TUNA, MISSION_BY_ID, attend, bump, canAttend, canClaimBonus, canClaimMission, claimBonus, claimMission, daily, dailyPending } from './meta/daily';
 import { cloud, cloudEnabled, linkEmailStart, linkEmailVerify, loginEmailStart, loginEmailVerify } from './cloud';
 import { drawCatLookToon, drawCatPortrait, IDLE_POSE } from './catdraw';
 import { CATS, CAT_BY_ID, HERO_ID, RARITY_COLOR, originalName, setHero, type CatDef, type CatLook } from './data/cats';
@@ -133,6 +134,42 @@ export class Menu {
     void this.onClick({ target: b } as unknown as MouseEvent);
   }
 
+  /** 출석·일일 미션 창 */
+  private openDaily(): void {
+    const s = this.save;
+    const st = daily(s);
+    const got = st.att % ATTEND.length; // 이번 주기에서 받은 칸 수
+    const todayDone = !canAttend(s);
+    const cells = ATTEND.map((r, i) => {
+      const done = i < got || (todayDone && got === 0 && st.att > 0); // 7일째까지 받은 직후엔 한 바퀴 다 받은 것
+      const isNext = !todayDone && i === got;
+      return `<div class="att ${done ? 'done' : ''} ${isNext ? 'next' : ''} ${i === 6 ? 'big' : ''}"><small>${i + 1}일</small><b>${r.tuna ? '🐟' : r.yarn ? '🧶' : '🪙'}</b><span>${r.label}</span></div>`;
+    }).join('');
+    const ms = st.missions.map((m, i) => {
+      const def = MISSION_BY_ID[m.id];
+      const can = canClaimMission(s, i);
+      return `<div class="mission ${m.done ? 'done' : ''}">
+        <div class="m-body"><b>${def.text}</b><div class="m-bar"><i style="width:${(m.prog / def.goal) * 100}%"></i></div><small>${m.prog}/${def.goal} · 🐟${def.tuna}${def.coins ? ` 🪙${def.coins}` : ''}</small></div>
+        <button class="btn small ${can ? 'gold' : 'off'}" data-act="mission" data-arg="${i}" ${can ? '' : 'disabled'}>${m.done ? '완료' : can ? '받기' : '진행 중'}</button>
+      </div>`;
+    }).join('');
+    this.openModal(`
+      <button class="x" data-act="close">✕</button>
+      <h2>📅 출석 체크</h2>
+      <div class="att-grid">${cells}</div>
+      <div class="row center"><button class="btn ${todayDone ? 'off' : 'gold'}" data-act="attend" ${todayDone ? 'disabled' : ''}>${todayDone ? '오늘 출석 완료! 내일 또 와요' : '출석 보상 받기'}</button></div>
+      <h2>📋 오늘의 미션</h2>
+      ${ms}
+      <div class="row center"><button class="btn ${canClaimBonus(s) ? 'gold' : 'off'}" data-act="mission-bonus" ${canClaimBonus(s) ? '' : 'disabled'}>${st.bonusDone ? '올클리어 보상 받음 ✓' : `3개 모두 완료하면 🐟${ALL_CLEAR_TUNA}`}</button></div>
+      <p class="muted">미션은 매일 자정에 바뀌어요.</p>`, 'daily');
+  }
+
+  /** 로비에 들어올 때: 오늘 출석을 아직 안 받았으면 창을 띄운다 (첫날 안내가 끝난 뒤부터) */
+  maybeDaily(): void {
+    if (this.save.guide !== 0 || !this.modal.hidden || !canAttend(this.save)) return;
+    this.openDaily();
+  }
+
   /** 첫 승리 뒤 한 번: 진행을 이메일로 지켜 두라고 권한다 */
   askCloudAfterWin(): void {
     if (!cloudEnabled() || cloud.email || this.save.cloudAsked) return;
@@ -214,6 +251,7 @@ export class Menu {
         const r = canLevelUp(s, arg);
         if (!r.ok) { this.toast(r.reason); break; }
         levelUp(s, arg);
+        bump(s, 'levelup');
         sound.play('card');
         this.commit();
         break;
@@ -249,7 +287,7 @@ export class Menu {
         this.toast(`이제부터 「${CAT_BY_ID[HERO_ID].name}」라고 불러요!`);
         break;
       }
-      case 'pull': track('gacha', { type: 'cat', n: Number(arg) }); this.doPull(arg === '10' ? 10 : 1); break;
+      case 'pull': track('gacha', { type: 'cat', n: Number(arg) }); bump(s, 'gacha'); this.doPull(arg === '10' ? 10 : 1); break;
       case 'ad-cat':
       case 'ad-item': {
         const kind = act === 'ad-cat' ? 'cat' : 'item';
@@ -258,11 +296,12 @@ export class Menu {
         track('ad', { kind, ok });
         if (!ok) break;
         adUse(s, kind);
+        bump(s, 'ad');
         // 광고 보상 = 그 뽑기 1회 비용만큼 참치를 주고 바로 뽑는다
         if (kind === 'cat') { s.tuna += PULL_COST; this.doPull(1); } else { s.tuna += ITEM_BOX_COST; this.doPullItems(1); }
         break;
       }
-      case 'pull-item': track('gacha', { type: 'item', n: Number(arg) }); this.doPullItems(arg === '10' ? 10 : 1); break;
+      case 'pull-item': track('gacha', { type: 'item', n: Number(arg) }); bump(s, 'gacha'); this.doPullItems(arg === '10' ? 10 : 1); break;
       case 'free': {
         const r = claimFree(s);
         if (!r) { this.toast('오늘은 이미 받았어요. 내일 또 와요!'); break; }
@@ -425,6 +464,35 @@ export class Menu {
         this.toast('처음부터 다시 시작해요');
         break;
       case 'close': this.closeModal(); break;
+      case 'daily': this.openDaily(); break;
+      case 'attend': {
+        const i = attend(s);
+        if (i === null) break;
+        sound.play('gacha');
+        this.toast(`출석 ${i + 1}일째! ${ATTEND[i].label} 받았어요`);
+        track('attend', { day: i + 1 });
+        this.commit();
+        this.openDaily();
+        break;
+      }
+      case 'mission': {
+        const def = claimMission(s, Number(arg));
+        if (!def) break;
+        sound.play('card');
+        this.toast(`미션 완료! 참치 ${def.tuna}${def.coins ? ` · 코인 ${def.coins}` : ''}`);
+        track('mission', { id: def.id });
+        this.commit();
+        this.openDaily();
+        break;
+      }
+      case 'mission-bonus': {
+        if (!claimBonus(s)) break;
+        sound.play('levelup');
+        this.toast(`오늘 미션 올클리어! 참치 ${ALL_CLEAR_TUNA}`);
+        this.commit();
+        this.openDaily();
+        break;
+      }
       case 'copy-errors': {
         const txt = `${navigator.userAgent}\n${errorLog().join('\n')}`;
         try { await navigator.clipboard.writeText(txt); this.toast('오류 기록을 복사했어요. 그대로 보내 주세요!'); } catch { this.toast('복사하지 못했어요'); }
@@ -659,6 +727,7 @@ export class Menu {
         <div class="side left">
           <button class="side-btn" data-act="nap"><span>${iconHtml('btn-nap', '💤')}</span><small>낮잠 보상</small>${nap.coins > 0 ? `<em>${fmt(nap.coins)}</em>` : ''}</button>
           <button class="side-btn" data-act="tab" data-arg="shop"><span>${iconHtml('btn-gift', '🎁')}</span><small>무료 상자</small>${freeReady ? '<i class="dot"></i>' : ''}</button>
+          <button class="side-btn" data-act="daily"><span class="emo">📋</span><small>출석·미션</small>${dailyPending(s) ? '<i class="dot"></i>' : ''}</button>
         </div>
         <div class="side right">
           <button class="side-btn" data-act="tab" data-arg="cats"><span>${iconHtml('tab-cats', '🐱')}</span><small>고양이</small></button>

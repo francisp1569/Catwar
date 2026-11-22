@@ -11,6 +11,15 @@ export interface Item {
   level: number;
 }
 
+export interface DailyState {
+  day: string;
+  missions: { id: string; prog: number; done: boolean }[];
+  bonusDone: boolean;
+  /** 출석: 받은 날 수 (7일 주기) 와 마지막으로 받은 날 */
+  att: number;
+  attDay: string;
+}
+
 export interface SaveData {
   version: 1;
   coins: number;   // 🪙 레벨업 재화
@@ -32,9 +41,10 @@ export interface SaveData {
   tutorialDone?: boolean; // 첫 판 안내를 끝냈는지
   hardMode?: boolean;  // 로비에서 어려움 모드 선택
   ch2Seen?: boolean;   // 2장 컷씬을 봤는지
-  cloudAsked?: boolean;
-  guide?: number;
-  ads?: { day: string; n: Record<string, number> }; // 오늘 광고로 받은 횟수      // 첫 승리 뒤 로비 안내 단계 (0=끝) // 첫 승리 뒤 '이메일로 저장 지키기'를 권했는지
+  cloudAsked?: boolean; // 첫 승리 뒤 '이메일로 저장 지키기'를 권했는지
+  guide?: number;       // 첫 승리 뒤 로비 안내 단계 (0=끝)
+  ads?: { day: string; n: Record<string, number> }; // 오늘 광고로 받은 횟수
+  daily?: DailyState;   // 출석·일일 미션
   heroId?: string;     // 대장 고양이 (없으면 치즈)
   heroName?: string;   // 대장 고양이에게 붙인 이름
   savedAt?: number;    // 마지막 저장 시각 (클라우드와 비교용)

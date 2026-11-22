@@ -315,6 +315,7 @@ export class Game {
   useUlt(slot: number): boolean {
     if (!this.canUlt(slot)) return false;
     const m = this.squad[slot];
+    this.ultUses++;
     m.ultT = ULT_DUR;
     m.ultCd = ULT_CD;
     m.wakeFx = 1.2;
@@ -331,6 +332,8 @@ export class Game {
 
   canRally(): boolean { return this.active && this.rallyCd <= 0; }
 
+  /** 이번 판 필살기 사용 횟수 (일일 미션용) */
+  ultUses = 0;
   /** 광고 부활을 이미 썼는지 (한 판에 한 번) */
   revived = false;
 

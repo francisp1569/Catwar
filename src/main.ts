@@ -18,6 +18,7 @@ import * as gacha from './meta/gacha';
 import * as items from './meta/items';
 import * as progression from './meta/progression';
 import { playerLevel } from './meta/items';
+import { bump } from './meta/daily';
 import * as rewards from './meta/rewards';
 import * as saveMod from './meta/save';
 import * as stagesMod from './data/stages';
@@ -115,6 +116,7 @@ function offerRevive(g: Game): void {
     el.remove();
     const ok = a === 'yes' && (await showRewarded('revive'));
     track('ad', { kind: 'revive', asked: a === 'yes', ok, stage: g.stage.id });
+    if (ok) bump(save, 'ad');
     if (ok && game === g) {
       adUse(save, 'revive');
       g.revive();
@@ -141,6 +143,7 @@ function offerDouble(g: Game, r: { coins: number; tuna: number; yarn: number }):
     el.remove();
     if (!ok || game !== g) return;
     adUse(save, 'double');
+    bump(save, 'ad');
     save.coins += r.coins;
     save.tuna += r.tuna;
     save.yarn += r.yarn;
@@ -346,6 +349,10 @@ function frameBody(now: number): void {
     if (g.phase === 'defeat' && !reward && !adPending && !reviveAsked && !g.tutorial) { reviveAsked = true; offerRevive(g); }
     if (g.phase !== 'playing' && !reward && !adPending) {
       reward = applyResult(save, g.stage, g.result!);
+      bump(save, 'battle');
+      if (g.result!.victory) bump(save, 'win');
+      bump(save, 'kill', g.result!.kills);
+      bump(save, 'ult', g.ultUses);
       track('stage_end', { stage: g.stage.id, win: g.result!.victory, stars: g.result!.stars, prog: Math.round(g.result!.progress * 100) / 100, time: Math.round(g.time), lv: g.level, revived: g.revived, minHp: Math.round(g.minHpRatio * 100) / 100 });
       if (g.result!.victory) offerDouble(g, reward as unknown as { coins: number; tuna: number; yarn: number });
       if (g.tutorial && g.tutStep >= 1) save.tutorialDone = true;
@@ -418,6 +425,7 @@ function enterGame(): void {
     if (cloudEnabled() && cloud.status === 'on') openWelcome(pickHero);
     else pickHero();
   } else if (!save.introSeen) playIntro();
+  else setTimeout(() => menu.maybeDaily(), 500);
 }
 
 /** 맨 처음: 새로 시작할지, 다른 기기에서 하던 저장을 불러올지 */
