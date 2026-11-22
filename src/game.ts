@@ -4,7 +4,7 @@ import { synergyState, type ActiveSynergy, type SynergyId } from './data/synergy
 import { CONFIG } from './data/config';
 import { BATTLE_LINES, JOIN_LINES, RALLY_LINE } from './data/lines';
 import { ENEMIES, type EnemyDef, type EnemyKind } from './data/enemies';
-import type { Mix, StageDef } from './data/stages';
+import { WAVE_BOSSES, WAVE_GROWTH, WAVE_MIX, WAVE_SEC, type Mix, type StageDef } from './data/stages';
 import { GENERIC, applyMods, rally, type GenericCard, type WeaponDef, type WeaponFx, type WeaponParams } from './data/weapons';
 import type { Bonus } from './meta/items';
 import { catStats } from './meta/progression';
@@ -113,7 +113,7 @@ export type Card =
   | { type: 'generic'; id: GenericCard };
 
 export type Phase = 'playing' | 'victory' | 'defeat';
-export interface BattleResult { victory: boolean; stars: number; kills: number; time: number; progress: number; discovered: string[]; bonusCoins?: number; }
+export interface BattleResult { victory: boolean; stars: number; kills: number; time: number; progress: number; discovered: string[]; bonusCoins?: number; wave?: number; }
 
 /** 필살기: 쿨타임(초), 폭주 지속(초), 공격 속도 배율, 피해 배율 */
 export const ULT_CD = 32;
@@ -237,7 +237,7 @@ export class Game {
     });
     this.maxHp = Math.round(hp * (1 + this.bonus.hp));
     this.hp = this.maxHp;
-    this.banner = { text: `${stage.hard ? "🔥 어려움 · " : ""}STAGE ${stage.no} · ${stage.name}`, t: 2.5 };
+    this.banner = { text: stage.endless ? '♾️ 무한 모드 · 얼마나 버틸 수 있을까?' : `${stage.hard ? "🔥 어려움 · " : ""}STAGE ${stage.no} · ${stage.name}`, t: 2.5 };
     this.layout(true);
     this.refreshSynergy();
   }
@@ -266,7 +266,14 @@ export class Game {
   get hero(): Member { return this.squad[0]; }
   get heroRally() { return rally(this.hero.owned.stars); }
   get xpNeed(): number { return CONFIG.xpBase + CONFIG.xpPerLevel * this.level; }
-  get progress(): number { return Math.min(1, this.time / this.stage.duration); }
+  get progress(): number {
+    if (this.stage.endless) return (this.time % WAVE_SEC) / WAVE_SEC;
+    return Math.min(1, this.time / this.stage.duration);
+  }
+  /** 무한 모드 웨이브 (1부터) */
+  get wave(): number { return Math.floor(this.time / WAVE_SEC) + 1; }
+  private get waveMul(): number { return this.stage.endless ? Math.pow(WAVE_GROWTH, this.wave - 1) : 1; }
+  private lastWave = 1;
   get timeLeft(): number { return Math.max(0, this.stage.duration - this.time); }
   private get active(): boolean { return this.phase === 'playing' && !this.paused && !this.choice && !this.pickAnim; }
 
@@ -549,7 +556,7 @@ export class Game {
     this.choice = null;
     const ratio = this.hp / this.maxHp;
     const stars = !victory ? 0 : ratio >= 0.7 ? 3 : ratio >= 0.35 ? 2 : 1;
-    this.result = { victory, stars, kills: this.kills, time: this.time, progress: this.progress, discovered: [...this.discovered], bonusCoins: this.bonusCoins };
+    this.result = { victory, stars, kills: this.kills, time: this.time, progress: this.progress, discovered: [...this.discovered], bonusCoins: this.bonusCoins, wave: this.stage.endless ? this.wave : undefined };
   }
 
   // ───────────── 출현 ─────────────
@@ -575,11 +582,11 @@ export class Game {
 
   private spawn(kind: EnemyKind, x = 30 + Math.random() * (W - 60), y = CONFIG.fieldTop - 20, worth = this.pack): Enemy {
     const def = ENEMIES[kind];
-    const mul = this.stage.mul * (1 + this.progress * 1.1); // 시간이 갈수록 조금씩 강해짐
+    const mul = this.stage.mul * (1 + this.progress * 1.1) * this.waveMul; // 시간이 갈수록 조금씩 강해짐
     const w = def.boss ? 1 : worth;
     const e: Enemy = {
       uid: this.nextUid++, def, x, y, baseX: x,
-      hp: def.hp * mul * HORDE.hp * Math.pow(w, 0.75), maxHp: def.hp * mul * HORDE.hp * Math.pow(w, 0.75), atk: def.atk * this.stage.mul * HORDE.atk * Math.pow(w, 0.7),
+      hp: def.hp * mul * HORDE.hp * Math.pow(w, 0.75), maxHp: def.hp * mul * HORDE.hp * Math.pow(w, 0.75), atk: def.atk * this.stage.mul * this.waveMul * HORDE.atk * Math.pow(w, 0.7),
       atkTimer: 0, attacking: false, slowT: 0, slowAmt: 0, stunT: 0, hitFlash: 0,
       animT: Math.random() * 10, dead: false, deathT: 0,
     };
@@ -595,6 +602,33 @@ export class Game {
     return e;
   }
 
+  /** 무한 모드: 웨이브마다 구성이 바뀌고, 3웨이브마다 보스 */
+  private updateEndless(dt: number): void {
+    const w = this.wave;
+    if (w !== this.lastWave) {
+      // 막 끝난 웨이브가 3의 배수였으면 보스
+      if (this.lastWave % 3 === 0) {
+        const kind = WAVE_BOSSES[(this.lastWave / 3 - 1) % WAVE_BOSSES.length];
+        this.spawn(kind, W / 2, CONFIG.fieldTop - 40);
+        this.bossIntro = { kinds: [kind], at: this.time };
+        this.sfx('boss');
+      }
+      this.lastWave = w;
+      this.banner = { text: `🌊 WAVE ${w}`, t: 1.8 };
+      this.sfx('levelup');
+      this.coinsBonus(20 * w);
+    }
+    const k = this.progress;
+    const mix = WAVE_MIX[Math.min(WAVE_MIX.length - 1, Math.floor((w - 1) / 2))];
+    const rate = this.stage.rate[0] + (this.stage.rate[1] - this.stage.rate[0]) * Math.min(1, (w - 1) / 8) * (0.5 + k * 0.5);
+    this.spawnAcc += (rate / this.pack) * dt;
+    while (this.spawnAcc >= 1) {
+      this.spawnAcc -= 1;
+      this.spawnCapped(this.pickKind(mix));
+    }
+  }
+  private coinsBonus(n: number): void { this.bonusCoins += n; }
+
   /** 최대 수를 넘으면 지금 나올 적의 몫을 쌓아 두었다가 다음 적에 얹는다 */
   private spawnCapped(kind: EnemyKind, x?: number, y?: number, worth = this.pack): void {
     let alive = 0;
@@ -607,6 +641,7 @@ export class Game {
 
   private updateSpawns(dt: number): void {
     const st = this.stage;
+    if (st.endless) { this.updateEndless(dt); return; }
     if (this.time < st.duration) {
       const k = this.progress;
       // 레퍼런스처럼: 처음엔 한두 마리씩, 후반엔 폭발적으로

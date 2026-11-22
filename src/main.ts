@@ -2,7 +2,7 @@ import './style.css';
 import { artProgress, loadArt, loadWorldArt } from './art';
 import { sound } from './audio';
 import { CONFIG, applyLayout } from './data/config';
-import { STAGES, getStage } from './data/stages';
+import { STAGES, endlessStage, getStage } from './data/stages';
 import { Game, buildSquad } from './game';
 import { Menu } from './menu';
 import { bonuses } from './meta/items';
@@ -37,7 +37,8 @@ let reward: RewardView | null = null;
 const menu = new Menu(save, startBattle);
 
 function startBattle(stageId: string): void {
-  const stage = getStage(stageId);
+  const best = Math.max(0, ...Object.keys(save.stages).filter((k) => !k.endsWith('h')).map((k) => Number(k.slice(1)) || 0));
+  const stage = stageId === 'inf' ? endlessStage(best) : getStage(stageId);
   if (!stage) return;
   // 2장에 처음 들어가면 짧은 컷씬
   if (stage.no >= 11 && !save.ch2Seen) {
@@ -48,7 +49,7 @@ function startBattle(stageId: string): void {
   }
   applyLayout(window.innerWidth, window.innerHeight);
   layoutButtons(CONFIG.height);
-  save.selectedStage = stage.id.replace(/h$/, '');
+  if (!stage.endless) save.selectedStage = stage.id.replace(/h$/, '');
   game = new Game(stage, buildSquad(save.cats), bonuses(save), save.seen);
   game.tutorial = !save.tutorialDone;
   game.aimHint = !!save.tutorialDone && !save.aimLearned;

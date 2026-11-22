@@ -45,6 +45,8 @@ export interface SaveData {
   guide?: number;       // 첫 승리 뒤 로비 안내 단계 (0=끝)
   ads?: { day: string; n: Record<string, number> }; // 오늘 광고로 받은 횟수
   daily?: DailyState;   // 출석·일일 미션
+  endlessBest?: number; // 무한 모드 최고 웨이브
+  endlessSel?: boolean; // 로비에서 무한 모드 선택
   aimLearned?: boolean; // 대장 조준을 한 번이라도 써 봤는지
   heroId?: string;     // 대장 고양이 (없으면 치즈)
   heroName?: string;   // 대장 고양이에게 붙인 이름

@@ -1804,8 +1804,9 @@ function drawHud(ctx: Ctx, game: Game, t: number, pressed: string | null): void 
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, W, 64);
   roundRect(ctx, 60, 14, 78, 32, 16); ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.fill();
-  text(ctx, game.time >= game.stage.duration ? 'BOSS' : fmtTime(game.timeLeft), 99, 30, 17, game.timeLeft < 15 ? '#ff8a8a' : '#fff');
-  text(ctx, `${game.stage.hard ? "🔥" : ""}St.${game.stage.no} · ${game.stage.name}`, 306, 30, 17, game.stage.hard ? "#ffb3a8" : "#fff");
+  if (game.stage.endless) text(ctx, `🌊 ${game.wave}`, 99, 30, 17, '#9fe3ff');
+  else text(ctx, game.time >= game.stage.duration ? 'BOSS' : fmtTime(game.timeLeft), 99, 30, 17, game.timeLeft < 15 ? '#ff8a8a' : '#fff');
+  text(ctx, game.stage.endless ? '♾️ 무한 모드' : `${game.stage.hard ? "🔥" : ""}St.${game.stage.no} · ${game.stage.name}`, 306, 30, 17, game.stage.hard ? "#ffb3a8" : game.stage.endless ? '#9fe3ff' : "#fff");
   // 진행 바
   ctx.fillStyle = 'rgba(0,0,0,0.45)';
   ctx.fillRect(10, 56, W - 20, 6);
@@ -2407,6 +2408,10 @@ function drawResult(ctx: Ctx, game: Game, t: number, reward: RewardView | null):
       const on = i < res.stars;
       text(ctx, '★', W / 2 - 80 + i * 80, 330, on ? 60 : 48, on ? '#ffd84d' : '#6b5a66');
     }
+  } else if (game.stage.endless) {
+    const rv = reward as (RewardView & { wave?: number; newBest?: boolean }) | null;
+    text(ctx, `🌊 WAVE ${res.wave ?? game.wave}`, W / 2, 270, 52, '#9fe3ff');
+    text(ctx, rv?.newBest ? '🏆 최고 기록 갱신!' : `이번에 버틴 웨이브`, W / 2, 335, 20, rv?.newBest ? '#ffd84d' : '#fff');
   } else {
     text(ctx, '패배...', W / 2, 280, 56, '#ff8a8a');
     text(ctx, '고양이를 키우고 새 고양이를 모아서 다시 도전!', W / 2, 345, 17, '#fff');

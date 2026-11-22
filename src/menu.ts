@@ -10,7 +10,7 @@ import { cloud, cloudEnabled, linkEmailStart, linkEmailVerify, loginEmailStart, 
 import { drawCatLookToon, drawCatPortrait, IDLE_POSE } from './catdraw';
 import { CATS, CAT_BY_ID, HERO_ID, RARITY_COLOR, originalName, setHero, type CatDef, type CatLook } from './data/cats';
 import { SLOTS, SLOT_INFO, ITEM_MAX_LV, type Slot } from './data/items';
-import { AREA_NAME, CHAPTERS, STAGES, getStage, type StageDef } from './data/stages';
+import { AREA_NAME, CHAPTERS, ENDLESS_UNLOCK, STAGES, WAVE_SEC, getStage, type StageDef } from './data/stages';
 import { rallyDesc } from './data/weapons';
 import {
   ITEM_BOX10_COST, ITEM_BOX_COST, PULL10_COST, PULL_COST, RATES, claimFree, pull, pullItems, today, type PullResult,
@@ -228,6 +228,7 @@ export class Menu {
       case 'toggle-music': sound.setMusic(!sound.musicOn); this.openSettings(); break;
       case 'tab': this.tab = arg as Tab; this.closeModal(); this.render(); break;
       case 'start': {
+        if (arg === 'inf') { this.onStart('inf'); break; }
         const st = getStage(arg)!;
         if (!isUnlocked(s, st)) { this.toast(st.hard ? '보통을 깨고, 이전 판 어려움도 깨야 열려요' : '이전 스테이지를 먼저 클리어해요'); break; }
         this.onStart(arg);
@@ -242,7 +243,13 @@ export class Menu {
         break;
       }
       case 'select-stage': s.selectedStage = arg; this.tab = 'battle'; this.commit(); break;
-      case 'mode': s.hardMode = arg === 'hard'; this.commit(); break;
+      case 'mode':
+        if (arg === 'inf') {
+          if ((s.stages[ENDLESS_UNLOCK] ?? 0) <= 0) { this.toast('St.5를 깨면 무한 모드가 열려요!'); break; }
+          s.endlessSel = true;
+        } else { s.endlessSel = false; s.hardMode = arg === 'hard'; }
+        this.commit();
+        break;
       case 'cat-prev': this.catIdx = (this.catIdx + CATS.length - 1) % CATS.length; this.render(); break;
       case 'cat-next': this.catIdx = (this.catIdx + 1) % CATS.length; this.render(); break;
       case 'cat-pick': this.catIdx = CATS.findIndex((c) => c.id === arg); this.render(); break;
@@ -707,23 +714,30 @@ export class Menu {
         <small class="muted">${label}</small>
       </div>`;
     const team = [HERO_ID, ...CATS.filter((c) => !c.hero && s.cats[c.id]).map((c) => c.id)];
-    return `
-      <section class="stage-head ${st.hard ? 'hard' : ''}">
-        <div class="mode-toggle">
-          <button class="${st.hard ? '' : 'on'}" data-act="mode" data-arg="normal">보통</button>
-          <button class="${st.hard ? 'on' : ''}" data-act="mode" data-arg="hard">🔥 어려움</button>
-        </div>
+    const infOpen = (s.stages[ENDLESS_UNLOCK] ?? 0) > 0;
+    const inf = !!s.endlessSel && infOpen;
+    const head = inf ? `
+        <div class="area">♾️ 끝없이 몰려오는 찍찍 도적단 · ${WAVE_SEC}초마다 다음 웨이브</div>
+        <div class="stage-title"><h1>무한 모드</h1></div>
+        <div class="pill">🏆 최고 기록 WAVE ${s.endlessBest ?? 0} · 3웨이브마다 보스</div>` : `
         <div class="area">${chapterOf(st.no)} · ${AREA_NAME[st.area]} · ${best ? stars(best, 3) : '미클리어'}</div>
         <div class="stage-title">
           <button class="stage-arrow" data-act="stage-prev" ${st.no === 1 ? 'disabled' : ''}>◀</button>
           <h1>St.${st.no} - ${esc(st.name.replace('[보스] ', ''))}${isBoss ? ' <span class="skull">💀</span>' : ''}</h1>
           <button class="stage-arrow" data-act="stage-next" ${st.no === STAGES.length ? 'disabled' : ''}>▶</button>
         </div>
-        <div class="pill">적 강함 x${st.mul.toFixed(1)} · ${fmtTime(st.duration)} 버티기${isBoss ? ' + 보스' : ''}</div>
+        <div class="pill">적 강함 x${st.mul.toFixed(1)} · ${fmtTime(st.duration)} 버티기${isBoss ? ' + 보스' : ''}</div>`;
+    return `
+      <section class="stage-head ${st.hard && !inf ? 'hard' : ''} ${inf ? 'endless' : ''}">
+        <div class="mode-toggle">
+          <button class="${st.hard || inf ? '' : 'on'}" data-act="mode" data-arg="normal">보통</button>
+          <button class="${st.hard && !inf ? 'on' : ''}" data-act="mode" data-arg="hard">🔥 어려움</button>
+          <button class="${inf ? 'on' : ''} ${infOpen ? '' : 'locked'}" data-act="mode" data-arg="inf">${infOpen ? '♾️ 무한' : '🔒 무한'}</button>
+        </div>${head}
       </section>
       <section class="diorama">
         <canvas data-anim="stage" data-stage="${st.id}"></canvas>
-        ${unlocked ? '' : `<div class="lock-cover">🔒<small>${st.hard ? '보통을 깨고 이전 판 어려움도 깨면 열려요' : '이전 스테이지를 클리어하면 열려요'}</small></div>`}
+        ${unlocked || inf ? '' : `<div class="lock-cover">🔒<small>${st.hard ? '보통을 깨고 이전 판 어려움도 깨면 열려요' : '이전 스테이지를 클리어하면 열려요'}</small></div>`}
         <div class="side left">
           <button class="side-btn" data-act="nap"><span>${iconHtml('btn-nap', '💤')}</span><small>낮잠 보상</small>${nap.coins > 0 ? `<em>${fmt(nap.coins)}</em>` : ''}</button>
           <button class="side-btn" data-act="tab" data-arg="shop"><span>${iconHtml('btn-gift', '🎁')}</span><small>무료 상자</small>${freeReady ? '<i class="dot"></i>' : ''}</button>
@@ -735,14 +749,14 @@ export class Menu {
           <button class="side-btn" data-act="settings"><span>${iconHtml('btn-settings', '⚙️')}</span><small>설정</small></button>
         </div>
       </section>
-      <section class="chests">
+      ${inf ? `<section class="chests endless-note"><small>버틴 웨이브만큼 코인·참치·털실을 받아요. 최고 기록을 넘으면 참치 보너스!</small></section>` : `<section class="chests">
         ${chest(1, `${COIN()}${st.reward.coins}`)}
         <div class="chest-line"></div>
         ${chest(2, `${TUNA()}20 · 장비`)}
         <div class="chest-line"></div>
         ${chest(3, `${TUNA()}20 · 장비+1`)}
-      </section>
-      <button class="start-btn" data-act="start" data-arg="${st.id}" ${unlocked ? '' : 'disabled'}>
+      </section>`}
+      <button class="start-btn" data-act="start" data-arg="${inf ? 'inf' : st.id}" ${unlocked || inf ? '' : 'disabled'}>
         <span>START</span><small>팀 전투력 ${fmt(teamPower(s))}</small>
       </button>
       <button class="team-strip" data-act="tab" data-arg="cats">

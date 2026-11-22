@@ -688,3 +688,8 @@ canvas#game { display: block; position: fixed; inset: 0; width: 100vw; height: 1
 .mission .m-body small { font-size: 12px; opacity: 0.85; }
 .m-bar { height: 8px; background: #0005; border-radius: 99px; overflow: hidden; margin: 4px 0 2px; }
 .m-bar i { display: block; height: 100%; background: linear-gradient(90deg, #ffcf5a, #ff9f43); }
+.mode-toggle button { padding: 3px 11px; }
+.mode-toggle button.locked { opacity: 0.55; }
+.stage-head.endless .stage-title h1 { color: #9fe3ff; }
+.chests.endless-note { justify-content: center; text-align: center; padding: 10px 18px; }
+.chests.endless-note small { font-size: 13px; color: #d9e9ff; }

@@ -12,6 +12,9 @@ export interface Reward {
   /** 집사 레벨이 올랐으면 [이전, 이후] */
   levelUp: [number, number] | null;
   levelTuna: number;
+  /** 무한 모드: 이번 웨이브와 최고 기록 갱신 여부 */
+  wave?: number;
+  newBest?: boolean;
 }
 
 export const DISCOVER_TUNA = 10;
@@ -42,6 +45,20 @@ export function applyResult(save: SaveData, stage: StageDef, res: BattleResult):
   save.seen.push(...newSeen);
   save.tuna += newSeen.length * DISCOVER_TUNA;
   const extra = { discovered: newSeen.length, levelUp, levelTuna };
+  if (stage.endless) {
+    // 무한 모드: 버틴 웨이브만큼 보상, 최고 기록을 넘으면 참치 보너스
+    const wave = res.wave ?? 1;
+    const best = save.endlessBest ?? 0;
+    const newBest = wave > best;
+    const coins = Math.round(120 * wave * coinMul) + (res.bonusCoins ?? 0);
+    const tuna = 6 * wave + (newBest ? 30 * (wave - best) : 0);
+    const yarn = 2 * wave;
+    save.coins += coins;
+    save.tuna += tuna;
+    save.yarn += yarn;
+    if (newBest) save.endlessBest = wave;
+    return { coins, tuna, yarn, exp, heroShards: 0, firstClear: false, newStars: 0, items: [], ...extra, wave, newBest };
+  }
   const prevStars = save.stages[stage.id] ?? 0;
   const bonus = res.bonusCoins ?? 0; // 황금쥐 코인 (아래 coins에 포함)
   if (!res.victory) {

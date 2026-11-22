@@ -36,6 +36,8 @@ export interface StageDef {
   reward: { coins: number; tuna: number };
   /** 어려움 모드 */
   hard?: boolean;
+  /** 무한 모드: 웨이브가 끝없이 이어지고 점점 세진다 */
+  endless?: boolean;
 }
 
 const b = (t: number, kind: EnemyKind, count: number): Burst => ({ t, kind, count });
@@ -132,4 +134,32 @@ export function getStage(id: string): StageDef | undefined {
   const hard = id.endsWith('h');
   const base = STAGES.find((s) => s.id === (hard ? id.slice(0, -1) : id));
   return base && hard ? hardStage(base) : base;
+}
+
+// ───────────── 무한 모드 ─────────────
+/** 한 웨이브 길이(초) */
+export const WAVE_SEC = 40;
+/** 웨이브마다 적이 세지는 비율 */
+export const WAVE_GROWTH = 1.17;
+/** 무한 모드가 열리는 조건: 이 스테이지를 깨면 */
+export const ENDLESS_UNLOCK = 's5';
+/** 웨이브 구간별 적 구성 (뒤로 갈수록 2장 적) */
+export const WAVE_MIX: Mix[] = [
+  { ant: 3, mouse: 3, roach: 2, mosquito: 1 },
+  { mouse: 3, roach: 2, spider: 1.5, fly: 2 },
+  { roach: 2, shieldmouse: 1.5, spider: 1.5, fly: 2, slug: 1.5 },
+  { shieldmouse: 1.5, slug: 2, centipede: 1.5, wasp: 1.5, pigeon: 1.5 },
+  { mole: 1.5, frog: 2, beetle: 1.5, pigeon: 2, wasp: 1.5, goldmouse: 0.3 },
+];
+/** 3웨이브마다 나오는 보스 (돌아가며) */
+export const WAVE_BOSSES: EnemyKind[] = ['ratking', 'roachgen', 'spiderqueen', 'toadking', 'crowboss', 'ratemperor'];
+
+/** 무한 모드 스테이지: 시작 세기는 지금까지 깬 가장 높은 스테이지에 맞춘다 */
+export function endlessStage(bestNo: number): StageDef {
+  const ref = STAGES[Math.max(0, Math.min(STAGES.length - 1, bestNo - 1))];
+  return {
+    id: 'inf', no: 0, area: bestNo >= 11 ? 'garden' : 'living', name: '무한 모드',
+    mul: ref.mul * 0.55, duration: 99999, rate: [3.2, 9], early: WAVE_MIX[0], late: WAVE_MIX[0], bursts: [],
+    baseHp: ref.baseHp, reward: { coins: 0, tuna: 0 }, endless: true,
+  };
 }
