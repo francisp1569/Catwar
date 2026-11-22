@@ -1,4 +1,7 @@
-// 효과음·배경음악을 Web Audio로 직접 합성한다 (외부 음원 파일 없음)
+// 효과음·배경음악
+// - public/audio 의 음원 파일(모두 CC0, 출처는 public/audio/CREDITS.md)을 우선 쓰고
+// - 파일이 없거나 아직 못 받았으면 Web Audio로 직접 합성한 소리를 쓴다
+import { ART_V } from './art';
 type Wave = OscillatorType;
 
 const PREF_KEY = 'catwar.sound.v1';
@@ -26,6 +29,12 @@ class Sound {
   private noiseBuf!: AudioBuffer;
   private last = new Map<string, number>();
   sfxOn = true;
+  /** 받아 둔 음원 (이름 → 후보 여러 개) */
+  private samples = new Map<string, AudioBuffer[]>();
+  private songs = new Map<TrackName, AudioBuffer>();
+  private songSrc: AudioBufferSourceNode | null = null;
+  private songName: TrackName | null = null;
+  private loading = false;
   musicOn = true;
   private track: Track | null = null;
   private wanted: TrackName | null = null;
@@ -73,6 +82,56 @@ class Sound {
     for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
     if (ctx.state !== 'running') void ctx.resume().catch(() => {});
     if (this.wanted) this.music(this.wanted);
+    void this.loadFiles();
+  }
+
+  private async decode(file: string): Promise<AudioBuffer | null> {
+    try {
+      const res = await fetch(`audio/${file}?v=${ART_V}`);
+      if (!res.ok) return null;
+      const data = await res.arrayBuffer();
+      // 구형 사파리는 콜백 방식만 지원
+      return await new Promise<AudioBuffer>((ok, bad) => { const p = this.ctx!.decodeAudioData(data, ok, bad); if (p) p.then(ok, bad); });
+    } catch {
+      return null;
+    }
+  }
+
+  private async loadFiles(): Promise<void> {
+    if (this.loading || !this.ctx) return;
+    this.loading = true;
+    // 지금 필요한 배경음악부터
+    const order: TrackName[] = this.wanted === 'battle' ? ['battle', 'lobby'] : ['lobby', 'battle'];
+    const jobs = Object.entries(SAMPLE_FILES).map(async ([name, files]) => {
+      const bufs = (await Promise.all(files.map((f) => this.decode(`${f}.wav`)))).filter((b): b is AudioBuffer => !!b);
+      if (bufs.length) this.samples.set(name, bufs);
+    });
+    for (const tn of order) {
+      const b = await this.decode(`bgm-${tn}.mp3`);
+      if (b) {
+        this.songs.set(tn, b);
+        if (this.wanted === tn) { this.track = null; this.music(tn); }
+      }
+    }
+    await Promise.all(jobs);
+  }
+
+  /** 받아 둔 음원 재생 */
+  private playBuf(buf: AudioBuffer, rate = 1, vol = 1, at = 0): void {
+    const ctx = this.ctx!;
+    if (!this.voice(buf.duration / rate)) return;
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.playbackRate.value = rate;
+    const g = ctx.createGain();
+    g.gain.value = vol;
+    src.connect(g).connect(this.sfxBus);
+    src.start(at || ctx.currentTime);
+  }
+
+  /** 앱을 벗어나면 소리를 바로 멈춘다 */
+  sleep(): void {
+    if (this.ctx && this.ctx.state === 'running') void this.ctx.suspend().catch(() => {});
   }
 
   /** 백그라운드에서 돌아왔을 때 */
@@ -210,6 +269,14 @@ class Sound {
     if (now - (this.last.get(name) ?? -1) < g) return;
     this.last.set(name, now);
     const r = 0.92 + Math.random() * 0.16;
+    const bufs = this.samples.get(name);
+    if (bufs) {
+      const b = bufs[Math.floor(Math.random() * bufs.length)];
+      const rate = name === 'meow-hi' ? 1.18 * r : name === 'pounce' || name.startsWith('meow') || name === 'hit' || name === 'crit' ? r : 1;
+      this.playBuf(b, rate, SAMPLE_VOL[name] ?? 1);
+      if (name === 'win' && this.samples.get('meow')) this.playBuf(this.samples.get('meow')![0], 1.05, 0.9, now + 0.7);
+      return;
+    }
     switch (name) {
       case 'pop': this.tone(520 * r, 0.08, { to: 260, vol: 0.18, type: 'triangle' }); break;
       case 'yarn': this.noise(0.14, { freq: 900, to: 2400, vol: 0.18, q: 2 }); break;
@@ -254,6 +321,25 @@ class Sound {
   music(name: TrackName | null): void {
     this.wanted = name;
     if (!this.ctx) return;
+    const song = name ? this.songs.get(name) : null;
+    if (song) {
+      // 음원 파일이 있으면 그걸 반복 재생 (합성 음악은 끈다)
+      if (this.songName === name && this.songSrc) return;
+      clearInterval(this.timer);
+      this.track = null;
+      this.stopSong();
+      const src = this.ctx.createBufferSource();
+      src.buffer = song;
+      src.loop = true;
+      const g = this.ctx.createGain();
+      g.gain.value = 2.2; // 합성 음악 기준으로 맞춘 버스 음량 보정
+      src.connect(g).connect(this.musicBus);
+      src.start();
+      this.songSrc = src;
+      this.songName = name;
+      return;
+    }
+    this.stopSong();
     if (this.track && this.track.name === name) return;
     clearInterval(this.timer);
     this.track = name ? TRACKS[name] : null;
@@ -261,6 +347,12 @@ class Sound {
     this.step = 0;
     this.nextTime = this.ctx.currentTime + 0.1;
     this.timer = window.setInterval(() => this.schedule(), 25);
+  }
+
+  private stopSong(): void {
+    if (this.songSrc) { try { this.songSrc.stop(); } catch { /* noop */ } this.songSrc.disconnect(); }
+    this.songSrc = null;
+    this.songName = null;
   }
 
   private schedule(): void {
@@ -290,6 +382,16 @@ class Sound {
 
 type TrackName = 'lobby' | 'battle';
 interface Track { name: TrackName; bpm: number; leadWave: Wave; leadLen?: number; lead: number[]; bass: number[]; drums: string[]; }
+
+/** 효과음 이름 → 음원 파일 (public/audio/*.wav). 여러 개면 무작위로 하나 */
+const SAMPLE_FILES: Record<string, string[]> = {
+  meow: ['meow1', 'meow2', 'meow3'], 'meow-hi': ['meow2', 'meow3'], pounce: ['pounce'],
+  hit: ['hit'], crit: ['crit'], boom: ['boom'], thud: ['thud'], hurt: ['hurt'],
+  gacha: ['gacha'], coin: ['coin'], levelup: ['levelup'], win: ['win'], lose: ['lose'],
+  click: ['click'], card: ['card'], heal: ['heal'], discover: ['discover'],
+};
+/** 음원별 음량 (자주 나는 소리는 작게) */
+const SAMPLE_VOL: Record<string, number> = { hit: 0.35, crit: 0.5, click: 0.6, boom: 0.55, thud: 0.7, hurt: 0.5, meow: 0.9, 'meow-hi': 0.8, pounce: 0.5 };
 
 const midi = (n: number) => 440 * Math.pow(2, (n - 69) / 12);
 

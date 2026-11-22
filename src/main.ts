@@ -481,7 +481,7 @@ function pickHero(): void {
 // 브라우저 정책: 첫 터치/키 입력 때 소리를 켠다
 // 브라우저마다 '사용자 동작'으로 인정하는 이벤트가 달라서 여러 개에 건다 (구형 iOS는 touchend/click만 인정)
 for (const ev of ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown'] as const) document.addEventListener(ev, () => sound.unlock(), { capture: true });
-document.addEventListener('visibilitychange', () => { if (!document.hidden) sound.wake(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) sound.sleep(); else sound.wake(); });
 window.addEventListener('pageshow', () => sound.wake());
 window.addEventListener('focus', () => sound.wake());
 // 클라우드 저장: 저장할 때마다 서버로 (설정이 비어 있으면 아무것도 안 함)
