@@ -665,3 +665,6 @@ canvas#game { display: block; position: fixed; inset: 0; width: 100vw; height: 1
 #adtest .ad-box b { font-size: 22px; }
 #adtest .ad-box p { margin: 0; font-size: 13px; color: #777; }
 #adtest .ad-skip { background: none; border: 0; color: #999; font: inherit; font-size: 12px; text-decoration: underline; }
+
+#loading .ld-links { position: absolute; bottom: max(10px, env(safe-area-inset-bottom)); left: 0; right: 0; margin: 0; text-align: center; z-index: 2; font-size: 13px; color: #fff9; }
+#loading .ld-links a { color: #fffc; }

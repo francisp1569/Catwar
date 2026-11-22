@@ -976,6 +976,7 @@ export class Menu {
       <div class="row center gap"><button class="btn small" data-act="save-export">💾 저장 코드 복사</button><button class="btn small" data-act="save-import">📥 저장 코드 불러오기</button></div>
       ${errorLog().length ? `<div class="row center gap"><button class="btn small" data-act="copy-errors">🐞 오류 기록 복사 (${errorLog().length})</button></div>` : ''}
       <p class="muted">진행 상황은 이 브라우저에 자동 저장돼요.</p>
+      <p class="muted"><a href="about.html" target="_blank">게임 소개</a> · <a href="privacy.html" target="_blank">개인정보처리방침</a></p>
       <p class="muted">낮잠 보상: 시간당 ${COIN()}${napRate(this.save)} (최대 ${NAP_MAX_HOURS}시간 쌓임)</p>
       <button class="btn ${this.resetArmed ? 'danger' : 'off'}" data-act="reset">${this.resetArmed ? '정말 초기화할까요? 한 번 더 누르면 삭제돼요' : '진행 상황 초기화'}</button>`);
   }

@@ -381,7 +381,8 @@ loading.innerHTML = `
   <div class="ld-bottom">
     <div class="ld-bar"><i></i></div>
     <p class="ld-msg">고양이들이 출동 준비 중…</p>
-  </div>`;
+  </div>
+  <p class="ld-links"><a href="about.html">게임 소개</a> · <a href="privacy.html">개인정보처리방침</a></p>`;
 document.body.appendChild(loading);
 const titleImg = new Image();
 titleImg.onload = () => { (loading.querySelector('.ld-art') as HTMLElement).style.backgroundImage = `url(${titleImg.src})`; loading.classList.add('has-art'); };
@@ -494,6 +495,7 @@ void Promise.all([loadArt(), loadWorldArt(), cloudReady]).then(() => {
   (loading.querySelector('.ld-msg') as HTMLElement).textContent = '화면을 터치해서 시작!';
   loading.classList.add('ready');
   // 터치(소리 켜기에도 필요) 한 번으로 시작
+  loading.querySelectorAll('.ld-links a').forEach((a) => a.addEventListener('pointerdown', (e) => e.stopPropagation()));
   loading.addEventListener('pointerdown', enterGame, { once: true });
 });
 
